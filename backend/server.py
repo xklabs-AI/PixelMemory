@@ -8,6 +8,7 @@ Run:
 
 from typing import Optional
 import re
+import threading
 from pathlib import Path
 from pydantic import BaseModel
 
@@ -21,9 +22,13 @@ from backend.db import (
     create_album, get_all_albums, get_album_by_id,
     add_photo_to_album, remove_photo_from_album,
     get_album_image_ids, get_photo_albums, delete_album,
+    bulk_add_photos_to_album, delete_images, bulk_update_location,
+    get_all_image_paths, update_description, mark_embedded,
 )
 from backend.search import SemanticSearch
 from backend.ingest import tracker, queue_manager, start_background_import
+from backend.metadata import search_locations, regenerate_all_thumbnails, generate_thumbnail
+from backend.describer import enrich_description
 
 
 class ImportRequest(BaseModel):
@@ -38,6 +43,29 @@ class CreateAlbumRequest(BaseModel):
 
 class AddPhotoRequest(BaseModel):
     image_id: int
+
+
+class BulkAlbumRequest(BaseModel):
+    album_id: int
+    image_ids: list[int]
+
+
+class BulkDeleteRequest(BaseModel):
+    image_ids: list[int]
+
+
+class BulkLocationRequest(BaseModel):
+    image_ids: list[int]
+    place_name: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    city: str = ""
+    region: str = ""
+    country: str = ""
+
+
+class BulkReprocessRequest(BaseModel):
+    image_ids: list[int]
 
 
 app = FastAPI(title="PixelMemory", version="1.0.0")
@@ -520,6 +548,148 @@ def get_photo_albums_endpoint(image_id: int):
         albums = get_photo_albums(conn, image_id)
     return {"albums": albums}
 
+
+# ── Bulk Operations & Location Search ────────────────────
+
+@app.get("/api/locations/search")
+def search_locations_endpoint(q: str = Query("", min_length=1), limit: int = Query(8, ge=1, le=50)):
+    """Fast offline location search across global places for Google Calendar style location picker."""
+    places = search_locations(q, limit=limit)
+    return {"query": q, "count": len(places), "results": places}
+
+
+@app.post("/api/photos/bulk-location")
+def bulk_location_endpoint(req: BulkLocationRequest):
+    """Assign location to multiple selected photos, update metadata, and re-embed."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+
+    search = get_search()
+    place_name = req.place_name.strip()
+    with get_conn() as conn:
+        updated_rows = bulk_update_location(
+            conn,
+            req.image_ids,
+            place_name=place_name,
+            latitude=req.latitude,
+            longitude=req.longitude,
+            city=req.city.strip(),
+            region=req.region.strip(),
+            country=req.country.strip(),
+        )
+        for row in updated_rows:
+            enriched = enrich_description(
+                row["raw_description"] or "",
+                {
+                    "date_taken": row["date_taken"],
+                    "place_name": place_name,
+                    "camera_model": row["camera_model"],
+                },
+            )
+            update_description(conn, row["id"], raw=row["raw_description"] or "", enriched=enriched)
+            search.add(row["id"], enriched)
+
+    return {
+        "status": "ok",
+        "updated_count": len(updated_rows),
+        "place_name": place_name,
+        "latitude": req.latitude,
+        "longitude": req.longitude,
+    }
+
+
+@app.post("/api/photos/bulk-album")
+def bulk_album_endpoint(req: BulkAlbumRequest):
+    """Add multiple photos to an album."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+    with get_conn() as conn:
+        album = get_album_by_id(conn, req.album_id)
+        if not album:
+            raise HTTPException(404, f"Album {req.album_id} not found.")
+        count = bulk_add_photos_to_album(conn, req.album_id, req.image_ids)
+    return {
+        "status": "ok",
+        "album_id": req.album_id,
+        "album_name": album["name"],
+        "added_count": count,
+    }
+
+
+@app.post("/api/photos/bulk-delete")
+def bulk_delete_endpoint(req: BulkDeleteRequest):
+    """Remove selected photos from library database, thumbnails, and vector index (original files preserved)."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+
+    with get_conn() as conn:
+        paths = delete_images(conn, req.image_ids)
+
+    # Delete cached thumbnails
+    for iid in req.image_ids:
+        tpath = THUMB_DIR / f"{iid}.jpg"
+        if tpath.exists():
+            try:
+                tpath.unlink()
+            except Exception:
+                pass
+
+    # Delete from ChromaDB
+    try:
+        get_search()._collection.delete(ids=[str(i) for i in req.image_ids])
+    except Exception as e:
+        print(f"Chroma delete error: {e}")
+
+    return {"status": "ok", "deleted_count": len(req.image_ids)}
+
+
+@app.post("/api/photos/bulk-reprocess")
+def bulk_reprocess_endpoint(req: BulkReprocessRequest):
+    """Queue selected photos for AI vision re-captioning and re-embedding."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+
+    target_ids = list(req.image_ids)
+
+    def reprocess_worker():
+        from backend.describer import ImageDescriber
+        describer = ImageDescriber()
+        describer.load()
+        search = get_search()
+
+        with get_conn() as conn:
+            placeholders = ",".join("?" for _ in target_ids)
+            rows = conn.execute(f"SELECT * FROM images WHERE id IN ({placeholders})", target_ids).fetchall()
+
+        for r in rows:
+            try:
+                raw_desc = describer.describe(r["file_path"])
+                enriched = enrich_description(raw_desc, {
+                    "date_taken": r["date_taken"],
+                    "place_name": r["place_name"],
+                    "camera_model": r["camera_model"],
+                })
+                with get_conn() as conn:
+                    update_description(conn, r["id"], raw=raw_desc, enriched=enriched)
+                    mark_embedded(conn, r["id"])
+                search.add(r["id"], enriched)
+                # Regenerate thumbnail with correct EXIF orientation
+                generate_thumbnail(r["file_path"], r["id"], force=True)
+            except Exception as e:
+                print(f"Error reprocessing image #{r['id']}: {e}")
+
+    t = threading.Thread(target=reprocess_worker, daemon=True)
+    t.start()
+    return {"status": "queued", "count": len(target_ids), "message": f"Queued {len(target_ids)} photos for AI re-analysis"}
+
+
+@app.post("/api/photos/regenerate-thumbnails")
+def regenerate_thumbnails_endpoint():
+    """Regenerate all thumbnails with EXIF auto-transposition so sideways images are upright."""
+    with get_conn() as conn:
+        records = get_all_image_paths(conn)
+    count = regenerate_all_thumbnails(records)
+    return {"status": "ok", "regenerated": count, "total": len(records)}
 
 
 @app.get("/api/thumb/{image_id}")

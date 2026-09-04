@@ -5,7 +5,7 @@ import base64
 import urllib.request
 import urllib.error
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageOps
 from tqdm import tqdm
 
 from backend.config import (
@@ -79,6 +79,7 @@ class ImageDescriber:
         try:
             import io
             with Image.open(p) as img:
+                img = ImageOps.exif_transpose(img)
                 if img.mode != "RGB":
                     img = img.convert("RGB")
                 # Downscale large camera photos to max 1024x1024 for fast inference
@@ -108,12 +109,13 @@ class ImageDescriber:
 
     def _describe_hf(self, file_path: str) -> str:
         """Describe image using direct HuggingFace model."""
-        img = Image.open(file_path)
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        encoded = self.hf_model.encode_image(img)
-        result = self.hf_model.query(encoded, VLM_PROMPT)["answer"]
-        return result.strip()
+        with Image.open(file_path) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            encoded = self.hf_model.encode_image(img)
+            result = self.hf_model.query(encoded, VLM_PROMPT)["answer"]
+            return result.strip()
 
     def describe(self, file_path: str) -> str:
         """Generate a description for a single image."""

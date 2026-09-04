@@ -691,6 +691,227 @@
     box-shadow: 0 0 0 2px var(--accent), 0 12px 30px rgba(59, 130, 246, 0.25);
   }
 
+  .photo-card.selected-multi {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px #3b82f6, 0 12px 32px rgba(59, 130, 246, 0.35);
+  }
+
+  /* Selection checkbox / ring on top-left */
+  .card-select-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(15, 20, 32, 0.75);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+    z-index: 10;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .photo-card:hover .card-select-btn,
+  .card-select-btn.active,
+  body.selection-active .card-select-btn {
+    opacity: 1;
+  }
+
+  .card-select-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  }
+
+  .card-select-btn:hover {
+    transform: scale(1.12);
+    border-color: #fff;
+  }
+
+  body.selection-active .floating-ai-bar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  /* ── Floating Selection Action Dock ────────────────── */
+  .floating-selection-dock {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(40px);
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(14, 18, 28, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(59, 130, 246, 0.5);
+    border-radius: 999px;
+    padding: 0.45rem 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(59, 130, 246, 0.3);
+    z-index: 210;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #fff;
+  }
+
+  .floating-selection-dock.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .dock-count-badge {
+    background: #3b82f6;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .dock-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 0.32rem 0.8rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .dock-btn:hover {
+    color: #fff;
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.15);
+  }
+
+  .dock-btn-danger:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .dock-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.15rem 0.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.2rem;
+    transition: all 0.15s;
+  }
+
+  .dock-close-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* ── Location Picker Modal Styles ──────────────────── */
+  .location-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.85rem;
+  }
+
+  .location-input-icon {
+    position: absolute;
+    left: 1rem;
+    color: #ef4444;
+    font-size: 1.15rem;
+  }
+
+  .location-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.85rem;
+    background: #0d111c;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-size: 0.92rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .location-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+  }
+
+  .location-suggestions-list {
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .location-suggestion-item {
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.15s ease;
+  }
+
+  .location-suggestion-item:hover,
+  .location-suggestion-item.selected {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  .location-item-icon {
+    font-size: 1.25rem;
+  }
+
+  .location-item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    overflow: hidden;
+  }
+
+  .location-item-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .location-item-sub {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
   .card-thumb-wrap {
     width: 100%;
     aspect-ratio: 1;
@@ -1807,6 +2028,63 @@
   </div>
 </div>
 
+<!-- Floating Selection Action Dock -->
+<div class="floating-selection-dock" id="floatingSelectionDock">
+  <div class="dock-count-badge" id="dockSelectedCount">0 selected</div>
+  <button class="dock-btn" id="dockSelectAllBtn">Select All</button>
+  <button class="dock-btn" id="dockAddAlbumBtn">🖼️ Album</button>
+  <button class="dock-btn" id="dockAddLocationBtn">📍 Location</button>
+  <button class="dock-btn" id="dockReprocessBtn" title="Re-run AI Vision Captioning on selected photos">🔄 Re-process</button>
+  <button class="dock-btn dock-btn-danger" id="dockDeleteBtn" title="Remove selected from gallery">🗑️ Remove</button>
+  <button class="dock-close-btn" id="dockCloseBtn" title="Clear selection">&times;</button>
+</div>
+
+<!-- Location Picker Modal (Google Calendar style) -->
+<div class="modal-backdrop" id="locationPickerModal">
+  <div class="modal-window" style="max-width: 520px;">
+    <div class="modal-top">
+      <div class="modal-title" id="locationModalTitle">📍 Assign Location to Photos</div>
+      <button class="modal-close-btn" id="locationModalClose">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <div class="location-input-wrap">
+        <span class="location-input-icon">📍</span>
+        <input type="text" id="locationInput" class="location-search-input" placeholder="Search city, landmark, or region..." autocomplete="off" autofocus />
+      </div>
+
+      <div class="section-title" style="margin-bottom: 0.45rem;">Suggested Locations</div>
+      <div class="location-suggestions-list" id="locationSuggestionsList">
+        <div style="font-size: 0.78rem; color: var(--text-dim); padding: 0.75rem; text-align: center;">Type at least 2 characters to search global places offline...</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.65rem; margin-top: 1rem;">
+        <button class="tool-btn" id="locationCancelBtn">Cancel</button>
+        <button class="cta-btn" id="locationApplyBtn">Apply Location</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Add to Album Modal -->
+<div class="modal-backdrop" id="bulkAlbumModal">
+  <div class="modal-window" style="max-width: 480px;">
+    <div class="modal-top">
+      <div class="modal-title" id="bulkAlbumModalTitle">🖼️ Add Photos to Album</div>
+      <button class="modal-close-btn" id="bulkAlbumModalClose">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <div class="album-create-inline" style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+        <input type="text" id="bulkNewAlbumTitle" class="setting-input" placeholder="Create new album name..." style="flex: 1;" />
+        <button class="cta-btn" id="bulkCreateAlbumBtn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; white-space: nowrap;">Create & Add</button>
+      </div>
+      <div class="section-title" style="margin-bottom: 0.45rem;">Existing Albums</div>
+      <div class="album-picker-list" id="bulkAlbumPickerList" style="max-height: 240px; overflow-y: auto;">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast" class="toast"></div>
 
@@ -1821,6 +2099,12 @@ let currentAlbumId = null;
 let currentDetailPhoto = null;
 let currentAddToAlbumPhotoId = null;
 let importPollTimer = null;
+
+// ── Multi-select & Bulk Action State ────────────────────
+let selectedPhotoIds = new Set();
+let currentFilteredPhotos = [];
+let locationSearchTimeout = null;
+let currentChosenLocation = null;
 
 // ── Multi-criteria Filter State ─────────────────────────
 let activeFilters = {
@@ -2016,6 +2300,7 @@ function applyFiltersAndRender() {
     filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
   }
 
+  currentFilteredPhotos = filtered;
   renderFilterChips();
 
   if (filtered.length !== allResults.length) {
@@ -2032,16 +2317,27 @@ function applyFiltersAndRender() {
         <div class="state-desc">${currentAlbumId ? 'This album has no photos matching the active date/location filters.' : 'No photos match the selected date or location criteria. Try broadening your filter range.'}</div>
       </div>
     `;
+    updateSelectionDock();
     return;
   }
 
   grid.innerHTML = '';
   filtered.forEach(r => {
+    const isSelected = selectedPhotoIds.has(r.id);
     const card = document.createElement('div');
-    card.className = 'photo-card';
+    card.className = `photo-card ${isSelected ? 'selected-multi' : ''}`;
+    card.setAttribute('data-photoid', r.id);
+
     card.addEventListener('click', (e) => {
-      // Don't open detail if clicked on action button
-      if (e.target.closest('.card-action-btn')) return;
+      // Don't open detail if clicked on action button or select circle
+      if (e.target.closest('.card-action-btn') || e.target.closest('.card-select-btn')) return;
+
+      if (selectedPhotoIds.size > 0) {
+        // Selection mode active: clicking anywhere on card toggles selection
+        togglePhotoSelection(r.id);
+        return;
+      }
+
       document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       showDetail(r);
@@ -2059,6 +2355,9 @@ function applyFiltersAndRender() {
 
     card.innerHTML = `
       <div class="card-thumb-wrap">
+        <div class="card-select-btn ${isSelected ? 'active' : ''}" data-photoid="${r.id}" title="Select photo">
+          ${isSelected ? '✓' : ''}
+        </div>
         <button class="card-action-btn" title="Add to Album" data-photoid="${r.id}">
           <span>➕</span>
           <span>Album</span>
@@ -2074,6 +2373,12 @@ function applyFiltersAndRender() {
       </div>
     `;
 
+    const selectBtn = card.querySelector('.card-select-btn');
+    selectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePhotoSelection(r.id);
+    });
+
     const albumBtn = card.querySelector('.card-action-btn');
     albumBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2082,6 +2387,8 @@ function applyFiltersAndRender() {
 
     grid.appendChild(card);
   });
+
+  updateSelectionDock();
 }
 
 // ── Detail Modal ────────────────────────────────────────
@@ -2885,6 +3192,329 @@ $('#resetModalBtn').addEventListener('click', async () => {
   }
 });
 
+// ── Multi-select Management ─────────────────────────────
+function togglePhotoSelection(photoId) {
+  if (selectedPhotoIds.has(photoId)) {
+    selectedPhotoIds.delete(photoId);
+  } else {
+    selectedPhotoIds.add(photoId);
+  }
+  updateSelectionDock();
+}
+
+function updateSelectionDock() {
+  const dock = $('#floatingSelectionDock');
+  const count = selectedPhotoIds.size;
+  const countBadge = $('#dockSelectedCount');
+  const selectAllBtn = $('#dockSelectAllBtn');
+
+  if (count > 0) {
+    document.body.classList.add('selection-active');
+    dock.classList.add('active');
+    countBadge.textContent = `${count} selected`;
+
+    const allFilteredSelected = currentFilteredPhotos.length > 0 && currentFilteredPhotos.every(p => selectedPhotoIds.has(p.id));
+    selectAllBtn.textContent = allFilteredSelected ? 'Deselect All' : 'Select All';
+  } else {
+    document.body.classList.remove('selection-active');
+    dock.classList.remove('active');
+    countBadge.textContent = `0 selected`;
+    selectAllBtn.textContent = 'Select All';
+  }
+
+  // Sync card elements in the DOM
+  document.querySelectorAll('.photo-card').forEach(card => {
+    const btn = card.querySelector('.card-select-btn');
+    if (!btn) return;
+    const pid = btn.getAttribute('data-photoid');
+    if (selectedPhotoIds.has(pid)) {
+      card.classList.add('selected-multi');
+      btn.classList.add('active');
+      btn.textContent = '✓';
+    } else {
+      card.classList.remove('selected-multi');
+      btn.classList.remove('active');
+      btn.textContent = '';
+    }
+  });
+}
+
+function selectAllToggle() {
+  if (currentFilteredPhotos.length === 0) return;
+  const allFilteredSelected = currentFilteredPhotos.every(p => selectedPhotoIds.has(p.id));
+  if (allFilteredSelected) {
+    currentFilteredPhotos.forEach(p => selectedPhotoIds.delete(p.id));
+  } else {
+    currentFilteredPhotos.forEach(p => selectedPhotoIds.add(p.id));
+  }
+  updateSelectionDock();
+}
+
+function clearSelection() {
+  selectedPhotoIds.clear();
+  updateSelectionDock();
+}
+
+$('#dockSelectAllBtn').addEventListener('click', selectAllToggle);
+$('#dockCloseBtn').addEventListener('click', clearSelection);
+
+// ── Bulk Actions: Add to Album ──────────────────────────
+async function openBulkAlbumModal() {
+  if (selectedPhotoIds.size === 0) return;
+  $('#bulkAlbumModalTitle').textContent = `🖼️ Add ${selectedPhotoIds.size} Photos to Album`;
+  $('#bulkNewAlbumTitle').value = '';
+  $('#bulkAlbumModal').classList.add('active');
+
+  const list = $('#bulkAlbumPickerList');
+  list.innerHTML = '<div style="font-size:0.8rem; color:var(--text-dim); padding:0.5rem;">Loading albums...</div>';
+
+  try {
+    const res = await fetch(`${API}/api/albums`);
+    const data = await res.json();
+    allAlbums = data.albums || [];
+
+    if (allAlbums.length === 0) {
+      list.innerHTML = '<div style="font-size:0.82rem; color:var(--text-dim); padding:0.75rem; text-align:center;">No albums yet. Enter a title above to create your first album!</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    allAlbums.forEach(album => {
+      const card = document.createElement('div');
+      card.className = 'album-picker-card';
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.1rem;">🖼️</span>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #fff;">${escapeHtml(album.name)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim);">${album.photo_count} photos</div>
+          </div>
+        </div>
+        <div>
+          <span class="small-add-btn">+ Add All</span>
+        </div>
+      `;
+      card.addEventListener('click', async () => {
+        await executeBulkAddToAlbum(album.id, album.name);
+      });
+      list.appendChild(card);
+    });
+  } catch (e) {
+    list.innerHTML = '<div style="color:#ef4444; font-size:0.8rem;">Failed to load albums</div>';
+  }
+}
+
+async function executeBulkAddToAlbum(albumId, albumName) {
+  const ids = Array.from(selectedPhotoIds);
+  try {
+    const res = await fetch(`${API}/api/photos/bulk-album`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ album_id: albumId, image_ids: ids })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.detail || 'Failed to add photos to album');
+    showToast(`Added ${result.added_count} photos to "${albumName}"`);
+    $('#bulkAlbumModal').classList.remove('active');
+    clearSelection();
+    await loadAlbums();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+$('#dockAddAlbumBtn').addEventListener('click', openBulkAlbumModal);
+$('#bulkAlbumModalClose').addEventListener('click', () => $('#bulkAlbumModal').classList.remove('active'));
+
+$('#bulkCreateAlbumBtn').addEventListener('click', async () => {
+  const name = $('#bulkNewAlbumTitle').value.trim();
+  if (!name) {
+    alert('Please enter an album title.');
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/albums`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create album');
+    }
+    const album = await res.json();
+    await executeBulkAddToAlbum(album.id, album.name);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// ── Bulk Actions: Add Location (Google Calendar Style) ──
+function openLocationModal() {
+  if (selectedPhotoIds.size === 0) return;
+  currentChosenLocation = null;
+  $('#locationModalTitle').textContent = `📍 Assign Location to ${selectedPhotoIds.size} Photos`;
+  $('#locationInput').value = '';
+  $('#locationSuggestionsList').innerHTML = '<div style="font-size: 0.78rem; color: var(--text-dim); padding: 0.75rem; text-align: center;">Type at least 2 characters to search global places offline...</div>';
+  $('#locationPickerModal').classList.add('active');
+  setTimeout(() => $('#locationInput').focus(), 100);
+}
+
+$('#dockAddLocationBtn').addEventListener('click', openLocationModal);
+$('#locationCancelBtn').addEventListener('click', () => $('#locationPickerModal').classList.remove('active'));
+$('#locationModalClose').addEventListener('click', () => $('#locationPickerModal').classList.remove('active'));
+
+$('#locationInput').addEventListener('input', (e) => {
+  clearTimeout(locationSearchTimeout);
+  const q = e.target.value.trim();
+  if (q.length < 2) {
+    $('#locationSuggestionsList').innerHTML = '<div style="font-size: 0.78rem; color: var(--text-dim); padding: 0.75rem; text-align: center;">Type at least 2 characters to search global places offline...</div>';
+    currentChosenLocation = null;
+    return;
+  }
+
+  locationSearchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API}/api/locations/search?q=${encodeURIComponent(q)}&limit=15`);
+      const data = await res.json();
+      renderLocationSuggestions(data.results || [], q);
+    } catch (err) {
+      console.warn('Location search error:', err);
+    }
+  }, 200);
+});
+
+function renderLocationSuggestions(suggestions, query) {
+  const container = $('#locationSuggestionsList');
+  container.innerHTML = '';
+
+  if (suggestions.length === 0) {
+    const customDiv = document.createElement('div');
+    customDiv.className = 'location-suggestion-item selected';
+    customDiv.innerHTML = `
+      <span class="location-item-icon">📍</span>
+      <div class="location-item-text">
+        <div class="location-item-title">Use "${escapeHtml(query)}"</div>
+        <div class="location-item-sub">Custom place name (no coordinates)</div>
+      </div>
+    `;
+    currentChosenLocation = { place_name: query, latitude: null, longitude: null };
+    customDiv.addEventListener('click', () => {
+      currentChosenLocation = { place_name: query, latitude: null, longitude: null };
+      $('#locationInput').value = query;
+      document.querySelectorAll('.location-suggestion-item').forEach(el => el.classList.remove('selected'));
+      customDiv.classList.add('selected');
+    });
+    container.appendChild(customDiv);
+    return;
+  }
+
+  suggestions.forEach((loc, idx) => {
+    const item = document.createElement('div');
+    item.className = `location-suggestion-item ${idx === 0 ? 'selected' : ''}`;
+    if (idx === 0) {
+      currentChosenLocation = loc;
+    }
+    const coordsStr = `${loc.latitude.toFixed(3)}°, ${loc.longitude.toFixed(3)}°`;
+    const subStr = [loc.admin1, loc.country_code, coordsStr].filter(Boolean).join(' · ');
+
+    item.innerHTML = `
+      <span class="location-item-icon">📍</span>
+      <div class="location-item-text">
+        <div class="location-item-title">${escapeHtml(loc.name)}</div>
+        <div class="location-item-sub">${escapeHtml(subStr)}</div>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      currentChosenLocation = loc;
+      $('#locationInput').value = loc.place_name || loc.name;
+      document.querySelectorAll('.location-suggestion-item').forEach(el => el.classList.remove('selected'));
+      item.classList.add('selected');
+    });
+
+    container.appendChild(item);
+  });
+}
+
+$('#locationApplyBtn').addEventListener('click', async () => {
+  const customText = $('#locationInput').value.trim();
+  if (!currentChosenLocation && !customText) {
+    alert('Please select or enter a location.');
+    return;
+  }
+
+  const placeName = currentChosenLocation ? (currentChosenLocation.place_name || currentChosenLocation.name) : customText;
+  const payload = {
+    image_ids: Array.from(selectedPhotoIds),
+    place_name: placeName,
+    latitude: currentChosenLocation ? currentChosenLocation.latitude : null,
+    longitude: currentChosenLocation ? currentChosenLocation.longitude : null,
+  };
+
+  try {
+    const res = await fetch(`${API}/api/photos/bulk-location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to update locations');
+    showToast(`Updated location to "${placeName}" for ${data.updated_count} photos!`);
+    $('#locationPickerModal').classList.remove('active');
+    clearSelection();
+    await loadPlatformStats();
+    doSearch(currentQuery);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// ── Bulk Actions: Re-process (Moondream2) ────────────────
+$('#dockReprocessBtn').addEventListener('click', async () => {
+  if (selectedPhotoIds.size === 0) return;
+  const count = selectedPhotoIds.size;
+  if (!confirm(`Re-run AI vision captioning (Moondream2) and re-embed ${count} photo(s)?\n\nThis will run in the background.`)) return;
+
+  try {
+    const res = await fetch(`${API}/api/photos/bulk-reprocess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_ids: Array.from(selectedPhotoIds) })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to start re-processing');
+    showToast(`Started AI re-processing for ${count} photos in the background...`);
+    clearSelection();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// ── Bulk Actions: Remove from Gallery ────────────────────
+$('#dockDeleteBtn').addEventListener('click', async () => {
+  if (selectedPhotoIds.size === 0) return;
+  const count = selectedPhotoIds.size;
+  if (!confirm(`Remove ${count} photo(s) from the PixelMemory gallery?\n\nOriginal photo files on your disk will NOT be deleted.`)) return;
+
+  try {
+    const res = await fetch(`${API}/api/photos/bulk-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_ids: Array.from(selectedPhotoIds) })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to remove photos');
+    showToast(`Removed ${data.deleted_count} photos from gallery.`);
+    clearSelection();
+    await loadPlatformStats();
+    await loadAlbums();
+    doSearch(currentQuery);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
 // Global Keyboard Shortcuts
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -2893,6 +3523,11 @@ document.addEventListener('keydown', (e) => {
     $('#importModal').classList.remove('active');
     $('#createAlbumModal').classList.remove('active');
     $('#addToAlbumModal').classList.remove('active');
+    $('#locationPickerModal').classList.remove('active');
+    $('#bulkAlbumModal').classList.remove('active');
+    if (selectedPhotoIds.size > 0) {
+      clearSelection();
+    }
   }
   if (e.key === '/' && document.activeElement !== queryInput && document.activeElement !== aiInput) {
     e.preventDefault();

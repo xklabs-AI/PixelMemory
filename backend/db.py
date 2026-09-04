@@ -258,3 +258,64 @@ def delete_album(conn: sqlite3.Connection, album_id: int) -> bool:
     """Delete an album (cascade removes associations)."""
     conn.execute("DELETE FROM albums WHERE id = ?", (album_id,))
     return True
+
+
+def bulk_add_photos_to_album(conn: sqlite3.Connection, album_id: int, image_ids: list[int]) -> int:
+    """Batch add multiple images to an album."""
+    count = 0
+    for iid in image_ids:
+        conn.execute(
+            "INSERT OR IGNORE INTO album_images (album_id, image_id) VALUES (?, ?)",
+            (album_id, iid),
+        )
+        count += 1
+    conn.execute("UPDATE albums SET updated_at = datetime('now') WHERE id = ?", (album_id,))
+    return count
+
+
+def delete_images(conn: sqlite3.Connection, image_ids: list[int]) -> list[str]:
+    """Delete multiple images from database and return their file paths for disk cleanup."""
+    if not image_ids:
+        return []
+    placeholders = ",".join("?" for _ in image_ids)
+    rows = conn.execute(
+        f"SELECT file_path FROM images WHERE id IN ({placeholders})", image_ids
+    ).fetchall()
+    paths = [r["file_path"] for r in rows]
+
+    conn.execute(f"DELETE FROM album_images WHERE image_id IN ({placeholders})", image_ids)
+    conn.execute(f"DELETE FROM images WHERE id IN ({placeholders})", image_ids)
+    return paths
+
+
+def bulk_update_location(
+    conn: sqlite3.Connection,
+    image_ids: list[int],
+    place_name: str,
+    latitude: float | None,
+    longitude: float | None,
+    city: str = "",
+    region: str = "",
+    country: str = "",
+) -> list[dict]:
+    """Update location metadata for specified images and return updated rows for vector re-embedding."""
+    if not image_ids:
+        return []
+    placeholders = ",".join("?" for _ in image_ids)
+    conn.execute(
+        f"""UPDATE images 
+            SET place_name = ?, latitude = ?, longitude = ?, city = ?, region = ?, country = ?, updated_at = datetime('now')
+            WHERE id IN ({placeholders})""",
+        [place_name, latitude, longitude, city, region, country] + image_ids,
+    )
+    rows = conn.execute(
+        f"SELECT * FROM images WHERE id IN ({placeholders})", image_ids
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_all_image_paths(conn: sqlite3.Connection) -> list[tuple[int, str]]:
+    """Return all (id, file_path) pairs for thumbnail regeneration."""
+    rows = conn.execute("SELECT id, file_path FROM images").fetchall()
+    return [(r["id"], r["file_path"]) for r in rows]
+

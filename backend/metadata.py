@@ -5,7 +5,7 @@ from pathlib import Path
 
 import exifread
 import reverse_geocoder as rg
-from PIL import Image
+from PIL import Image, ImageOps
 
 from backend.config import THUMB_DIR, THUMB_SIZE
 
@@ -106,23 +106,98 @@ def reverse_geocode(lat: float, lon: float) -> dict:
     return {}
 
 
-def generate_thumbnail(file_path: str, image_id: int) -> Path | None:
-    """Create a JPEG thumbnail for the search UI."""
+_geocoder_singleton = None
+
+
+def get_geocoder():
+    """Lazy load reverse_geocoder singleton database for fast offline search."""
+    global _geocoder_singleton
+    if _geocoder_singleton is None:
+        _geocoder_singleton = rg.RGeocoder(mode=1)
+    return _geocoder_singleton
+
+
+def search_locations(query: str, limit: int = 8) -> list[dict]:
+    """
+    Offline autocomplete search across 144,000+ global cities and landmarks.
+    Enables Google Calendar style location selection without external API calls.
+    """
+    q = (query or "").strip().lower()
+    if not q or len(q) < 2:
+        return []
+
+    geo = get_geocoder()
+    prefix_matches = []
+    substring_matches = []
+
+    for loc in geo.locations:
+        name = loc.get("name", "")
+        name_lower = name.lower()
+        admin1 = loc.get("admin1", "")
+        admin2 = loc.get("admin2", "")
+        cc = loc.get("cc", "")
+
+        parts = [p for p in (name, admin1, cc) if p]
+        place_str = ", ".join(parts)
+        item = {
+            "name": name,
+            "region": admin1,
+            "county": admin2,
+            "country": cc,
+            "place_name": place_str,
+            "latitude": float(loc["lat"]),
+            "longitude": float(loc["lon"]),
+        }
+
+        if name_lower == q or name_lower.startswith(q):
+            prefix_matches.append(item)
+            if len(prefix_matches) >= limit:
+                break
+        elif q in name_lower or (admin1 and q in admin1.lower()):
+            if len(substring_matches) < limit:
+                substring_matches.append(item)
+
+    combined = prefix_matches + substring_matches
+    # Deduplicate by place_name
+    seen = set()
+    unique = []
+    for item in combined:
+        if item["place_name"] not in seen:
+            seen.add(item["place_name"])
+            unique.append(item)
+            if len(unique) >= limit:
+                break
+    return unique
+
+
+def generate_thumbnail(file_path: str, image_id: int, force: bool = False) -> Path | None:
+    """Create a JPEG thumbnail for the search UI, correctly oriented via EXIF transposition."""
     THUMB_DIR.mkdir(parents=True, exist_ok=True)
     thumb_path = THUMB_DIR / f"{image_id}.jpg"
-    if thumb_path.exists():
+    if thumb_path.exists() and not force:
         return thumb_path
 
     try:
         with Image.open(file_path) as img:
+            # Auto-rotate based on EXIF Orientation tag so camera & phone shots are upright
+            img = ImageOps.exif_transpose(img)
             img.thumbnail(THUMB_SIZE)
             # Convert to RGB if needed (handles RGBA, palette, etc.)
             if img.mode not in ("RGB", "L"):
                 img = img.convert("RGB")
-            img.save(thumb_path, "JPEG", quality=80)
+            img.save(thumb_path, "JPEG", quality=82)
         return thumb_path
     except Exception:
         return None
+
+
+def regenerate_all_thumbnails(image_records: list[tuple[int, str]]) -> int:
+    """Regenerate thumbnails for given (image_id, file_path) pairs with EXIF auto-transposition."""
+    count = 0
+    for iid, fpath in image_records:
+        if generate_thumbnail(fpath, iid, force=True):
+            count += 1
+    return count
 
 
 def process_metadata(image_id: int, file_path: str) -> dict:
