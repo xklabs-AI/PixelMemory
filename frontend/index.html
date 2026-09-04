@@ -483,6 +483,158 @@
     font-size: 0.8rem;
   }
 
+  .filter-date-input {
+    background: #0d111c;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.3rem 0.55rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    color-scheme: dark;
+    transition: border-color 0.15s ease;
+  }
+
+  .filter-date-input:focus {
+    border-color: var(--accent);
+  }
+
+  .filter-pill-btn {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    padding: 0.32rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .filter-pill-btn:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.6);
+  }
+
+  .filter-pill-btn.active {
+    background: #d97706;
+    border-color: #f59e0b;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+  }
+
+  .filter-reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.32rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-reset-btn:hover {
+    color: #fff;
+    border-color: var(--border-highlight);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Active Filter Chips Row ───────────────────────── */
+  .active-filter-chips-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.4rem 2rem 0.2rem 2rem;
+    flex-wrap: wrap;
+    animation: fadeIn 0.15s ease;
+  }
+
+  .chips-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .chips-list {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+    font-size: 0.73rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  .filter-chip.chip-warning {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fcd34d;
+  }
+
+  .filter-chip.chip-success {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+  }
+
+  .filter-chip-remove {
+    background: transparent;
+    border: none;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 0.15rem;
+    transition: opacity 0.15s;
+  }
+
+  .filter-chip-remove:hover {
+    opacity: 1;
+  }
+
+  .chips-clear-all {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 0.25rem;
+    padding: 0.2rem;
+  }
+
+  .chips-clear-all:hover {
+    color: #ef4444;
+  }
+
+  .tool-btn .filter-active-dot {
+    width: 7px;
+    height: 7px;
+    background: #3b82f6;
+    border-radius: 50%;
+    margin-left: 0.2rem;
+    box-shadow: 0 0 6px #3b82f6;
+  }
+
   /* ── Results Info Bar ──────────────────────────────── */
   .results-meta-bar {
     display: flex;
@@ -1263,6 +1415,16 @@
             <span>My Local Photos</span>
             <span class="nav-badge" id="navTotalCount">0</span>
           </div>
+          <div class="nav-item" id="navDateUnknown" title="Photos without date metadata">
+            <span>📅</span>
+            <span>Date Unknown</span>
+            <span class="nav-badge" id="navUnknownCount" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">0</span>
+          </div>
+          <div class="nav-item" id="navGpsPhotos" title="Photos with GPS coordinates">
+            <span>📍</span>
+            <span>With GPS Location</span>
+            <span class="nav-badge" id="navGpsCount" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">0</span>
+          </div>
           <div class="nav-item nav-sub" data-query="sunset">
             <span>› 📁</span>
             <span>/Sunsets & Golden Hour</span>
@@ -1313,29 +1475,48 @@
                    autocomplete="off" autofocus />
             <button class="search-clear" id="clearBtn">&times;</button>
           </div>
-          <button class="tool-btn" id="filterBtn">⚙️ Filters</button>
-          <button class="tool-btn" id="sortBtn">↕ Sort by Relevance</button>
+          <button class="tool-btn" id="filterBtn">
+            <span>⚙️ Filters</span>
+            <span class="filter-active-dot" id="filterActiveDot" style="display: none;"></span>
+          </button>
+          <button class="tool-btn" id="sortBtn">↕ Sort</button>
         </div>
 
         <!-- Collapsible Filters Drawer -->
         <div class="filter-drawer" id="filterDrawer">
           <div class="filter-group">
-            <label>Relevance Filter</label>
-            <select class="filter-select" id="filterModeSelect">
-              <option value="balanced" selected>Balanced (Relevant Only)</option>
-              <option value="strict">Strict (Top Matches Only)</option>
-              <option value="broad">Broad (Show More)</option>
-              <option value="all">All (Unfiltered Candidates)</option>
+            <label>📅 Date Filter</label>
+            <select class="filter-select" id="filterDatePreset">
+              <option value="all" selected>All Time</option>
+              <option value="unknown">Date Unknown (No EXIF Date)</option>
+              <option value="past_7d">Past 7 Days</option>
+              <option value="past_30d">Past 30 Days</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2022">2022</option>
+              <option value="older">Older (Before 2022)</option>
+              <option value="custom">Custom Range...</option>
             </select>
           </div>
+
+          <!-- Date Range Pickers (active on custom or when dates picked) -->
+          <div class="filter-group" id="dateRangeGroup" style="display: none;">
+            <label>From</label>
+            <input type="date" id="filterStartDate" class="filter-date-input" />
+            <label>To</label>
+            <input type="date" id="filterEndDate" class="filter-date-input" />
+          </div>
+
           <div class="filter-group">
-            <label>Sort Order</label>
+            <label>Sort</label>
             <select class="filter-select" id="sortSelect">
-              <option value="relevance">Similarity Score (High to Low)</option>
-              <option value="newest">Date (Newest First)</option>
-              <option value="oldest">Date (Oldest First)</option>
+              <option value="relevance">Similarity Score</option>
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
             </select>
           </div>
+
           <div class="filter-group">
             <label>Location</label>
             <select class="filter-select" id="filterGeo">
@@ -1343,7 +1524,29 @@
               <option value="gps">With GPS Coordinates Only</option>
             </select>
           </div>
+
+          <div class="filter-group">
+            <label>AI Mode</label>
+            <select class="filter-select" id="filterModeSelect">
+              <option value="balanced" selected>Balanced</option>
+              <option value="strict">Strict</option>
+              <option value="broad">Broad</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+
+          <div class="filter-group" style="margin-left: auto; gap: 0.4rem;">
+            <button class="filter-pill-btn" id="btnDateUnknownQuick" title="Toggle photos with no date metadata">📅 Date Unknown</button>
+            <button class="filter-reset-btn" id="btnResetFilters" title="Reset all filters">Reset</button>
+          </div>
         </div>
+      </div>
+
+      <!-- Active Filter Chips Row -->
+      <div class="active-filter-chips-bar" id="activeFilterChipsBar" style="display: none;">
+        <div class="chips-label">Filters:</div>
+        <div class="chips-list" id="chipsList"></div>
+        <button class="chips-clear-all" id="clearAllChipsBtn">Clear All</button>
       </div>
 
       <!-- Results Meta Info Bar -->
@@ -1619,6 +1822,16 @@ let currentDetailPhoto = null;
 let currentAddToAlbumPhotoId = null;
 let importPollTimer = null;
 
+// ── Multi-criteria Filter State ─────────────────────────
+let activeFilters = {
+  dateMode: 'all',     // 'all', 'unknown', 'past_7d', 'past_30d', '2026', '2025', '2024', '2022', 'older', 'custom'
+  startDate: '',       // 'YYYY-MM-DD'
+  endDate: '',         // 'YYYY-MM-DD'
+  geo: 'all',          // 'all', 'gps'
+  sort: 'relevance',   // 'relevance', 'newest', 'oldest'
+  relevanceMode: 'balanced',
+};
+
 // ── Toast Notification ──────────────────────────────────
 let toastTimer = null;
 function showToast(msg) {
@@ -1639,9 +1852,17 @@ async function doSearch(query) {
   const meta = $('#resultMeta');
   const clearBtn = $('#clearBtn');
 
-  // Highlight all photos tab
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  $('#navAllPhotos').classList.add('active');
+  // Highlight all photos tab if not on Date Unknown or GPS
+  if (activeFilters.dateMode === 'unknown') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('#navDateUnknown').classList.add('active');
+  } else if (activeFilters.geo === 'gps') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('#navGpsPhotos').classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('#navAllPhotos').classList.add('active');
+  }
 
   if (query) {
     clearBtn.classList.add('visible');
@@ -1659,15 +1880,34 @@ async function doSearch(query) {
   `;
 
   try {
-    let data;
+    let url;
+    const params = new URLSearchParams();
     if (query) {
-      const filterMode = $('#filterModeSelect') ? $('#filterModeSelect').value : 'balanced';
-      const res = await fetch(`${API}/api/search?q=${encodeURIComponent(query)}&top_k=50&filter_mode=${encodeURIComponent(filterMode)}`);
-      data = await res.json();
+      params.append('q', query);
+      params.append('top_k', '60');
+      params.append('filter_mode', activeFilters.relevanceMode || 'balanced');
+      if (activeFilters.dateMode === 'unknown') {
+        params.append('date_unknown', 'true');
+      } else {
+        if (activeFilters.startDate) params.append('start_date', activeFilters.startDate);
+        if (activeFilters.endDate) params.append('end_date', activeFilters.endDate);
+      }
+      if (activeFilters.geo === 'gps') params.append('geo_only', 'true');
+      url = `${API}/api/search?${params.toString()}`;
     } else {
-      const res = await fetch(`${API}/api/photos?limit=500`);
-      data = await res.json();
+      params.append('limit', '500');
+      if (activeFilters.dateMode === 'unknown') {
+        params.append('date_unknown', 'true');
+      } else {
+        if (activeFilters.startDate) params.append('start_date', activeFilters.startDate);
+        if (activeFilters.endDate) params.append('end_date', activeFilters.endDate);
+      }
+      if (activeFilters.geo === 'gps') params.append('geo_only', 'true');
+      url = `${API}/api/photos?${params.toString()}`;
     }
+
+    const res = await fetch(url);
+    const data = await res.json();
     allResults = data.results || [];
     applyFiltersAndRender();
   } catch (err) {
@@ -1681,33 +1921,115 @@ async function doSearch(query) {
   }
 }
 
+// ── Filter Chips Rendering ──────────────────────────────
+function renderFilterChips() {
+  const bar = $('#activeFilterChipsBar');
+  const list = $('#chipsList');
+  const dot = $('#filterActiveDot');
+  list.innerHTML = '';
+
+  let activeCount = 0;
+
+  // Date filter chip
+  if (activeFilters.dateMode === 'unknown') {
+    activeCount++;
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip chip-warning';
+    chip.innerHTML = `<span>📅 Date: Unknown (No EXIF)</span> <button class="filter-chip-remove" title="Remove filter">&times;</button>`;
+    chip.querySelector('button').addEventListener('click', () => setDateFilter('all'));
+    list.appendChild(chip);
+  } else if (activeFilters.startDate || activeFilters.endDate) {
+    activeCount++;
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip';
+    let label = '📅 ';
+    if (activeFilters.startDate && activeFilters.endDate) {
+      label += `${activeFilters.startDate} → ${activeFilters.endDate}`;
+    } else if (activeFilters.startDate) {
+      label += `From ${activeFilters.startDate}`;
+    } else {
+      label += `Until ${activeFilters.endDate}`;
+    }
+    chip.innerHTML = `<span>${label}</span> <button class="filter-chip-remove" title="Remove filter">&times;</button>`;
+    chip.querySelector('button').addEventListener('click', () => setDateFilter('all'));
+    list.appendChild(chip);
+  }
+
+  // Location filter chip
+  if (activeFilters.geo === 'gps') {
+    activeCount++;
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip chip-success';
+    chip.innerHTML = `<span>📍 GPS Coordinates Only</span> <button class="filter-chip-remove" title="Remove filter">&times;</button>`;
+    chip.querySelector('button').addEventListener('click', () => setGeoFilter('all'));
+    list.appendChild(chip);
+  }
+
+  if (activeCount > 0) {
+    bar.style.display = 'flex';
+    if (dot) dot.style.display = 'inline-block';
+  } else {
+    bar.style.display = 'none';
+    if (dot) dot.style.display = 'none';
+  }
+}
+
 // ── Filter and Render Cards ─────────────────────────────
 function applyFiltersAndRender() {
   const grid = $('#grid');
-  const sortMode = $('#sortSelect').value;
-  const geoFilter = $('#filterGeo').value;
 
   let filtered = allResults.filter(r => {
-    if (geoFilter === 'gps' && (!r.latitude || !r.longitude)) return false;
+    // Location filter
+    if (activeFilters.geo === 'gps' && (!r.latitude || !r.longitude)) return false;
+
+    // Date filter
+    const dt = r.date_taken;
+    if (activeFilters.dateMode === 'unknown') {
+      if (dt && dt.trim() !== '') return false;
+    } else if (activeFilters.startDate || activeFilters.endDate) {
+      if (!dt) return false;
+      if (activeFilters.startDate && dt < activeFilters.startDate) return false;
+      if (activeFilters.endDate) {
+        const endDt = activeFilters.endDate.length === 10 ? activeFilters.endDate + 'T23:59:59' : activeFilters.endDate;
+        if (dt > endDt) return false;
+      }
+    }
     return true;
   });
 
-  if (sortMode === 'newest') {
-    filtered.sort((a, b) => new Date(b.date_taken || 0) - new Date(a.date_taken || 0));
-  } else if (sortMode === 'oldest') {
-    filtered.sort((a, b) => new Date(a.date_taken || 0) - new Date(b.date_taken || 0));
+  // Sort
+  if (activeFilters.sort === 'newest') {
+    filtered.sort((a, b) => {
+      if (!a.date_taken && !b.date_taken) return 0;
+      if (!a.date_taken) return 1;
+      if (!b.date_taken) return -1;
+      return new Date(b.date_taken) - new Date(a.date_taken);
+    });
+  } else if (activeFilters.sort === 'oldest') {
+    filtered.sort((a, b) => {
+      if (!a.date_taken && !b.date_taken) return 0;
+      if (!a.date_taken) return 1;
+      if (!b.date_taken) return -1;
+      return new Date(a.date_taken) - new Date(b.date_taken);
+    });
   } else {
-    filtered.sort((a, b) => b.score - a.score);
+    filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
   }
 
-  $('#statsSummary').textContent = `${filtered.length} photos displayed`;
+  renderFilterChips();
+
+  if (filtered.length !== allResults.length) {
+    $('#statsSummary').textContent = `${filtered.length} of ${allResults.length} photos displayed`;
+  } else {
+    $('#statsSummary').textContent = `${filtered.length} photos displayed`;
+  }
 
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="state-box" style="grid-column: 1 / -1;">
         <div class="state-icon">📸</div>
         <div class="state-title">No matching photos found</div>
-        <div class="state-desc">${currentAlbumId ? 'This album is currently empty. Click "Add to Album" on any photo to add it here.' : 'Try another description, concept, location, or year.'}</div>
+        <div class="state-desc">${currentAlbumId ? 'This album has no photos matching the active date/location filters.' : 'No photos match the selected date or location criteria. Try broadening your filter range.'}</div>
       </div>
     `;
     return;
@@ -2285,6 +2607,8 @@ async function loadPlatformStats() {
     const res = await fetch(`${API}/api/stats`);
     const s = await res.json();
     $('#navTotalCount').textContent = s.total ?? 0;
+    if ($('#navUnknownCount')) $('#navUnknownCount').textContent = s.unknown_dates ?? 0;
+    if ($('#navGpsCount')) $('#navGpsCount').textContent = s.with_gps ?? 0;
   } catch (e) {}
 
   try {
@@ -2306,6 +2630,135 @@ async function loadPlatformStats() {
       });
     }
   } catch (e) {}
+}
+
+// ── Date & Filter Controllers ───────────────────────────
+function setDateFilter(mode, start = '', end = '') {
+  activeFilters.dateMode = mode;
+  const presetSelect = $('#filterDatePreset');
+  const rangeGroup = $('#dateRangeGroup');
+  const startInput = $('#filterStartDate');
+  const endInput = $('#filterEndDate');
+  const quickUnknownBtn = $('#btnDateUnknownQuick');
+  const navUnknown = $('#navDateUnknown');
+  const navAll = $('#navAllPhotos');
+
+  const now = new Date();
+  const formatDate = (d) => d.toISOString().split('T')[0];
+
+  if (mode === 'unknown') {
+    activeFilters.startDate = '';
+    activeFilters.endDate = '';
+    presetSelect.value = 'unknown';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.add('active');
+  } else if (mode === 'past_7d') {
+    const past = new Date(now.getTime() - 7 * 86400000);
+    activeFilters.startDate = formatDate(past);
+    activeFilters.endDate = formatDate(now);
+    presetSelect.value = 'past_7d';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === 'past_30d') {
+    const past = new Date(now.getTime() - 30 * 86400000);
+    activeFilters.startDate = formatDate(past);
+    activeFilters.endDate = formatDate(now);
+    presetSelect.value = 'past_30d';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === '2026') {
+    activeFilters.startDate = '2026-01-01';
+    activeFilters.endDate = '2026-12-31';
+    presetSelect.value = '2026';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === '2025') {
+    activeFilters.startDate = '2025-01-01';
+    activeFilters.endDate = '2025-12-31';
+    presetSelect.value = '2025';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === '2024') {
+    activeFilters.startDate = '2024-01-01';
+    activeFilters.endDate = '2024-12-31';
+    presetSelect.value = '2024';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === '2022') {
+    activeFilters.startDate = '2022-01-01';
+    activeFilters.endDate = '2022-12-31';
+    presetSelect.value = '2022';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === 'older') {
+    activeFilters.startDate = '';
+    activeFilters.endDate = '2021-12-31';
+    presetSelect.value = 'older';
+    rangeGroup.style.display = 'none';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else if (mode === 'custom') {
+    presetSelect.value = 'custom';
+    rangeGroup.style.display = 'flex';
+    activeFilters.startDate = start || startInput.value;
+    activeFilters.endDate = end || endInput.value;
+    startInput.value = activeFilters.startDate;
+    endInput.value = activeFilters.endDate;
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  } else { // 'all'
+    activeFilters.startDate = '';
+    activeFilters.endDate = '';
+    activeFilters.dateMode = 'all';
+    presetSelect.value = 'all';
+    rangeGroup.style.display = 'none';
+    startInput.value = '';
+    endInput.value = '';
+    if (quickUnknownBtn) quickUnknownBtn.classList.remove('active');
+  }
+
+  // Sync sidebar active highlight
+  if (mode === 'unknown') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (navUnknown) navUnknown.classList.add('active');
+  } else if (activeFilters.geo === 'gps') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('#navGpsPhotos').classList.add('active');
+  } else if (!currentAlbumId && !currentQuery) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (navAll) navAll.classList.add('active');
+  }
+
+  applyFiltersAndRender();
+}
+
+function setGeoFilter(mode) {
+  activeFilters.geo = mode;
+  $('#filterGeo').value = mode;
+  const navGps = $('#navGpsPhotos');
+  const navAll = $('#navAllPhotos');
+
+  if (mode === 'gps') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (navGps) navGps.classList.add('active');
+  } else if (activeFilters.dateMode === 'unknown') {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('#navDateUnknown').classList.add('active');
+  } else if (!currentAlbumId && !currentQuery) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (navAll) navAll.classList.add('active');
+  }
+
+  applyFiltersAndRender();
+}
+
+function resetAllFilters() {
+  setDateFilter('all');
+  setGeoFilter('all');
+  activeFilters.sort = 'relevance';
+  $('#sortSelect').value = 'relevance';
+  $('#sortBtn').textContent = '↕ Sort';
+  activeFilters.relevanceMode = 'balanced';
+  $('#filterModeSelect').value = 'balanced';
+  applyFiltersAndRender();
 }
 
 // ── Event Handlers ──────────────────────────────────────
@@ -2340,9 +2793,65 @@ $('#filterBtn').addEventListener('click', () => {
   $('#filterBtn').classList.toggle('active', drawer.classList.contains('open'));
 });
 
-$('#filterModeSelect').addEventListener('change', () => doSearch(currentQuery));
-$('#sortSelect').addEventListener('change', applyFiltersAndRender);
-$('#filterGeo').addEventListener('change', applyFiltersAndRender);
+$('#filterDatePreset').addEventListener('change', (e) => {
+  setDateFilter(e.target.value);
+});
+
+$('#filterStartDate').addEventListener('change', (e) => {
+  activeFilters.startDate = e.target.value;
+  applyFiltersAndRender();
+});
+
+$('#filterEndDate').addEventListener('change', (e) => {
+  activeFilters.endDate = e.target.value;
+  applyFiltersAndRender();
+});
+
+$('#btnDateUnknownQuick').addEventListener('click', () => {
+  setDateFilter(activeFilters.dateMode === 'unknown' ? 'all' : 'unknown');
+});
+
+$('#btnResetFilters').addEventListener('click', resetAllFilters);
+$('#clearAllChipsBtn').addEventListener('click', resetAllFilters);
+
+$('#filterModeSelect').addEventListener('change', (e) => {
+  activeFilters.relevanceMode = e.target.value;
+  doSearch(currentQuery);
+});
+
+$('#sortSelect').addEventListener('change', (e) => {
+  activeFilters.sort = e.target.value;
+  $('#sortBtn').textContent = e.target.value === 'newest' ? '↕ Newest' : e.target.value === 'oldest' ? '↕ Oldest' : '↕ Relevance';
+  applyFiltersAndRender();
+});
+
+$('#sortBtn').addEventListener('click', () => {
+  const modes = ['relevance', 'newest', 'oldest'];
+  const next = modes[(modes.indexOf(activeFilters.sort) + 1) % modes.length];
+  activeFilters.sort = next;
+  $('#sortSelect').value = next;
+  $('#sortBtn').textContent = next === 'newest' ? '↕ Newest' : next === 'oldest' ? '↕ Oldest' : '↕ Relevance';
+  applyFiltersAndRender();
+});
+
+$('#filterGeo').addEventListener('change', (e) => {
+  setGeoFilter(e.target.value);
+});
+
+// Sidebar navigation items
+$('#navAllPhotos').addEventListener('click', () => {
+  resetAllFilters();
+  queryInput.value = '';
+  doSearch('');
+});
+
+$('#navDateUnknown').addEventListener('click', () => {
+  setDateFilter('unknown');
+});
+
+$('#navGpsPhotos').addEventListener('click', () => {
+  setGeoFilter(activeFilters.geo === 'gps' ? 'all' : 'gps');
+});
 
 // Sub-nav click queries
 document.querySelectorAll('.nav-sub').forEach(item => {
@@ -2353,13 +2862,11 @@ document.querySelectorAll('.nav-sub').forEach(item => {
   });
 });
 
-$('#navAllPhotos').addEventListener('click', () => {
-  queryInput.value = '';
-  doSearch('');
-});
-
 // Rail click actions
-$('#railFolders').addEventListener('click', showAllPhotos);
+$('#railFolders').addEventListener('click', () => {
+  resetAllFilters();
+  showAllPhotos();
+});
 $('#railIndex').addEventListener('click', () => $('#settingsModal').classList.add('active'));
 $('#settingsBtn').addEventListener('click', () => $('#settingsModal').classList.add('active'));
 $('#settingsClose').addEventListener('click', () => $('#settingsModal').classList.remove('active'));

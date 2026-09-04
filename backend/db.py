@@ -164,10 +164,16 @@ def get_stats(conn: sqlite3.Connection) -> dict:
             COUNT(*) as total,
             SUM(metadata_done) as metadata_done,
             SUM(description_done) as described,
-            SUM(embedded) as embedded
+            SUM(embedded) as embedded,
+            SUM(CASE WHEN date_taken IS NULL OR date_taken = '' THEN 1 ELSE 0 END) as unknown_dates,
+            SUM(CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN 1 ELSE 0 END) as with_gps
         FROM images
     """).fetchone()
-    return dict(row)
+    res = dict(row)
+    res["unknown_dates"] = res.get("unknown_dates") or 0
+    res["with_gps"] = res.get("with_gps") or 0
+    return res
+
 
 
 # ── Album Operations ────────────────────────────────────

@@ -6,6 +6,7 @@ Run:
     # or: uvicorn backend.server:app --host 0.0.0.0 --port 8642
 """
 
+from typing import Optional
 import re
 from pathlib import Path
 from pydantic import BaseModel
@@ -38,10 +39,11 @@ class CreateAlbumRequest(BaseModel):
 class AddPhotoRequest(BaseModel):
     image_id: int
 
-app = FastAPI(title="PixelMemory", version="0.1.0")
 
-# Lazy-loaded search engine
-_search: SemanticSearch | None = None
+app = FastAPI(title="PixelMemory", version="1.0.0")
+
+# Lazy singleton
+_search = None
 
 
 def get_search() -> SemanticSearch:
@@ -51,20 +53,19 @@ def get_search() -> SemanticSearch:
     return _search
 
 
-def extract_tags(text: str = "", place: str = "", camera: str = "", date_taken: str = "") -> list[str]:
-    """Dynamically derive tags from real metadata without hardcoded keyword lists."""
+def extract_tags(enriched: str, place: str, camera: str, date_taken: str) -> list[str]:
+    """Extract human-readable quick tags from metadata."""
     tags = []
     if place:
-        for part in place.split(","):
-            part_clean = re.sub(r"[^\w]", "", part.strip())
-            if part_clean and len(part_clean) > 2 and part_clean.lower() not in {"us", "usa", "the"}:
-                tags.append(f"#{part_clean}")
-                break
+        parts = [p.strip() for p in place.split(",") if p.strip()]
+        for p in parts[:2]:
+            clean = re.sub(r'[^a-zA-Z0-9]', '', p)
+            if clean and len(clean) > 2:
+                tags.append(f"#{clean}")
     if camera:
-        cleaned_cam = camera.replace("samsung", "").replace("Apple", "").strip()
-        cleaned_cam = re.sub(r"[^\w]", "", cleaned_cam)
-        if cleaned_cam:
-            tags.append(f"#{cleaned_cam}")
+        cam_clean = re.sub(r'[^a-zA-Z0-9]', '', camera)
+        if cam_clean:
+            tags.append(f"#{cam_clean}")
     if date_taken:
         year = date_taken[:4]
         if year.isdigit():
@@ -77,16 +78,47 @@ def extract_tags(text: str = "", place: str = "", camera: str = "", date_taken: 
 # ── API routes ───────────────────────────────────────────
 
 @app.get("/api/photos")
-def list_all_photos(limit: int = Query(500, ge=1, le=5000), offset: int = Query(0, ge=0)):
-    """Return all indexed photos in the library ordered chronologically."""
+def list_all_photos(
+    limit: int = Query(500, ge=1, le=5000),
+    offset: int = Query(0, ge=0),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_unknown: bool = Query(False),
+    geo_only: bool = Query(False),
+):
+    """Return indexed photos in the library ordered chronologically, with optional date and GPS filters."""
+    where_clauses = []
+    params = []
+
+    if date_unknown:
+        where_clauses.append("(date_taken IS NULL OR date_taken = '')")
+    else:
+        if start_date and start_date.strip():
+            where_clauses.append("date_taken >= ?")
+            params.append(start_date.strip())
+        if end_date and end_date.strip():
+            end_val = end_date.strip()
+            if len(end_val) == 10:
+                end_val += "T23:59:59"
+            where_clauses.append("date_taken <= ?")
+            params.append(end_val)
+        if (start_date and start_date.strip()) or (end_date and end_date.strip()):
+            where_clauses.append("(date_taken IS NOT NULL AND date_taken != '')")
+
+    if geo_only:
+        where_clauses.append("(latitude IS NOT NULL AND longitude IS NOT NULL)")
+
+    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
     with get_conn() as conn:
-        rows = conn.execute("""
+        rows = conn.execute(f"""
             SELECT * FROM images 
+            {where_sql}
             ORDER BY COALESCE(date_taken, '') DESC, id DESC
             LIMIT ? OFFSET ?
-        """, (limit, offset)).fetchall()
+        """, params + [limit, offset]).fetchall()
 
-        total_row = conn.execute("SELECT COUNT(*) as total FROM images").fetchone()
+        total_row = conn.execute(f"SELECT COUNT(*) as total FROM images {where_sql}", params).fetchone()
         total = total_row["total"] if total_row else 0
 
         results = []
@@ -123,14 +155,26 @@ def search_images(
     q: str = Query("", min_length=0),
     top_k: int = Query(SEARCH_TOP_K, ge=1, le=200),
     filter_mode: str = Query("balanced"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_unknown: bool = Query(False),
+    geo_only: bool = Query(False),
 ):
-    """Semantic search over image descriptions with hybrid scoring and relevance filtering."""
+    """Semantic search over image descriptions with hybrid scoring, relevance filtering, and date/geo criteria."""
     q_str = q.strip() if q else ""
     if not q_str:
-        return list_all_photos(limit=top_k)
+        return list_all_photos(
+            limit=top_k,
+            start_date=start_date,
+            end_date=end_date,
+            date_unknown=date_unknown,
+            geo_only=geo_only,
+        )
 
     engine = get_search()
-    hits = engine.query(q_str, top_k=top_k, filter_mode=filter_mode)
+    # If filters are active, retrieve more candidates from vector space to filter down
+    fetch_k = top_k * 3 if (start_date or end_date or date_unknown or geo_only) else top_k
+    hits = engine.query(q_str, top_k=fetch_k, filter_mode=filter_mode)
 
     results = []
     with get_conn() as conn:
@@ -138,10 +182,29 @@ def search_images(
             row = get_image_by_id(conn, hit["image_id"])
             if row is None:
                 continue
+
+            dt = row["date_taken"] or ""
+            if date_unknown:
+                if dt:
+                    continue
+            else:
+                if start_date and start_date.strip():
+                    if not dt or dt < start_date.strip():
+                        continue
+                if end_date and end_date.strip():
+                    end_val = end_date.strip()
+                    if len(end_val) == 10:
+                        end_val += "T23:59:59"
+                    if not dt or dt > end_val:
+                        continue
+
+            if geo_only:
+                if not row["latitude"] or not row["longitude"]:
+                    continue
+
             enriched = hit["enriched_text"] or ""
             place = row["place_name"] or ""
             camera = row["camera_model"] or ""
-            dt = row["date_taken"] or ""
             tags = extract_tags(enriched, place, camera, dt)
             results.append({
                 "id": row["id"],
@@ -158,6 +221,8 @@ def search_images(
                 "longitude": row["longitude"],
                 "tags": tags,
             })
+            if len(results) >= top_k:
+                break
 
     return {
         "query": q_str,
@@ -354,8 +419,14 @@ def create_album_endpoint(req: CreateAlbumRequest):
 
 
 @app.get("/api/albums/{album_id}")
-def get_album_endpoint(album_id: int):
-    """Get album metadata and all photos in this album."""
+def get_album_endpoint(
+    album_id: int,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_unknown: bool = Query(False),
+    geo_only: bool = Query(False),
+):
+    """Get album metadata and all photos in this album, with optional date and geo filters."""
     with get_conn() as conn:
         album = get_album_by_id(conn, album_id)
         if not album:
@@ -365,26 +436,46 @@ def get_album_endpoint(album_id: int):
         photos = []
         for img_id in image_ids:
             row = get_image_by_id(conn, img_id)
-            if row:
-                enriched = row["enriched_text"] or ""
-                place = row["place_name"] or ""
-                camera = row["camera_model"] or ""
-                dt = row["date_taken"] or ""
-                photos.append({
-                    "id": row["id"],
-                    "file_path": row["file_path"],
-                    "score": 1.0,
-                    "raw_score": 1.0,
-                    "enriched_text": enriched,
-                    "raw_description": row["raw_description"] or "",
-                    "date_taken": row["date_taken"],
-                    "place_name": place,
-                    "camera_model": camera,
-                    "camera_make": row["camera_make"] or "",
-                    "latitude": row["latitude"],
-                    "longitude": row["longitude"],
-                    "tags": extract_tags(enriched, place, camera, dt),
-                })
+            if not row:
+                continue
+
+            dt = row["date_taken"] or ""
+            if date_unknown:
+                if dt:
+                    continue
+            else:
+                if start_date and start_date.strip():
+                    if not dt or dt < start_date.strip():
+                        continue
+                if end_date and end_date.strip():
+                    end_val = end_date.strip()
+                    if len(end_val) == 10:
+                        end_val += "T23:59:59"
+                    if not dt or dt > end_val:
+                        continue
+
+            if geo_only:
+                if not row["latitude"] or not row["longitude"]:
+                    continue
+
+            enriched = row["enriched_text"] or ""
+            place = row["place_name"] or ""
+            camera = row["camera_model"] or ""
+            photos.append({
+                "id": row["id"],
+                "file_path": row["file_path"],
+                "score": 1.0,
+                "raw_score": 1.0,
+                "enriched_text": enriched,
+                "raw_description": row["raw_description"] or "",
+                "date_taken": row["date_taken"],
+                "place_name": place,
+                "camera_model": camera,
+                "camera_make": row["camera_make"] or "",
+                "latitude": row["latitude"],
+                "longitude": row["longitude"],
+                "tags": extract_tags(enriched, place, camera, dt),
+            })
 
     album["photo_count"] = len(photos)
     album["photos"] = photos
