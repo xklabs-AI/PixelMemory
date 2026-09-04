@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixelMemory AI — Local Semantic Photo Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Color Tokens ──────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-main: #0c0f17;
+    --bg-sidebar: #090c13;
+    --bg-rail: #07090e;
+    --bg-surface: #131824;
+    --bg-surface-hover: #1b2132;
+    --bg-card: #111520;
+    --border: #1f2738;
+    --border-highlight: #2e3a54;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.35);
+    --accent-indigo: #6366f1;
+    --match-green: #10b981;
+    --match-green-bg: rgba(16, 185, 129, 0.12);
+    --match-amber: #f59e0b;
+    --match-amber-bg: rgba(245, 158, 11, 0.12);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+  }
+
+  html, body {
+    height: 100%;
+    background-color: var(--bg-main);
+    color: var(--text);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── App Shell Layout ──────────────────────────────── */
+  .window {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background: var(--bg-main);
+  }
+
+  /* ── Top Window Bar ────────────────────────────────── */
+  .top-header {
+    height: 52px;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    user-select: none;
+    z-index: 30;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .mac-controls {
+    display: flex;
+    gap: 7px;
+  }
+
+  .mac-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .mac-dot.close { background: #ff5f56; }
+  .mac-dot.min { background: #ffbd2e; }
+  .mac-dot.max { background: #27c93f; }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+
+  .brand-icon {
+    color: var(--accent);
+    font-size: 1.15rem;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+  }
+
+  .brand-sub {
+    color: var(--accent);
+    font-weight: 800;
+    margin-left: 1px;
+  }
+
+  .header-center {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: -0.01em;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .model-pill {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #6ee7b7;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 0.3rem 0.75rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--match-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--match-green);
+    animation: pulse 2s infinite ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .icon-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.9rem;
+  }
+
+  .icon-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+  }
+
+  /* ── Body Container: Rail + Sidebar + Main Area ───── */
+  .app-body {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+
+  /* ── Far Left Icon Rail ────────────────────────────── */
+  .rail {
+    width: 68px;
+    background: var(--bg-rail);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0;
+    gap: 1.25rem;
+    user-select: none;
+  }
+
+  .rail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-dim);
+    font-size: 0.65rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 52px;
+    padding: 0.45rem 0;
+    border-radius: var(--radius-sm);
+  }
+
+  .rail-item .rail-icon {
+    font-size: 1.15rem;
+  }
+
+  .rail-item:hover {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .rail-item.active {
+    color: #fff;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .rail-bottom {
+    margin-top: auto;
+  }
+
+  /* ── Navigation Drawer / Sidebar ──────────────────── */
+  .sidebar {
+    width: 240px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1rem;
+    overflow-y: auto;
+    gap: 1.75rem;
+    user-select: none;
+  }
+
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.65rem;
+  }
+
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-surface);
+    color: var(--text);
+  }
+
+  .nav-item.active {
+    background: #1a2337;
+    color: #93c5fd;
+    font-weight: 500;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .nav-sub {
+    padding-left: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .nav-sub:hover {
+    color: var(--text-muted);
+  }
+
+  /* ── Dynamic Tags ──────────────────────────────────── */
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .tag-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tag-pill:hover {
+    background: var(--bg-surface-hover);
+    color: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .tag-pill.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent);
+    color: #93c5fd;
+  }
+
+  /* ── Main Work Area ────────────────────────────────── */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── Search & Filter Toolbar ───────────────────────── */
+  .toolbar {
+    padding: 1.25rem 2rem 0.85rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    background: var(--bg-main);
+    border-bottom: 1px solid rgba(31, 39, 56, 0.5);
+    z-index: 10;
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .search-box {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1.1rem;
+    color: var(--text-dim);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 3rem 0 2.85rem;
+    background: #0f1422;
+    border: 1.5px solid var(--border-highlight);
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 6px 20px rgba(0, 0, 0, 0.5);
+    background: #111827;
+  }
+
+  .search-input::placeholder {
+    color: #4b5563;
+    font-size: 0.88rem;
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 0.9rem;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: none;
+  }
+
+  .search-clear.visible { display: block; }
+  .search-clear:hover { color: var(--text); }
+
+  .tool-btn {
+    height: 48px;
+    padding: 0 1.15rem;
+    background: #101524;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tool-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text);
+    border-color: var(--border-highlight);
+  }
+
+  .tool-btn.active {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: var(--accent);
+    color: #93c5fd;
+  }
+
+  /* ── Filter Dropdown Drawer ────────────────────────── */
+  .filter-drawer {
+    display: none;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin-top: 0.5rem;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+  }
+
+  .filter-drawer.open {
+    display: flex;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .filter-group label {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .filter-select {
+    background: #0d111c;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-size: 0.8rem;
+  }
+
+  /* ── Results Info Bar ──────────────────────────────── */
+  .results-meta-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 2rem 0.25rem 2rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .meta-query-text {
+    color: var(--text-muted);
+  }
+
+  .meta-query-text span {
+    color: #60a5fa;
+    font-weight: 500;
+  }
+
+  /* ── Gallery Scroll Container ──────────────────────── */
+  .gallery-viewport {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 2rem 6rem 2rem;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.15rem;
+  }
+
+  /* ── Photo Card ────────────────────────────────────── */
+  .photo-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .photo-card:hover {
+    border-color: var(--border-highlight);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .photo-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent), 0 12px 30px rgba(59, 130, 246, 0.25);
+  }
+
+  .card-thumb-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #080a10;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+  }
+
+  .photo-card:hover .card-thumb {
+    transform: scale(1.04);
+  }
+
+  .card-details {
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+  }
+
+  /* Match pill */
+  .match-badge {
+    align-self: flex-start;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+  }
+
+  .match-badge.high {
+    background: var(--match-green-bg);
+    color: var(--match-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .match-badge.medium {
+    background: var(--match-amber-bg);
+    color: var(--match-amber);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .card-row {
+    color: var(--text-dim);
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-row strong {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .card-tags {
+    color: #93c5fd;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Floating AI Assistant Bar (from inspiration) ─── */
+  .floating-ai-bar {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 680px;
+    background: rgba(19, 24, 36, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    z-index: 25;
+    transition: all 0.2s ease;
+  }
+
+  .floating-ai-bar:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 24px rgba(59, 130, 246, 0.2);
+  }
+
+  .ai-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .ai-sparkle {
+    color: #facc15;
+  }
+
+  .ai-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .ai-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    outline: none;
+  }
+
+  .ai-input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .ai-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ai-action-btn:hover {
+    color: #fff;
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  /* ── Empty & Loading States ────────────────────────── */
+  .state-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 1.5rem;
+    text-align: center;
+    gap: 1rem;
+    color: var(--text-dim);
+  }
+
+  .state-icon {
+    font-size: 2.75rem;
+    opacity: 0.6;
+  }
+
+  .state-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .state-desc {
+    font-size: 0.85rem;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+
+  .cta-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.65rem 1.35rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .cta-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  /* ── Detail Modal ──────────────────────────────────── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 7, 12, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+  }
+
+  .modal-backdrop.active { display: flex; }
+
+  .modal-window {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-highlight);
+    border-radius: var(--radius-lg);
+    max-width: 960px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+    animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-top {
+    height: 48px;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: #0e121c;
+  }
+
+  .modal-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+
+  .modal-close-btn:hover { color: #fff; }
+
+  .modal-content-split {
+    display: flex;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .modal-img-pane {
+    flex: 1.2;
+    background: #07090f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-img-pane img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+  }
+
+  .modal-info-pane {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .info-block h4 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+  }
+
+  .info-desc {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .info-k { color: var(--text-dim); }
+  .info-v { color: var(--text); font-family: var(--font-mono); }
+
+  .info-path {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    word-break: break-all;
+    background: #090c13;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Settings & Ingest Modal ───────────────────────── */
+  .settings-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .setting-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .setting-row label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .setting-input {
+    background: #0c0f17;
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 0.65rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    outline: none;
+  }
+
+  .setting-input:focus { border-color: var(--accent); }
+
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Toast ─────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #182030;
+    border: 1px solid var(--accent);
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    font-size: 0.85rem;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Progress Bar & Album UI Tokens ────────────────── */
+  .progress-track {
+    width: 100%;
+    height: 10px;
+    background: #080b12;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4, #10b981);
+    border-radius: var(--radius-full);
+    transition: width 0.35s ease;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+  }
+
+  .small-add-btn {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .small-add-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .album-picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .album-picker-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.85rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .album-picker-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-hover);
+    transform: translateX(2px);
+  }
+
+  .album-picker-card.in-album {
+    border-color: var(--match-green);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  .album-del-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.2rem 0.35rem;
+    border-radius: 4px;
+    transition: all 0.15s;
+    margin-left: 0.35rem;
+  }
+
+  .nav-item:hover .album-del-btn {
+    opacity: 1;
+  }
+
+  .album-del-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .card-action-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(15, 20, 32, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-highlight);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+    z-index: 5;
+  }
+
+  .photo-card:hover .card-action-btn {
+    opacity: 1;
+  }
+
+  .card-action-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.04);
+  }
+
+  /* ── Google Drive Style Floating Import Widget ───── */
+  .import-floating-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 370px;
+    max-width: calc(100vw - 36px);
+    background: rgba(14, 18, 28, 0.96);
+    border: 1.5px solid rgba(59, 130, 246, 0.45);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 24px rgba(59, 130, 246, 0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 250;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: widgetIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes widgetIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .import-floating-widget.minimized .widget-body {
+    display: none;
+  }
+
+  .widget-header {
+    height: 48px;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0b0e17;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .widget-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .widget-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .widget-queue-badge {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+
+  .widget-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .widget-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.15s;
+  }
+
+  .widget-action-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .widget-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .widget-phase-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .widget-phase-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+
+  .widget-percent {
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: #fff;
+  }
+
+  .widget-details {
+    background: #080a11;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.74rem;
+  }
+
+  .widget-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .widget-k { color: var(--text-dim); }
+  .widget-v { color: #fff; font-family: var(--font-mono); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .widget-v.highlight { color: #34d399; font-weight: 600; }
+
+  .widget-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <!-- Top Header -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="mac-controls">
+        <div class="mac-dot close"></div>
+        <div class="mac-dot min"></div>
+        <div class="mac-dot max"></div>
+      </div>
+      <div class="brand">
+        <span class="brand-icon">⚡</span>
+        <span>PIXELMEMORY<span class="brand-sub">AI</span></span>
+      </div>
+    </div>
+
+    <div class="header-center">Image Search</div>
+
+    <div class="header-right">
+      <button class="cta-btn" id="importFolderHeaderBtn" style="padding: 0.38rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);">
+        <span>📥</span>
+        <span>Import Folder</span>
+      </button>
+      <div class="model-pill" id="modelPill">
+        <div class="live-dot"></div>
+        <span id="modelText">Local Model: Moondream2 · MiniLM-L6</span>
+      </div>
+      <button class="icon-btn" id="settingsBtn" title="Platform Settings & Library">⚙️</button>
+    </div>
+  </header>
+
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- Far Left Icon Rail -->
+    <nav class="rail">
+      <div class="rail-item active" id="railFolders" title="All Photos">
+        <span class="rail-icon">📁</span>
+        <span>Photos</span>
+      </div>
+      <div class="rail-item" id="railAlbums" title="Photo Albums">
+        <span class="rail-icon">🖼️</span>
+        <span>Albums</span>
+      </div>
+      <div class="rail-item" id="railImport" title="Import Folder">
+        <span class="rail-icon">📥</span>
+        <span>Import</span>
+      </div>
+      <div class="rail-item" id="railTags" title="Tags">
+        <span class="rail-icon">🏷️</span>
+        <span>Tags</span>
+      </div>
+      <div class="rail-item rail-bottom" id="railIndex" title="Settings">
+        <span class="rail-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+    </nav>
+
+    <!-- Navigation / Directory Drawer -->
+    <aside class="sidebar">
+      <div class="nav-section">
+        <div class="section-title">Navigation</div>
+        <div class="nav-group">
+          <div class="nav-item active" id="navAllPhotos">
+            <span>📁</span>
+            <span>My Local Photos</span>
+            <span class="nav-badge" id="navTotalCount">0</span>
+          </div>
+          <div class="nav-item nav-sub" data-query="sunset">
+            <span>› 📁</span>
+            <span>/Sunsets & Golden Hour</span>
+          </div>
+          <div class="nav-item nav-sub" data-query="hiking or mountains or nature">
+            <span>› 📁</span>
+            <span>/Trips & Mountains</span>
+          </div>
+          <div class="nav-item nav-sub" data-query="city or street or architecture">
+            <span>› 📁</span>
+            <span>/Urban & Streets</span>
+          </div>
+          <div class="nav-item nav-sub" data-query="party or celebration or coffee">
+            <span>› 📁</span>
+            <span>/Moments & Life</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Albums Section -->
+      <div class="nav-section">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+          <div class="section-title" style="margin-bottom: 0;">Albums</div>
+          <button class="small-add-btn" id="sidebarNewAlbumBtn" title="Create New Album">+ New Album</button>
+        </div>
+        <div class="nav-group" id="albumsNavGroup">
+          <div style="font-size: 0.72rem; color: var(--text-dim); padding: 0.3rem 0.65rem;">Loading albums...</div>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="section-title">Dynamic Tags</div>
+        <div class="tags-container" id="tagsContainer">
+          <div style="font-size: 0.72rem; color: var(--text-dim); padding: 0.2rem;">Loading library tags...</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Toolbar: Search Bar + Filter Controls -->
+      <div class="toolbar">
+        <div class="search-row">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="queryInput" class="search-input"
+                   placeholder="Find photos of a vintage red car parked near a snowy mountain in the evening..."
+                   autocomplete="off" autofocus />
+            <button class="search-clear" id="clearBtn">&times;</button>
+          </div>
+          <button class="tool-btn" id="filterBtn">⚙️ Filters</button>
+          <button class="tool-btn" id="sortBtn">↕ Sort by Relevance</button>
+        </div>
+
+        <!-- Collapsible Filters Drawer -->
+        <div class="filter-drawer" id="filterDrawer">
+          <div class="filter-group">
+            <label>Relevance Filter</label>
+            <select class="filter-select" id="filterModeSelect">
+              <option value="balanced" selected>Balanced (Relevant Only)</option>
+              <option value="strict">Strict (Top Matches Only)</option>
+              <option value="broad">Broad (Show More)</option>
+              <option value="all">All (Unfiltered Candidates)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Sort Order</label>
+            <select class="filter-select" id="sortSelect">
+              <option value="relevance">Similarity Score (High to Low)</option>
+              <option value="newest">Date (Newest First)</option>
+              <option value="oldest">Date (Oldest First)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Location</label>
+            <select class="filter-select" id="filterGeo">
+              <option value="all">All Photos</option>
+              <option value="gps">With GPS Coordinates Only</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Meta Info Bar -->
+      <div class="results-meta-bar">
+        <div class="meta-query-text" id="resultMeta">Showing all indexed memories</div>
+        <div id="statsSummary">12 searchable vectors</div>
+      </div>
+
+      <!-- Photo Grid Gallery -->
+      <div class="gallery-viewport" id="viewport">
+        <div class="gallery-grid" id="grid"></div>
+      </div>
+
+      <!-- Floating Bottom AI Assistant Bar (from inspiration screenshot) -->
+      <div class="floating-ai-bar">
+        <div class="ai-label">
+          <span class="ai-sparkle">✨</span>
+          <span>Ask AI about your photos... (e.g., 'Find vintage red car on highway' or 'Photos near Grand Canyon')</span>
+        </div>
+        <div class="ai-input-row">
+          <input type="text" id="aiInput" class="ai-input" placeholder="Type a search query or question..." autocomplete="off" />
+          <button class="ai-action-btn" id="aiMicBtn" title="Voice Search">🎙️</button>
+          <button class="ai-action-btn" id="aiSendBtn" title="Search">↵</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Image Detail Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal-window">
+    <div class="modal-top">
+      <div class="modal-title" id="modalTitle">Photo Details</div>
+      <button class="modal-close-btn" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-content-split">
+      <div class="modal-img-pane">
+        <img id="modalImg" src="" alt="" />
+      </div>
+      <div class="modal-info-pane">
+        <div class="info-block">
+          <h4>Visual AI Description</h4>
+          <p class="info-desc" id="modalDesc"></p>
+        </div>
+
+        <div class="info-block">
+          <h4>Metadata</h4>
+          <div class="info-grid">
+            <span class="info-k">Date</span>
+            <span class="info-v" id="modalDate">-</span>
+
+            <span class="info-k">Location</span>
+            <span class="info-v" id="modalPlace">-</span>
+
+            <span class="info-k">GPS</span>
+            <span class="info-v" id="modalGPS">-</span>
+
+            <span class="info-k">Camera</span>
+            <span class="info-v" id="modalCamera">-</span>
+
+            <span class="info-k">Match</span>
+            <span class="info-v" id="modalScore" style="color:var(--match-green); font-weight:600;">-</span>
+          </div>
+        </div>
+
+        <div class="info-block">
+          <h4>File Path</h4>
+          <div class="info-path" id="modalPath"></div>
+        </div>
+
+        <div class="info-block" style="margin-top: 0.5rem;">
+          <button class="cta-btn" id="modalAddToAlbumBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; font-size: 0.85rem;">
+            <span>➕</span>
+            <span>Add to Album</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import Folder Modal -->
+<div class="modal-backdrop" id="importModal">
+  <div class="modal-window" style="max-width: 520px;">
+    <div class="modal-top">
+      <div class="modal-title">📥 Import & Analyze Photo Folder</div>
+      <button class="modal-close-btn" id="importModalClose">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-row">
+        <label>Photo Directory Path</label>
+        <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. gallery/test or C:\Users\dirkk\Pictures" value="gallery/test" />
+        <div style="display: flex; gap: 0.45rem; margin-top: 0.4rem; align-items: center;">
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Quick Pick:</span>
+          <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">gallery/test</button>
+          <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">gallery</button>
+        </div>
+      </div>
+
+      <div class="setting-row" style="flex-direction: row; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">AI Vision Analysis</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions with Moondream2 & index into ChromaDB</div>
+        </div>
+        <input type="checkbox" id="importVisionCheck" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" />
+      </div>
+
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+        <button class="tool-btn" id="importCancelBtn">Cancel</button>
+        <button class="cta-btn" id="importStartBtn">🚀 Start Import & Analysis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Google Drive Style Floating Import / Upload Widget (Non-blocking) -->
+<div id="importFloatingWidget" class="import-floating-widget">
+  <div class="widget-header" id="widgetHeader">
+    <div class="widget-header-left">
+      <div class="live-dot" id="widgetLiveDot"></div>
+      <span class="widget-title" id="widgetTitle">Importing Photos...</span>
+      <span class="widget-queue-badge" id="widgetQueueBadge" style="display: none;">0 in queue</span>
+    </div>
+    <div class="widget-header-actions">
+      <button class="widget-action-btn" id="widgetMinBtn" title="Minimize / Expand">_</button>
+      <button class="widget-action-btn" id="widgetCloseBtn" title="Dismiss" style="display: none; font-size: 1.2rem;">&times;</button>
+    </div>
+  </div>
+  <div class="widget-body" id="widgetBody">
+    <div class="widget-phase-row">
+      <span class="widget-phase-badge" id="widgetPhaseBadge">SCANNING DIRECTORY</span>
+      <span class="widget-percent" id="widgetPercent">0%</span>
+    </div>
+    <div class="progress-track" style="margin: 0.2rem 0;">
+      <div class="progress-fill" id="widgetProgressBar" style="width: 0%;"></div>
+    </div>
+    <div class="widget-details">
+      <div class="widget-detail-row">
+        <span class="widget-k">Current:</span>
+        <span class="widget-v" id="widgetCurrentFile">-</span>
+      </div>
+      <div class="widget-detail-row">
+        <span class="widget-k">Progress:</span>
+        <span class="widget-v" id="widgetSteps">0 of 0 photos</span>
+      </div>
+      <div class="widget-detail-row">
+        <span class="widget-k">Est. Time Left:</span>
+        <span class="widget-v highlight" id="widgetEta">Calculating...</span>
+      </div>
+      <div class="widget-detail-row">
+        <span class="widget-k">Speed:</span>
+        <span class="widget-v" id="widgetSpeed">-</span>
+      </div>
+    </div>
+    <div class="widget-actions">
+      <button class="tool-btn" id="widgetAbortBtn" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; color: #ef4444;">Abort</button>
+      <button class="cta-btn" id="widgetDoneBtn" style="display: none; padding: 0.35rem 0.85rem; font-size: 0.75rem;">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Album Modal -->
+<div class="modal-backdrop" id="createAlbumModal">
+  <div class="modal-window" style="max-width: 460px;">
+    <div class="modal-top">
+      <div class="modal-title">🖼️ Create New Album</div>
+      <button class="modal-close-btn" id="createAlbumClose">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-row">
+        <label>Album Title *</label>
+        <input type="text" id="albumTitleInput" class="setting-input" placeholder="e.g. Trips 2024, Nature, Favorites" />
+      </div>
+      <div class="setting-row">
+        <label>Description (Optional)</label>
+        <input type="text" id="albumDescInput" class="setting-input" placeholder="A short description of this collection" />
+      </div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+        <button class="tool-btn" id="createAlbumCancelBtn">Cancel</button>
+        <button class="cta-btn" id="createAlbumSubmitBtn">Create Album</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add to Album Modal -->
+<div class="modal-backdrop" id="addToAlbumModal">
+  <div class="modal-window" style="max-width: 480px;">
+    <div class="modal-top">
+      <div class="modal-title" id="addToAlbumModalTitle">➕ Add Photo to Album</div>
+      <button class="modal-close-btn" id="addToAlbumClose">&times;</button>
+    </div>
+    <div class="settings-body" style="gap: 1rem;">
+      <!-- State 1: No albums exist yet -->
+      <div id="noAlbumsView" style="display: none; flex-direction: column; gap: 1rem; text-align: center; padding: 1rem 0;">
+        <div style="font-size: 2.2rem;">📁</div>
+        <div style="font-size: 1.05rem; font-weight: 600; color: #fff;">No albums created yet</div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; max-width: 360px; margin: 0 auto;">Enter a title to create your first album and add this photo to it:</div>
+        <div class="setting-row" style="text-align: left;">
+          <label>Album Title *</label>
+          <input type="text" id="firstAlbumTitleInput" class="setting-input" placeholder="e.g. Favorites, Vacation" />
+        </div>
+        <div class="btn-row" style="justify-content: center; margin-top: 0.5rem;">
+          <button class="cta-btn" id="createFirstAlbumBtn">Create Album & Add Photo</button>
+        </div>
+      </div>
+
+      <!-- State 2: Albums exist -->
+      <div id="hasAlbumsView" style="display: none; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Select an album for this photo:</span>
+          <button class="small-add-btn" id="addModalNewAlbumToggleBtn">+ Create New Album</button>
+        </div>
+
+        <!-- Inline create album form (expandable) -->
+        <div id="inlineCreateAlbumWrap" style="display: none; background: #0a0d15; border: 1px solid var(--border-highlight); border-radius: var(--radius-sm); padding: 0.75rem; gap: 0.5rem; flex-direction: column;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: #93c5fd;">New Album Title:</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="inlineAlbumTitleInput" class="setting-input" placeholder="Album Title..." style="flex: 1;" />
+            <button class="cta-btn" id="inlineCreateAlbumBtn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Create & Add</button>
+          </div>
+        </div>
+
+        <!-- Existing albums list -->
+        <div class="album-picker-list" id="albumPickerList">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal-window" style="max-width: 540px;">
+    <div class="modal-top">
+      <div class="modal-title">Library & Model Settings</div>
+      <button class="modal-close-btn" id="settingsClose">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-row">
+        <label>Index Photo Directory</label>
+        <input type="text" id="ingestFolderInput" class="setting-input" placeholder="e.g. C:\Users\dirkk\Pictures\Archive" />
+      </div>
+
+      <div class="setting-row">
+        <label>Fast Ingest (Skip VLM GPU Captioning)</label>
+        <input type="checkbox" id="skipDescribeCheck" style="align-self: flex-start;" />
+      </div>
+
+      <div class="btn-row">
+        <button class="cta-btn" id="ingestSubmitBtn">Start Ingest</button>
+        <button class="tool-btn" id="seedDemoModalBtn">✨ Seed Demo Memories</button>
+        <button class="tool-btn" id="resetModalBtn" style="color:#ef4444;">🗑️ Clear DB</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const API = '';
+
+let allResults = [];
+let currentQuery = '';
+let allAlbums = [];
+let currentAlbumId = null;
+let currentDetailPhoto = null;
+let currentAddToAlbumPhotoId = null;
+let importPollTimer = null;
+
+// ── Toast Notification ──────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const toast = $('#toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ── Search & Retrieval ──────────────────────────────────
+async function doSearch(query) {
+  currentAlbumId = null;
+  query = (query || '').trim();
+  currentQuery = query;
+
+  const grid = $('#grid');
+  const meta = $('#resultMeta');
+  const clearBtn = $('#clearBtn');
+
+  // Highlight all photos tab
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  $('#navAllPhotos').classList.add('active');
+
+  if (query) {
+    clearBtn.classList.add('visible');
+    meta.innerHTML = `Search results for <span>"${escapeHtml(query)}"</span>`;
+  } else {
+    clearBtn.classList.remove('visible');
+    meta.textContent = 'Showing all indexed memories';
+  }
+
+  grid.innerHTML = `
+    <div class="state-box" style="grid-column: 1 / -1;">
+      <div class="live-dot" style="width: 14px; height: 14px; margin-bottom: 0.5rem;"></div>
+      <div class="state-title">${query ? 'Embedding query with local model...' : 'Loading memories...'}</div>
+    </div>
+  `;
+
+  try {
+    let data;
+    if (query) {
+      const filterMode = $('#filterModeSelect') ? $('#filterModeSelect').value : 'balanced';
+      const res = await fetch(`${API}/api/search?q=${encodeURIComponent(query)}&top_k=50&filter_mode=${encodeURIComponent(filterMode)}`);
+      data = await res.json();
+    } else {
+      const res = await fetch(`${API}/api/photos?limit=500`);
+      data = await res.json();
+    }
+    allResults = data.results || [];
+    applyFiltersAndRender();
+  } catch (err) {
+    grid.innerHTML = `
+      <div class="state-box" style="grid-column: 1 / -1;">
+        <div class="state-icon">⚠️</div>
+        <div class="state-title">Search Server Disconnected</div>
+        <div class="state-desc">Make sure the PixelMemory server is active on port 8642.</div>
+      </div>
+    `;
+  }
+}
+
+// ── Filter and Render Cards ─────────────────────────────
+function applyFiltersAndRender() {
+  const grid = $('#grid');
+  const sortMode = $('#sortSelect').value;
+  const geoFilter = $('#filterGeo').value;
+
+  let filtered = allResults.filter(r => {
+    if (geoFilter === 'gps' && (!r.latitude || !r.longitude)) return false;
+    return true;
+  });
+
+  if (sortMode === 'newest') {
+    filtered.sort((a, b) => new Date(b.date_taken || 0) - new Date(a.date_taken || 0));
+  } else if (sortMode === 'oldest') {
+    filtered.sort((a, b) => new Date(a.date_taken || 0) - new Date(b.date_taken || 0));
+  } else {
+    filtered.sort((a, b) => b.score - a.score);
+  }
+
+  $('#statsSummary').textContent = `${filtered.length} photos displayed`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="state-box" style="grid-column: 1 / -1;">
+        <div class="state-icon">📸</div>
+        <div class="state-title">No matching photos found</div>
+        <div class="state-desc">${currentAlbumId ? 'This album is currently empty. Click "Add to Album" on any photo to add it here.' : 'Try another description, concept, location, or year.'}</div>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = '';
+  filtered.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.addEventListener('click', (e) => {
+      // Don't open detail if clicked on action button
+      if (e.target.closest('.card-action-btn')) return;
+      document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      showDetail(r);
+    });
+
+    const matchPercent = Math.min(100, Math.round(r.score * 100));
+    const badgeClass = matchPercent >= 90 ? 'high' : 'medium';
+
+    const dateFormatted = r.date_taken
+      ? new Date(r.date_taken).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })
+      : 'Unknown';
+
+    const tagsStr = (r.tags && r.tags.length > 0) ? r.tags.join(', ') : '#Photo';
+    const placeStr = r.place_name ? r.place_name.split(',')[0] : 'Unknown';
+
+    card.innerHTML = `
+      <div class="card-thumb-wrap">
+        <button class="card-action-btn" title="Add to Album" data-photoid="${r.id}">
+          <span>➕</span>
+          <span>Album</span>
+        </button>
+        <img class="card-thumb" src="${API}/api/thumb/${r.id}" alt="" loading="lazy"
+             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23111520\\' width=\\'100\\' height=\\'100\\'/></svg>'" />
+      </div>
+      <div class="card-details">
+        <div class="match-badge ${badgeClass}">${matchPercent}% Match</div>
+        <div class="card-tags">Tags: ${escapeHtml(tagsStr)}</div>
+        <div class="card-row"><strong>Date:</strong> ${dateFormatted}</div>
+        <div class="card-row"><strong>Loc:</strong> ${escapeHtml(placeStr)}</div>
+      </div>
+    `;
+
+    const albumBtn = card.querySelector('.card-action-btn');
+    albumBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAddToAlbum(e, r.id);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// ── Detail Modal ────────────────────────────────────────
+function showDetail(r) {
+  currentDetailPhoto = r;
+  $('#modalImg').src = `${API}/api/original/${r.id}`;
+  $('#modalTitle').textContent = r.place_name ? `Memory · ${r.place_name.split(',')[0]}` : 'Photo Memory';
+  $('#modalDesc').textContent = r.raw_description || r.enriched_text;
+  $('#modalDate').textContent = r.date_taken ? new Date(r.date_taken).toLocaleString() : 'Unknown';
+  $('#modalPlace').textContent = r.place_name || 'Not Geocoded';
+  $('#modalGPS').textContent = (r.latitude && r.longitude) ? `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}` : 'None';
+  $('#modalCamera').textContent = [r.camera_make, r.camera_model].filter(Boolean).join(' ') || 'Unknown';
+  $('#modalScore').textContent = `${(r.score * 100).toFixed(1)}% Match`;
+  $('#modalPath').textContent = r.file_path;
+
+  $('#modal').classList.add('active');
+}
+
+$('#modalClose').addEventListener('click', () => $('#modal').classList.remove('active'));
+$('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) $('#modal').classList.remove('active'); });
+
+$('#modalAddToAlbumBtn').addEventListener('click', (e) => {
+  if (currentDetailPhoto) {
+    openAddToAlbum(e, currentDetailPhoto.id);
+  }
+});
+
+// ── Albums Logic ────────────────────────────────────────
+async function loadAlbums() {
+  try {
+    const res = await fetch(`${API}/api/albums`);
+    const data = await res.json();
+    allAlbums = data.albums || [];
+
+    const container = $('#albumsNavGroup');
+    if (allAlbums.length === 0) {
+      container.innerHTML = `
+        <div style="font-size: 0.75rem; color: var(--text-dim); padding: 0.4rem 0.65rem; display: flex; align-items: center; justify-content: space-between;">
+          <span>No albums yet</span>
+          <button class="small-add-btn" onclick="openCreateAlbumModal()">+ Create</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = '';
+    allAlbums.forEach(album => {
+      const item = document.createElement('div');
+      item.className = `nav-item ${currentAlbumId === album.id ? 'active' : ''}`;
+      item.innerHTML = `
+        <span>🖼️</span>
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(album.name)}</span>
+        <span class="nav-badge">${album.photo_count}</span>
+        <button class="album-del-btn" title="Delete Album" data-albumid="${album.id}">&times;</button>
+      `;
+
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.album-del-btn')) return;
+        showAlbumPhotos(album.id, album.name);
+      });
+
+      const delBtn = item.querySelector('.album-del-btn');
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete album "${album.name}"? Photos will not be deleted from disk.`)) {
+          await deleteAlbum(album.id);
+        }
+      });
+
+      container.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Failed to load albums:', err);
+  }
+}
+
+async function showAlbumPhotos(albumId, albumName) {
+  currentAlbumId = albumId;
+
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  // Find album nav item
+  const container = $('#albumsNavGroup');
+  container.querySelectorAll('.nav-item').forEach(el => {
+    if (el.textContent.includes(albumName)) el.classList.add('active');
+  });
+
+  const grid = $('#grid');
+  grid.innerHTML = `
+    <div class="state-box" style="grid-column: 1 / -1;">
+      <div class="live-dot" style="width: 14px; height: 14px; margin-bottom: 0.5rem;"></div>
+      <div class="state-title">Loading album "${escapeHtml(albumName)}"...</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API}/api/albums/${albumId}`);
+    if (!res.ok) throw new Error('Album not found');
+    const album = await res.json();
+    allResults = album.photos || [];
+
+    $('#resultMeta').innerHTML = `
+      Album: <span>"${escapeHtml(albumName)}"</span> (${allResults.length} photos)
+      <button class="small-add-btn" style="margin-left: 0.75rem;" onclick="showAllPhotos()">✕ View All Photos</button>
+    `;
+
+    applyFiltersAndRender();
+  } catch (err) {
+    grid.innerHTML = `
+      <div class="state-box" style="grid-column: 1 / -1;">
+        <div class="state-icon">⚠️</div>
+        <div class="state-title">Error Loading Album</div>
+        <div class="state-desc">${err.message}</div>
+      </div>
+    `;
+  }
+}
+
+function showAllPhotos() {
+  currentAlbumId = null;
+  $('#queryInput').value = '';
+  doSearch('');
+}
+
+async function deleteAlbum(albumId) {
+  try {
+    await fetch(`${API}/api/albums/${albumId}`, { method: 'DELETE' });
+    showToast('Album deleted');
+    if (currentAlbumId === albumId) {
+      showAllPhotos();
+    }
+    await loadAlbums();
+  } catch (err) {
+    showToast('Failed to delete album');
+  }
+}
+
+// ── Create Album Dialog ─────────────────────────────────
+function openCreateAlbumModal() {
+  $('#albumTitleInput').value = '';
+  $('#albumDescInput').value = '';
+  $('#createAlbumModal').classList.add('active');
+  setTimeout(() => $('#albumTitleInput').focus(), 100);
+}
+
+$('#sidebarNewAlbumBtn').addEventListener('click', openCreateAlbumModal);
+$('#createAlbumClose').addEventListener('click', () => $('#createAlbumModal').classList.remove('active'));
+$('#createAlbumCancelBtn').addEventListener('click', () => $('#createAlbumModal').classList.remove('active'));
+
+$('#createAlbumSubmitBtn').addEventListener('click', async () => {
+  const name = $('#albumTitleInput').value.trim();
+  const desc = $('#albumDescInput').value.trim();
+  if (!name) {
+    alert('Please enter an album title.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/albums`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description: desc }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create album');
+    }
+    const created = await res.json();
+    showToast(`Created album "${created.name}"`);
+    $('#createAlbumModal').classList.remove('active');
+    await loadAlbums();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// ── Add to Album Dialog (for any picture) ────────────────
+async function openAddToAlbum(e, photoId) {
+  currentAddToAlbumPhotoId = photoId;
+  $('#addToAlbumModal').classList.add('active');
+  $('#firstAlbumTitleInput').value = '';
+  $('#inlineAlbumTitleInput').value = '';
+  $('#inlineCreateAlbumWrap').style.display = 'none';
+
+  // Fetch albums and photo's existing albums
+  try {
+    const [albumsRes, photoAlbumsRes] = await Promise.all([
+      fetch(`${API}/api/albums`),
+      fetch(`${API}/api/photos/${photoId}/albums`),
+    ]);
+    const albumsData = await albumsRes.json();
+    const photoAlbumsData = await photoAlbumsRes.json();
+
+    allAlbums = albumsData.albums || [];
+    const inAlbumIds = new Set((photoAlbumsData.albums || []).map(a => a.id));
+
+    if (allAlbums.length === 0) {
+      // Case 1: No albums created before
+      $('#noAlbumsView').style.display = 'flex';
+      $('#hasAlbumsView').style.display = 'none';
+      setTimeout(() => $('#firstAlbumTitleInput').focus(), 100);
+    } else {
+      // Case 2: Albums exist
+      $('#noAlbumsView').style.display = 'none';
+      $('#hasAlbumsView').style.display = 'flex';
+
+      const list = $('#albumPickerList');
+      list.innerHTML = '';
+      allAlbums.forEach(album => {
+        const isMember = inAlbumIds.has(album.id);
+        const card = document.createElement('div');
+        card.className = `album-picker-card ${isMember ? 'in-album' : ''}`;
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span style="font-size: 1.1rem;">🖼️</span>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 600; color: #fff;">${escapeHtml(album.name)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">${album.photo_count} photos</div>
+            </div>
+          </div>
+          <div>
+            ${isMember 
+              ? '<span style="color: var(--match-green); font-size: 0.78rem; font-weight: 600;">✓ In Album</span>' 
+              : '<span class="small-add-btn">+ Add</span>'}
+          </div>
+        `;
+
+        card.addEventListener('click', async () => {
+          await addPhotoToAlbum(album.id, photoId, album.name);
+          $('#addToAlbumModal').classList.remove('active');
+        });
+
+        list.appendChild(card);
+      });
+    }
+  } catch (err) {
+    console.error('Failed to open Add to Album dialog:', err);
+  }
+}
+
+async function addPhotoToAlbum(albumId, photoId, albumName) {
+  try {
+    const res = await fetch(`${API}/api/albums/${albumId}/photos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_id: photoId }),
+    });
+    if (!res.ok) throw new Error('Failed to add photo to album');
+    showToast(`Added photo to "${albumName}"!`);
+    await loadAlbums();
+  } catch (err) {
+    showToast('Failed to add photo to album');
+  }
+}
+
+// Handler: Create first album and add photo
+$('#createFirstAlbumBtn').addEventListener('click', async () => {
+  const name = $('#firstAlbumTitleInput').value.trim();
+  if (!name) {
+    alert('Please enter an album title.');
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/albums`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create album');
+    }
+    const album = await res.json();
+    await addPhotoToAlbum(album.id, currentAddToAlbumPhotoId, album.name);
+    $('#addToAlbumModal').classList.remove('active');
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// Handler: Toggle inline new album form
+$('#addModalNewAlbumToggleBtn').addEventListener('click', () => {
+  const wrap = $('#inlineCreateAlbumWrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'flex' : 'none';
+  if (wrap.style.display === 'flex') {
+    $('#inlineAlbumTitleInput').focus();
+  }
+});
+
+// Handler: Create inline new album and add photo
+$('#inlineCreateAlbumBtn').addEventListener('click', async () => {
+  const name = $('#inlineAlbumTitleInput').value.trim();
+  if (!name) {
+    alert('Please enter an album title.');
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/albums`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create album');
+    }
+    const album = await res.json();
+    await addPhotoToAlbum(album.id, currentAddToAlbumPhotoId, album.name);
+    $('#addToAlbumModal').classList.remove('active');
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+$('#addToAlbumClose').addEventListener('click', () => $('#addToAlbumModal').classList.remove('active'));
+
+// ── Google Drive Style Floating Import Widget & Queue ───
+function openImportModal() {
+  $('#importModal').classList.add('active');
+  setTimeout(() => $('#importFolderInput').focus(), 100);
+}
+
+$('#importFolderHeaderBtn').addEventListener('click', openImportModal);
+$('#railImport').addEventListener('click', openImportModal);
+$('#railAlbums').addEventListener('click', () => {
+  if (allAlbums.length > 0) {
+    showAlbumPhotos(allAlbums[0].id, allAlbums[0].name);
+  } else {
+    openCreateAlbumModal();
+  }
+});
+$('#importModalClose').addEventListener('click', () => $('#importModal').classList.remove('active'));
+$('#importCancelBtn').addEventListener('click', () => $('#importModal').classList.remove('active'));
+
+$('#importStartBtn').addEventListener('click', async () => {
+  const folderPath = ($('#importFolderInput').value || '').trim() || 'gallery/test';
+  const skipDescribe = !$('#importVisionCheck').checked;
+
+  try {
+    const res = await fetch(`${API}/api/import/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_path: folderPath, skip_describe: skipDescribe }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || data.message || 'Failed to start import');
+    }
+
+    // Close config modal — floating widget appears without blocking the page!
+    $('#importModal').classList.remove('active');
+
+    if (data.status === 'queued') {
+      showToast(data.message || `Queued folder for import (#${data.queue_position} in line)`);
+    } else {
+      showToast(`Started import of "${folderPath}"`);
+    }
+
+    showFloatingWidget();
+    startProgressPolling();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+function showFloatingWidget() {
+  const widget = $('#importFloatingWidget');
+  widget.style.display = 'flex';
+  widget.classList.remove('minimized');
+  $('#widgetMinBtn').textContent = '_';
+  $('#widgetTitle').textContent = 'Importing Photos...';
+  $('#widgetPhaseBadge').textContent = 'STARTING';
+  $('#widgetPercent').textContent = '0%';
+  $('#widgetProgressBar').style.width = '0%';
+  $('#widgetCurrentFile').textContent = 'Preparing...';
+  $('#widgetSteps').textContent = '0 of 0 photos';
+  $('#widgetEta').textContent = 'Calculating...';
+  $('#widgetSpeed').textContent = '-';
+  $('#widgetLiveDot').style.background = 'var(--match-green)';
+  $('#widgetAbortBtn').style.display = 'block';
+  $('#widgetDoneBtn').style.display = 'none';
+  $('#widgetCloseBtn').style.display = 'none';
+}
+
+// Widget minimize / expand toggle
+$('#widgetMinBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const widget = $('#importFloatingWidget');
+  widget.classList.toggle('minimized');
+  $('#widgetMinBtn').textContent = widget.classList.contains('minimized') ? '▲' : '_';
+});
+
+$('#widgetHeader').addEventListener('click', () => {
+  const widget = $('#importFloatingWidget');
+  if (widget.classList.contains('minimized')) {
+    widget.classList.remove('minimized');
+    $('#widgetMinBtn').textContent = '_';
+  }
+});
+
+$('#widgetCloseBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('#importFloatingWidget').style.display = 'none';
+});
+
+$('#widgetDoneBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('#importFloatingWidget').style.display = 'none';
+});
+
+function startProgressPolling() {
+  clearInterval(importPollTimer);
+  importPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/api/import/status`);
+      const status = await res.json();
+
+      // Queue badge
+      const queueBadge = $('#widgetQueueBadge');
+      if (status.queue_length > 0) {
+        queueBadge.style.display = 'inline-block';
+        queueBadge.textContent = `${status.queue_length} in queue`;
+      } else {
+        queueBadge.style.display = 'none';
+      }
+
+      // Title
+      if (status.current_folder) {
+        $('#widgetTitle').textContent = `Importing "${status.current_folder}"`;
+      } else {
+        $('#widgetTitle').textContent = 'Importing Photos...';
+      }
+
+      // Phase Badge
+      const phaseNames = {
+        scanning: 'SCANNING DIRECTORY',
+        metadata: 'EXTRACTING METADATA & GPS',
+        describing: 'AI VISION ANALYSIS',
+        embedding: 'EMBEDDING VECTORS',
+        done: 'COMPLETED',
+        error: 'ERROR',
+      };
+      $('#widgetPhaseBadge').textContent = phaseNames[status.phase] || (status.phase || 'IDLE').toUpperCase();
+
+      // Progress Bar & Percentage
+      const pct = Math.round(status.percent || 0);
+      $('#widgetPercent').textContent = `${pct}%`;
+      $('#widgetProgressBar').style.width = `${pct}%`;
+
+      // Details
+      $('#widgetCurrentFile').textContent = status.current_file || '-';
+      $('#widgetSteps').textContent = `${status.current_step} of ${status.total_steps || '...'} photos`;
+      $('#widgetEta').textContent = status.eta_human || 'Calculating...';
+      $('#widgetSpeed').textContent = status.speed_label || `${status.elapsed_seconds}s elapsed`;
+
+      // Status conditions
+      if (status.status === 'completed') {
+        clearInterval(importPollTimer);
+        $('#widgetTitle').textContent = '🎉 Import Complete!';
+        $('#widgetPhaseBadge').textContent = 'FINISHED';
+        $('#widgetPhaseBadge').style.color = 'var(--match-green)';
+        $('#widgetPercent').textContent = '100%';
+        $('#widgetProgressBar').style.width = '100%';
+        $('#widgetEta').textContent = 'Done!';
+        $('#widgetAbortBtn').style.display = 'none';
+        $('#widgetDoneBtn').style.display = 'block';
+        $('#widgetCloseBtn').style.display = 'block';
+
+        // Auto-refresh the gallery so new photos appear immediately!
+        await loadPlatformStats();
+        await loadAlbums();
+        if (!currentAlbumId) {
+          doSearch('');
+        }
+        showToast('Photo library updated with newly imported photos!');
+
+        // Auto-fade widget after 10s if not dismissed
+        setTimeout(() => {
+          if ($('#widgetDoneBtn').style.display === 'block') {
+            $('#importFloatingWidget').style.display = 'none';
+          }
+        }, 10000);
+
+      } else if (status.status === 'error') {
+        clearInterval(importPollTimer);
+        $('#widgetTitle').textContent = '⚠️ Import Error';
+        $('#widgetPhaseBadge').textContent = 'FAILED';
+        $('#widgetPhaseBadge').style.color = '#ef4444';
+        $('#widgetEta').textContent = status.error_message || 'Error occurred';
+        $('#widgetAbortBtn').style.display = 'none';
+        $('#widgetCloseBtn').style.display = 'block';
+      }
+    } catch (e) {
+      console.warn('Poll error:', e);
+    }
+  }, 600);
+}
+
+$('#widgetAbortBtn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (confirm('Abort the import? Photos already processed will remain indexed.')) {
+    try {
+      await fetch(`${API}/api/import/cancel`, { method: 'POST' });
+    } catch (e) {}
+    clearInterval(importPollTimer);
+    $('#importFloatingWidget').style.display = 'none';
+    showToast('Import cancelled');
+    await loadPlatformStats();
+    if (!currentAlbumId) doSearch('');
+  }
+});
+
+// ── Stats & Dynamic Tags ────────────────────────────────
+async function loadPlatformStats() {
+  try {
+    const res = await fetch(`${API}/api/system`);
+    const sys = await res.json();
+    if (sys.vlm_model) {
+      $('#modelText').textContent = `Local Model: ${sys.vlm_model}`;
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch(`${API}/api/stats`);
+    const s = await res.json();
+    $('#navTotalCount').textContent = s.total ?? 0;
+  } catch (e) {}
+
+  try {
+    const res = await fetch(`${API}/api/tags`);
+    const data = await res.json();
+    if (data.tags && data.tags.length > 0) {
+      const container = $('#tagsContainer');
+      container.innerHTML = '';
+      data.tags.forEach(t => {
+        const pill = document.createElement('div');
+        pill.className = 'tag-pill';
+        pill.textContent = t;
+        pill.addEventListener('click', () => {
+          const q = t.replace('#', '').toLowerCase();
+          $('#queryInput').value = q;
+          doSearch(q);
+        });
+        container.appendChild(pill);
+      });
+    }
+  } catch (e) {}
+}
+
+// ── Event Handlers ──────────────────────────────────────
+const queryInput = $('#queryInput');
+const aiInput = $('#aiInput');
+
+queryInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch(queryInput.value);
+});
+
+$('#clearBtn').addEventListener('click', () => {
+  queryInput.value = '';
+  doSearch('');
+});
+
+// Floating AI input bar handler
+aiInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    queryInput.value = aiInput.value;
+    doSearch(aiInput.value);
+  }
+});
+$('#aiSendBtn').addEventListener('click', () => {
+  queryInput.value = aiInput.value;
+  doSearch(aiInput.value);
+});
+
+// Filter drawer toggle
+$('#filterBtn').addEventListener('click', () => {
+  const drawer = $('#filterDrawer');
+  drawer.classList.toggle('open');
+  $('#filterBtn').classList.toggle('active', drawer.classList.contains('open'));
+});
+
+$('#filterModeSelect').addEventListener('change', () => doSearch(currentQuery));
+$('#sortSelect').addEventListener('change', applyFiltersAndRender);
+$('#filterGeo').addEventListener('change', applyFiltersAndRender);
+
+// Sub-nav click queries
+document.querySelectorAll('.nav-sub').forEach(item => {
+  item.addEventListener('click', () => {
+    const q = item.getAttribute('data-query');
+    queryInput.value = q;
+    doSearch(q);
+  });
+});
+
+$('#navAllPhotos').addEventListener('click', () => {
+  queryInput.value = '';
+  doSearch('');
+});
+
+// Rail click actions
+$('#railFolders').addEventListener('click', showAllPhotos);
+$('#railIndex').addEventListener('click', () => $('#settingsModal').classList.add('active'));
+$('#settingsBtn').addEventListener('click', () => $('#settingsModal').classList.add('active'));
+$('#settingsClose').addEventListener('click', () => $('#settingsModal').classList.remove('active'));
+
+$('#resetModalBtn').addEventListener('click', async () => {
+  if (!confirm('Clear all indexed photos from the database and vector store?')) return;
+  try {
+    await fetch(`${API}/api/database/reset`, { method: 'POST' });
+    showToast('Database reset complete.');
+    $('#settingsModal').classList.remove('active');
+    await loadPlatformStats();
+    await loadAlbums();
+    doSearch('');
+  } catch (e) {
+    showToast('Reset failed');
+  }
+});
+
+// Global Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    $('#modal').classList.remove('active');
+    $('#settingsModal').classList.remove('active');
+    $('#importModal').classList.remove('active');
+    $('#createAlbumModal').classList.remove('active');
+    $('#addToAlbumModal').classList.remove('active');
+  }
+  if (e.key === '/' && document.activeElement !== queryInput && document.activeElement !== aiInput) {
+    e.preventDefault();
+    queryInput.focus();
+    queryInput.select();
+  }
+});
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ── Startup ─────────────────────────────────────────────
+(async () => {
+  await loadPlatformStats();
+  await loadAlbums();
+  doSearch('');
+})();
+</script>
+</body>
+</html>

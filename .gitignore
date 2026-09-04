@@ -1,0 +1,115 @@
+# ==============================================================================
+# PixelMemory — .gitignore
+# ==============================================================================
+
+# ── Private User Data & Photos ──────────────────────────────────────────────
+gallery/
+gallery/**
+data/
+photos/
+images/
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.heic
+*.heif
+*.tiff
+*.tif
+*.bmp
+*.raw
+*.cr2
+*.nef
+*.arw
+*.dng
+
+# ── Local Databases & Vector Stores ──────────────────────────────────────────
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+.pixelmemory/
+chroma/
+thumbnails/
+
+# ── Secrets, Credentials & Local Configs ─────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.cert
+secrets/
+credentials.json
+config.local.py
+
+# ── Python Virtual Environments & Packages ───────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ── Python Cache & Bytecode ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# ── Operating System & File System Artifacts ─────────────────────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ── IDEs, Editors & Tooling ──────────────────────────────────────────────────
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*~
+
+# ── Logs & Debug Dumps ───────────────────────────────────────────────────────
+*.log
+logs/
+scratch/
+temp/
+tmp/

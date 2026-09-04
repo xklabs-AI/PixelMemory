@@ -1,0 +1,27 @@
+# Vision model
+transformers>=4.40.0
+torch>=2.1.0
+moondream==0.0.5
+Pillow>=10.0.0
+
+# EXIF and image handling
+pillow-heif>=0.16.0       # HEIC support
+exifread>=3.0.0
+
+# Reverse geocoding (offline — no API calls)
+reverse_geocoder>=1.5.1
+
+# Embeddings and vector search
+sentence-transformers>=2.7.0
+chromadb>=0.5.0
+
+# Database
+# (sqlite3 is stdlib)
+
+# Web server
+fastapi>=0.111.0
+uvicorn>=0.30.0
+
+# Utilities
+tqdm>=4.66.0
+xxhash>=3.4.0             # fast file hashing
