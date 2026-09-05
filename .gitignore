@@ -114,3 +114,11 @@ logs/
 scratch/
 temp/
 tmp/
+
+# ── Tests & Temporary Verification Scripts ──────────────────────────────────
+tests/
+test_*.py
+*_test.py
+verify_*.py
+check_*.py
+inspect_*.py
