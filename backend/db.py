@@ -225,6 +225,16 @@ def get_album_by_id(conn: sqlite3.Connection, album_id: int) -> dict | None:
     return dict(row) if row else None
 
 
+def rename_album(conn: sqlite3.Connection, album_id: int, new_name: str, new_description: str = "") -> bool:
+    """Rename an album and update its updated_at timestamp."""
+    conn.execute(
+        "UPDATE albums SET name = ?, description = ?, updated_at = datetime('now') WHERE id = ?",
+        (new_name.strip(), new_description.strip(), album_id),
+    )
+    return True
+
+
+
 def add_photo_to_album(conn: sqlite3.Connection, album_id: int, image_id: int) -> bool:
     """Add a photo to an album. Idempotent via OR IGNORE."""
     conn.execute(

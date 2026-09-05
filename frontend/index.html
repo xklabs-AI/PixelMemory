@@ -661,11 +661,13 @@
     padding: 1rem 2rem 6rem 2rem;
   }
 
-  .gallery-grid {
+  .gallery-grid,
+  .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1.15rem;
   }
+
 
   /* ── Photo Card ────────────────────────────────────── */
   .photo-card {
@@ -1370,7 +1372,8 @@
     background: rgba(16, 185, 129, 0.08);
   }
 
-  .album-del-btn {
+  .album-del-btn,
+  .album-edit-btn {
     opacity: 0;
     background: none;
     border: none;
@@ -1380,17 +1383,24 @@
     padding: 0.2rem 0.35rem;
     border-radius: 4px;
     transition: all 0.15s;
-    margin-left: 0.35rem;
+    margin-left: 0.2rem;
   }
 
-  .nav-item:hover .album-del-btn {
+  .nav-item:hover .album-del-btn,
+  .nav-item:hover .album-edit-btn {
     opacity: 1;
+  }
+
+  .album-edit-btn:hover {
+    color: #93c5fd;
+    background: rgba(59, 130, 246, 0.15);
   }
 
   .album-del-btn:hover {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.15);
   }
+
 
   .card-action-btn {
     position: absolute;
@@ -2033,6 +2043,195 @@
     max-width: 440px;
     line-height: 1.6;
   }
+
+  /* ── Group By Layout & Section Headers ───────────────── */
+  .gallery-grid.is-grouped,
+  .grid.is-grouped {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+
+  .group-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    background: rgba(18, 24, 38, 0.75);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .group-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .group-icon {
+    font-size: 1.1rem;
+  }
+
+  .group-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .group-badge {
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.18rem 0.55rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-dim);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .group-select-btn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 0.3rem 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .group-select-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--accent);
+  }
+
+  .group-select-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ── Description Editor & Location Trigger in Modal ──── */
+  .tiny-edit-btn {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .tiny-edit-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+  }
+
+  .desc-edit-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+
+  .desc-edit-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(10, 14, 23, 0.9);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-xs);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    padding: 0.6rem 0.75rem;
+    resize: vertical;
+    min-height: 95px;
+    outline: none;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.18);
+  }
+
+  .desc-edit-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .desc-edit-tip {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .desc-save-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-xs);
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .desc-save-btn:hover {
+    opacity: 0.9;
+  }
+
+  .desc-cancel-btn {
+    font-size: 0.75rem;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 0.4rem 0.65rem;
+    cursor: pointer;
+  }
+
+  .desc-cancel-btn:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .card-loc-tag {
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .card-loc-tag:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -2168,10 +2367,25 @@
             <span class="filter-active-dot" id="filterActiveDot" style="display: none;"></span>
           </button>
           <button class="tool-btn" id="sortBtn">↕ Sort</button>
+          <button class="tool-btn" id="groupByBtn" title="Change grouping mode">📑 Group: <span id="groupByBtnLabel" style="color:var(--accent); font-weight:600;">None</span></button>
         </div>
 
         <!-- Collapsible Filters Drawer -->
         <div class="filter-drawer" id="filterDrawer">
+          <div class="filter-group">
+            <label>📑 Group By</label>
+            <select class="filter-select" id="groupBySelect">
+              <option value="none" selected>None (Flat Grid)</option>
+              <option value="day">Date (Day)</option>
+              <option value="month">Date (Month)</option>
+              <option value="year">Date (Year)</option>
+              <option value="location">Location (Place / City)</option>
+              <option value="country">Country</option>
+              <option value="camera">Camera / Device</option>
+              <option value="type">File Type</option>
+            </select>
+          </div>
+
           <div class="filter-group">
             <label>📅 Date Filter</label>
             <select class="filter-select" id="filterDatePreset">
@@ -2277,8 +2491,21 @@
       </div>
       <div class="modal-info-pane">
         <div class="info-block">
-          <h4>Visual AI Description</h4>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+            <h4>Visual AI Description</h4>
+            <button type="button" class="tiny-edit-btn" id="modalEditDescBtn" title="Edit description manually">✏️ Edit</button>
+          </div>
           <p class="info-desc" id="modalDesc"></p>
+          <div class="desc-edit-wrap" id="modalDescEditWrap" style="display: none;">
+            <textarea id="modalDescInput" class="desc-edit-textarea" rows="4" placeholder="Edit description..."></textarea>
+            <div class="desc-edit-footer">
+              <span class="desc-edit-tip">Ctrl+Enter to save • Esc to cancel</span>
+              <div style="display: flex; gap: 0.4rem;">
+                <button type="button" class="desc-cancel-btn" id="modalCancelDescBtn">Cancel</button>
+                <button type="button" class="desc-save-btn" id="modalSaveDescBtn">💾 Save</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="info-block">
@@ -2288,7 +2515,10 @@
             <span class="info-v" id="modalDate">-</span>
 
             <span class="info-k">Location</span>
-            <span class="info-v" id="modalPlace">-</span>
+            <span class="info-v" style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+              <span id="modalPlace" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">-</span>
+              <button type="button" class="tiny-edit-btn" id="modalEditLocationBtn" title="Assign or change location">📍 Set</button>
+            </span>
 
             <span class="info-k">GPS</span>
             <span class="info-v" id="modalGPS">-</span>
@@ -2306,10 +2536,14 @@
           <div class="info-path" id="modalPath"></div>
         </div>
 
-        <div class="info-block" style="margin-top: 0.5rem;">
-          <button class="cta-btn" id="modalAddToAlbumBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; font-size: 0.85rem;">
+        <div class="info-block" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+          <button class="cta-btn" id="modalAddToAlbumBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem;">
             <span>➕</span>
             <span>Add to Album</span>
+          </button>
+          <button class="tool-btn" id="modalSetLocationBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem; border-color: rgba(99, 102, 241, 0.4); color: var(--text);">
+            <span>📍</span>
+            <span>Set Location</span>
           </button>
         </div>
       </div>
@@ -2440,6 +2674,26 @@
       <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
         <button class="tool-btn" id="createAlbumCancelBtn">Cancel</button>
         <button class="cta-btn" id="createAlbumSubmitBtn">Create Album</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Album Modal -->
+<div class="modal-backdrop" id="renameAlbumModal">
+  <div class="modal-window" style="max-width: 460px;">
+    <div class="modal-top">
+      <div class="modal-title">✏️ Rename Album</div>
+      <button class="modal-close-btn" id="renameAlbumClose">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-row">
+        <label>Album Name *</label>
+        <input type="text" id="renameAlbumTitleInput" class="setting-input" placeholder="e.g. Trips 2024, Nature, Favorites" />
+      </div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+        <button class="tool-btn" id="renameAlbumCancelBtn">Cancel</button>
+        <button class="cta-btn" id="renameAlbumConfirmBtn">Save Name</button>
       </div>
     </div>
   </div>
@@ -2666,6 +2920,7 @@ let selectedPhotoIds = new Set();
 let currentFilteredPhotos = [];
 let locationSearchTimeout = null;
 let currentChosenLocation = null;
+let currentLocationTargetPhotoId = null;
 let bulkAlbumMode = 'add'; // 'add' or 'move'
 
 // ── Multi-criteria Filter State ─────────────────────────
@@ -2676,6 +2931,7 @@ let activeFilters = {
   geo: 'all',          // 'all', 'gps'
   sort: 'relevance',   // 'relevance', 'newest', 'oldest'
   relevanceMode: 'balanced',
+  groupBy: 'none',     // 'none', 'day', 'month', 'year', 'location', 'country', 'camera', 'type'
 };
 
 // ── Toast Notification ──────────────────────────────────
@@ -2776,6 +3032,25 @@ function renderFilterChips() {
 
   let activeCount = 0;
 
+  // Group by filter chip
+  if (activeFilters.groupBy && activeFilters.groupBy !== 'none') {
+    activeCount++;
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip';
+    const labels = {
+      'day': 'Date (Day)',
+      'month': 'Date (Month)',
+      'year': 'Date (Year)',
+      'location': 'Location (City/Place)',
+      'country': 'Country',
+      'camera': 'Camera / Device',
+      'type': 'File Type'
+    };
+    chip.innerHTML = `<span>📑 Group: ${labels[activeFilters.groupBy] || activeFilters.groupBy}</span> <button class="filter-chip-remove" title="Remove grouping">&times;</button>`;
+    chip.querySelector('button').addEventListener('click', () => setGroupBy('none'));
+    list.appendChild(chip);
+  }
+
   // Date filter chip
   if (activeFilters.dateMode === 'unknown') {
     activeCount++;
@@ -2818,6 +3093,243 @@ function renderFilterChips() {
     bar.style.display = 'none';
     if (dot) dot.style.display = 'none';
   }
+}
+
+// ── Group Photos Engine ─────────────────────────────────
+function groupPhotos(photos, mode) {
+  if (mode === 'none') {
+    return [{ key: 'all', title: '', icon: '', photos }];
+  }
+
+  const groupsMap = new Map();
+
+  photos.forEach(r => {
+    let key = '';
+    let title = '';
+    let icon = '📁';
+    let sortVal = '';
+
+    if (mode === 'day') {
+      icon = '📅';
+      if (r.date_taken) {
+        try {
+          const dt = new Date(r.date_taken);
+          if (!isNaN(dt.getTime())) {
+            key = dt.toISOString().split('T')[0];
+            title = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+            sortVal = key;
+          } else {
+            key = 'unknown';
+            title = 'Unknown Date';
+            sortVal = '0000-00-00';
+          }
+        } catch (e) {
+          key = 'unknown';
+          title = 'Unknown Date';
+          sortVal = '0000-00-00';
+        }
+      } else {
+        key = 'unknown';
+        title = 'Unknown Date';
+        sortVal = '0000-00-00';
+      }
+    } else if (mode === 'month') {
+      icon = '📅';
+      if (r.date_taken) {
+        try {
+          const dt = new Date(r.date_taken);
+          if (!isNaN(dt.getTime())) {
+            key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+            title = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            sortVal = key;
+          } else {
+            key = 'unknown';
+            title = 'Unknown Month';
+            sortVal = '0000-00';
+          }
+        } catch (e) {
+          key = 'unknown';
+          title = 'Unknown Month';
+          sortVal = '0000-00';
+        }
+      } else {
+        key = 'unknown';
+        title = 'Unknown Month';
+        sortVal = '0000-00';
+      }
+    } else if (mode === 'year') {
+      icon = '🗓️';
+      if (r.date_taken) {
+        const yearMatch = String(r.date_taken).match(/^(\d{4})/);
+        if (yearMatch) {
+          key = yearMatch[1];
+          title = key;
+          sortVal = key;
+        } else {
+          key = 'unknown';
+          title = 'Unknown Year';
+          sortVal = '0000';
+        }
+      } else {
+        key = 'unknown';
+        title = 'Unknown Year';
+        sortVal = '0000';
+      }
+    } else if (mode === 'location') {
+      icon = '📍';
+      if (r.place_name && r.place_name.trim()) {
+        key = r.place_name.trim();
+        title = key;
+        sortVal = key.toLowerCase();
+      } else {
+        key = 'not_geocoded';
+        title = 'Not Geocoded / Unknown Location';
+        sortVal = 'zzzz';
+      }
+    } else if (mode === 'country') {
+      icon = '🌍';
+      const country = r.country || (r.place_name ? r.place_name.split(',').pop().trim() : '');
+      if (country && country !== 'Not Geocoded') {
+        key = country;
+        title = country;
+        sortVal = country.toLowerCase();
+      } else {
+        key = 'unknown';
+        title = 'Unknown Country';
+        sortVal = 'zzzz';
+      }
+    } else if (mode === 'camera') {
+      icon = '📷';
+      const cam = [r.camera_make, r.camera_model].filter(Boolean).join(' ').trim();
+      if (cam) {
+        key = cam;
+        title = cam;
+        sortVal = cam.toLowerCase();
+      } else {
+        key = 'unknown';
+        title = 'Unknown Camera / Device';
+        sortVal = 'zzzz';
+      }
+    } else if (mode === 'type') {
+      icon = '📁';
+      const extMatch = (r.file_path || '').match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1].toUpperCase() : 'UNKNOWN';
+      key = ext;
+      const typeNames = {
+        'JPG': 'JPEG Image (.jpg)',
+        'JPEG': 'JPEG Image (.jpeg)',
+        'PNG': 'PNG Image (.png)',
+        'WEBP': 'WebP Image (.webp)',
+        'HEIC': 'HEIC / Live Photo (.heic)',
+        'AVIF': 'AVIF Image (.avif)',
+        'GIF': 'GIF Animation (.gif)'
+      };
+      title = typeNames[ext] || `${ext} File`;
+      sortVal = title.toLowerCase();
+    }
+
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, {
+        key,
+        title,
+        icon,
+        sortVal,
+        photos: []
+      });
+    }
+    groupsMap.get(key).photos.push(r);
+  });
+
+  const groups = Array.from(groupsMap.values());
+  if (mode === 'day' || mode === 'month' || mode === 'year') {
+    groups.sort((a, b) => {
+      if (a.key === 'unknown') return 1;
+      if (b.key === 'unknown') return -1;
+      return b.sortVal.localeCompare(a.sortVal);
+    });
+  } else {
+    groups.sort((a, b) => {
+      if (a.sortVal === 'zzzz') return 1;
+      if (b.sortVal === 'zzzz') return -1;
+      return a.sortVal.localeCompare(b.sortVal);
+    });
+  }
+
+  return groups;
+}
+
+// ── Photo Card Component Builder ────────────────────────
+function createPhotoCard(r) {
+  const isSelected = selectedPhotoIds.has(Number(r.id));
+  const card = document.createElement('div');
+  card.className = `photo-card ${isSelected ? 'selected-multi' : ''}`;
+  card.setAttribute('data-photoid', r.id);
+
+  card.addEventListener('click', (e) => {
+    // Don't open detail if clicked on action button, location tag, or select circle
+    if (e.target.closest('.card-action-btn') || e.target.closest('.card-select-btn') || e.target.closest('.card-loc-tag')) return;
+
+    if (selectedPhotoIds.size > 0) {
+      togglePhotoSelection(r.id);
+      return;
+    }
+
+    document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    showDetail(r);
+  });
+
+  const matchPercent = Math.min(100, Math.round(r.score * 100));
+  const badgeClass = matchPercent >= 90 ? 'high' : 'medium';
+
+  const dateFormatted = r.date_taken
+    ? new Date(r.date_taken).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })
+    : 'Unknown';
+
+  const tagsStr = (r.tags && r.tags.length > 0) ? r.tags.join(', ') : '#Photo';
+  const placeStr = r.place_name ? r.place_name.split(',')[0] : 'Not Geocoded';
+
+  card.innerHTML = `
+    <div class="card-thumb-wrap">
+      <div class="card-select-btn ${isSelected ? 'active' : ''}" data-photoid="${r.id}" title="Select photo">
+        ${isSelected ? '✓' : ''}
+      </div>
+      <button class="card-action-btn" title="Add to Album" data-photoid="${r.id}">
+        <span>➕</span>
+        <span>Album</span>
+      </button>
+      <img class="card-thumb" src="${API}/api/thumb/${r.id}" alt="" loading="lazy"
+           onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23111520\\' width=\\'100\\' height=\\'100\\'/></svg>'" />
+    </div>
+    <div class="card-details">
+      <div class="match-badge ${badgeClass}">${matchPercent}% Match</div>
+      <div class="card-tags">Tags: ${escapeHtml(tagsStr)}</div>
+      <div class="card-row"><strong>Date:</strong> ${dateFormatted}</div>
+      <div class="card-row"><strong>Loc:</strong> <span class="card-loc-tag" data-photoid="${r.id}" title="📍 Click to assign/change location">${escapeHtml(placeStr)}</span></div>
+    </div>
+  `;
+
+  const selectBtn = card.querySelector('.card-select-btn');
+  selectBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePhotoSelection(r.id);
+  });
+
+  const albumBtn = card.querySelector('.card-action-btn');
+  albumBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAddToAlbum(e, r.id);
+  });
+
+  const locTag = card.querySelector('.card-loc-tag');
+  if (locTag) {
+    locTag.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openLocationModal(r.id);
+    });
+  }
+
+  return card;
 }
 
 // ── Filter and Render Cards ─────────────────────────────
@@ -2872,6 +3384,7 @@ function applyFiltersAndRender() {
   }
 
   if (filtered.length === 0) {
+    grid.className = 'gallery-grid';
     grid.innerHTML = `
       <div class="state-box" style="grid-column: 1 / -1;">
         <div class="state-icon">📸</div>
@@ -2884,71 +3397,61 @@ function applyFiltersAndRender() {
   }
 
   grid.innerHTML = '';
-  filtered.forEach(r => {
-    const isSelected = selectedPhotoIds.has(Number(r.id));
-    const card = document.createElement('div');
-    card.className = `photo-card ${isSelected ? 'selected-multi' : ''}`;
-    card.setAttribute('data-photoid', r.id);
 
-    card.addEventListener('click', (e) => {
-      // Don't open detail if clicked on action button or select circle
-      if (e.target.closest('.card-action-btn') || e.target.closest('.card-select-btn')) return;
-
-      if (selectedPhotoIds.size > 0) {
-        // Selection mode active: clicking anywhere on card toggles selection
-        togglePhotoSelection(r.id);
-        return;
-      }
-
-      document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      showDetail(r);
+  if (!activeFilters.groupBy || activeFilters.groupBy === 'none') {
+    grid.className = 'gallery-grid';
+    filtered.forEach(r => {
+      grid.appendChild(createPhotoCard(r));
     });
+  } else {
+    grid.className = 'gallery-grid is-grouped';
+    const groups = groupPhotos(filtered, activeFilters.groupBy);
 
-    const matchPercent = Math.min(100, Math.round(r.score * 100));
-    const badgeClass = matchPercent >= 90 ? 'high' : 'medium';
 
-    const dateFormatted = r.date_taken
-      ? new Date(r.date_taken).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })
-      : 'Unknown';
+    groups.forEach(g => {
+      const section = document.createElement('div');
+      section.className = 'group-section';
 
-    const tagsStr = (r.tags && r.tags.length > 0) ? r.tags.join(', ') : '#Photo';
-    const placeStr = r.place_name ? r.place_name.split(',')[0] : 'Unknown';
+      const groupPhotoIds = g.photos.map(p => Number(p.id));
+      const allSelected = groupPhotoIds.length > 0 && groupPhotoIds.every(id => selectedPhotoIds.has(id));
 
-    card.innerHTML = `
-      <div class="card-thumb-wrap">
-        <div class="card-select-btn ${isSelected ? 'active' : ''}" data-photoid="${r.id}" title="Select photo">
-          ${isSelected ? '✓' : ''}
+      const header = document.createElement('div');
+      header.className = 'group-header';
+      header.innerHTML = `
+        <div class="group-header-left">
+          <span class="group-icon">${g.icon}</span>
+          <h3 class="group-title">${escapeHtml(g.title)}</h3>
+          <span class="group-badge">${g.photos.length} ${g.photos.length === 1 ? 'photo' : 'photos'}</span>
         </div>
-        <button class="card-action-btn" title="Add to Album" data-photoid="${r.id}">
-          <span>➕</span>
-          <span>Album</span>
-        </button>
-        <img class="card-thumb" src="${API}/api/thumb/${r.id}" alt="" loading="lazy"
-             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23111520\\' width=\\'100\\' height=\\'100\\'/></svg>'" />
-      </div>
-      <div class="card-details">
-        <div class="match-badge ${badgeClass}">${matchPercent}% Match</div>
-        <div class="card-tags">Tags: ${escapeHtml(tagsStr)}</div>
-        <div class="card-row"><strong>Date:</strong> ${dateFormatted}</div>
-        <div class="card-row"><strong>Loc:</strong> ${escapeHtml(placeStr)}</div>
-      </div>
-    `;
+        <div class="group-header-right">
+          <button class="group-select-btn ${allSelected ? 'active' : ''}" type="button">
+            ${allSelected ? '✓ Deselect Group' : '◻ Select Group'}
+          </button>
+        </div>
+      `;
 
-    const selectBtn = card.querySelector('.card-select-btn');
-    selectBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      togglePhotoSelection(r.id);
+      const groupSelectBtn = header.querySelector('.group-select-btn');
+      groupSelectBtn.addEventListener('click', () => {
+        const currentlyAll = groupPhotoIds.every(id => selectedPhotoIds.has(id));
+        if (currentlyAll) {
+          groupPhotoIds.forEach(id => selectedPhotoIds.delete(id));
+        } else {
+          groupPhotoIds.forEach(id => selectedPhotoIds.add(id));
+        }
+        applyFiltersAndRender();
+      });
+
+      const groupGrid = document.createElement('div');
+      groupGrid.className = 'group-grid';
+      g.photos.forEach(r => {
+        groupGrid.appendChild(createPhotoCard(r));
+      });
+
+      section.appendChild(header);
+      section.appendChild(groupGrid);
+      grid.appendChild(section);
     });
-
-    const albumBtn = card.querySelector('.card-action-btn');
-    albumBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openAddToAlbum(e, r.id);
-    });
-
-    grid.appendChild(card);
-  });
+  }
 
   updateSelectionDock();
 }
@@ -2958,7 +3461,14 @@ function showDetail(r) {
   currentDetailPhoto = r;
   $('#modalImg').src = `${API}/api/original/${r.id}`;
   $('#modalTitle').textContent = r.place_name ? `Memory · ${r.place_name.split(',')[0]}` : 'Photo Memory';
-  $('#modalDesc').textContent = r.raw_description || r.enriched_text;
+  
+  // Set description and reset edit mode
+  $('#modalDesc').textContent = r.raw_description || r.enriched_text || 'No description available.';
+  $('#modalDesc').style.display = 'block';
+  $('#modalDescEditWrap').style.display = 'none';
+  $('#modalEditDescBtn').style.display = 'inline-flex';
+  $('#modalDescInput').value = r.raw_description || '';
+
   $('#modalDate').textContent = r.date_taken ? new Date(r.date_taken).toLocaleString() : 'Unknown';
   $('#modalPlace').textContent = r.place_name || 'Not Geocoded';
   $('#modalGPS').textContent = (r.latitude && r.longitude) ? `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}` : 'None';
@@ -2975,6 +3485,91 @@ $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) $('
 $('#modalAddToAlbumBtn').addEventListener('click', (e) => {
   if (currentDetailPhoto) {
     openAddToAlbum(e, currentDetailPhoto.id);
+  }
+});
+
+$('#modalEditDescBtn').addEventListener('click', () => {
+  $('#modalDesc').style.display = 'none';
+  $('#modalDescEditWrap').style.display = 'flex';
+  $('#modalEditDescBtn').style.display = 'none';
+  $('#modalDescInput').value = currentDetailPhoto?.raw_description || currentDetailPhoto?.enriched_text || '';
+  $('#modalDescInput').focus();
+});
+
+$('#modalCancelDescBtn').addEventListener('click', () => {
+  $('#modalDesc').style.display = 'block';
+  $('#modalDescEditWrap').style.display = 'none';
+  $('#modalEditDescBtn').style.display = 'inline-flex';
+});
+
+async function saveEditedDescription() {
+  if (!currentDetailPhoto) return;
+  const newDesc = $('#modalDescInput').value.trim();
+  if (!newDesc) {
+    alert('Description cannot be empty.');
+    return;
+  }
+
+  const saveBtn = $('#modalSaveDescBtn');
+  const oldText = saveBtn.textContent;
+  saveBtn.textContent = 'Saving...';
+  saveBtn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/api/photos/${currentDetailPhoto.id}/description`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: newDesc })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to update description');
+
+    currentDetailPhoto.raw_description = data.raw_description;
+    currentDetailPhoto.enriched_text = data.enriched_text;
+    if (data.tags) currentDetailPhoto.tags = data.tags;
+
+    const idx = allResults.findIndex(p => Number(p.id) === Number(currentDetailPhoto.id));
+    if (idx !== -1) {
+      allResults[idx].raw_description = data.raw_description;
+      allResults[idx].enriched_text = data.enriched_text;
+      if (data.tags) allResults[idx].tags = data.tags;
+    }
+
+    $('#modalDesc').textContent = data.raw_description;
+    $('#modalDesc').style.display = 'block';
+    $('#modalDescEditWrap').style.display = 'none';
+    $('#modalEditDescBtn').style.display = 'inline-flex';
+
+    showToast('Description updated & vector re-indexed!');
+    applyFiltersAndRender();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    saveBtn.textContent = oldText;
+    saveBtn.disabled = false;
+  }
+}
+
+$('#modalSaveDescBtn').addEventListener('click', saveEditedDescription);
+
+$('#modalDescInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    saveEditedDescription();
+  } else if (e.key === 'Escape') {
+    $('#modalCancelDescBtn').click();
+  }
+});
+
+$('#modalEditLocationBtn').addEventListener('click', () => {
+  if (currentDetailPhoto) {
+    openLocationModal(currentDetailPhoto.id);
+  }
+});
+
+$('#modalSetLocationBtn').addEventListener('click', () => {
+  if (currentDetailPhoto) {
+    openLocationModal(currentDetailPhoto.id);
   }
 });
 
@@ -3004,12 +3599,19 @@ async function loadAlbums() {
         <span>🖼️</span>
         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(album.name)}</span>
         <span class="nav-badge">${album.photo_count}</span>
+        <button class="album-edit-btn" title="Rename Album" data-albumid="${album.id}">✏️</button>
         <button class="album-del-btn" title="Delete Album" data-albumid="${album.id}">&times;</button>
       `;
 
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.album-del-btn')) return;
+        if (e.target.closest('.album-del-btn') || e.target.closest('.album-edit-btn')) return;
         showAlbumPhotos(album.id, album.name);
+      });
+
+      const editBtn = item.querySelector('.album-edit-btn');
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openRenameAlbumModal(album.id, album.name);
       });
 
       const delBtn = item.querySelector('.album-del-btn');
@@ -3054,7 +3656,8 @@ async function showAlbumPhotos(albumId, albumName) {
 
     $('#resultMeta').innerHTML = `
       Album: <span>"${escapeHtml(albumName)}"</span> (${allResults.length} photos)
-      <button class="small-add-btn" style="margin-left: 0.75rem; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); color: #a78bfa;" onclick="openStoryTimeline(${albumId}, '${escapeHtml(albumName)}')">📖 Story Timeline</button>
+      <button class="small-add-btn" style="margin-left: 0.6rem;" onclick="openRenameAlbumModal(${albumId}, '${escapeHtml(albumName)}')">✏️ Rename</button>
+      <button class="small-add-btn" style="margin-left: 0.4rem; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); color: #a78bfa;" onclick="openStoryTimeline(${albumId}, '${escapeHtml(albumName)}')">📖 Story Timeline</button>
       <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
     `;
 
@@ -3090,6 +3693,68 @@ async function deleteAlbum(albumId) {
   }
 }
 
+// ── Rename Album Dialog ─────────────────────────────────
+let currentRenameAlbumId = null;
+
+function openRenameAlbumModal(albumId, currentName) {
+  currentRenameAlbumId = albumId;
+  $('#renameAlbumTitleInput').value = currentName || '';
+  $('#renameAlbumModal').classList.add('active');
+  setTimeout(() => {
+    const input = $('#renameAlbumTitleInput');
+    input.focus();
+    input.select();
+  }, 100);
+}
+
+$('#renameAlbumClose').addEventListener('click', () => $('#renameAlbumModal').classList.remove('active'));
+$('#renameAlbumCancelBtn').addEventListener('click', () => $('#renameAlbumModal').classList.remove('active'));
+
+async function submitRenameAlbum() {
+  if (!currentRenameAlbumId) return;
+  const newName = $('#renameAlbumTitleInput').value.trim();
+  if (!newName) {
+    alert('Album name cannot be empty.');
+    return;
+  }
+
+  const saveBtn = $('#renameAlbumConfirmBtn');
+  const oldText = saveBtn.textContent;
+  saveBtn.textContent = 'Saving...';
+  saveBtn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/api/albums/${currentRenameAlbumId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Failed to rename album');
+
+    $('#renameAlbumModal').classList.remove('active');
+    showToast(`Album renamed to "${newName}"`);
+
+    await loadAlbums();
+
+    if (currentAlbumId === currentRenameAlbumId) {
+      currentAlbumName = newName;
+      showAlbumPhotos(currentRenameAlbumId, newName);
+    }
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    saveBtn.textContent = oldText;
+    saveBtn.disabled = false;
+  }
+}
+
+$('#renameAlbumConfirmBtn').addEventListener('click', submitRenameAlbum);
+$('#renameAlbumTitleInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitRenameAlbum();
+  else if (e.key === 'Escape') $('#renameAlbumModal').classList.remove('active');
+});
+
 // ── Create Album Dialog ─────────────────────────────────
 function openCreateAlbumModal() {
   $('#albumTitleInput').value = '';
@@ -3097,6 +3762,7 @@ function openCreateAlbumModal() {
   $('#createAlbumModal').classList.add('active');
   setTimeout(() => $('#albumTitleInput').focus(), 100);
 }
+
 
 $('#sidebarNewAlbumBtn').addEventListener('click', openCreateAlbumModal);
 $('#createAlbumClose').addEventListener('click', () => $('#createAlbumModal').classList.remove('active'));
@@ -3685,6 +4351,24 @@ function setGeoFilter(mode) {
   applyFiltersAndRender();
 }
 
+function setGroupBy(mode) {
+  activeFilters.groupBy = mode;
+  $('#groupBySelect').value = mode;
+  const labels = {
+    'none': 'None',
+    'day': 'Day',
+    'month': 'Month',
+    'year': 'Year',
+    'location': 'Location',
+    'country': 'Country',
+    'camera': 'Camera',
+    'type': 'Type'
+  };
+  const labelEl = $('#groupByBtnLabel');
+  if (labelEl) labelEl.textContent = labels[mode] || 'None';
+  applyFiltersAndRender();
+}
+
 function resetAllFilters() {
   setDateFilter('all');
   setGeoFilter('all');
@@ -3693,6 +4377,7 @@ function resetAllFilters() {
   $('#sortBtn').textContent = '↕ Sort';
   activeFilters.relevanceMode = 'balanced';
   $('#filterModeSelect').value = 'balanced';
+  setGroupBy('none');
   applyFiltersAndRender();
 }
 
@@ -3726,6 +4411,16 @@ $('#filterBtn').addEventListener('click', () => {
   const drawer = $('#filterDrawer');
   drawer.classList.toggle('open');
   $('#filterBtn').classList.toggle('active', drawer.classList.contains('open'));
+});
+
+$('#groupBySelect').addEventListener('change', (e) => {
+  setGroupBy(e.target.value);
+});
+
+$('#groupByBtn').addEventListener('click', () => {
+  const modes = ['none', 'day', 'month', 'year', 'location', 'country', 'camera', 'type'];
+  const next = modes[(modes.indexOf(activeFilters.groupBy || 'none') + 1) % modes.length];
+  setGroupBy(next);
 });
 
 $('#filterDatePreset').addEventListener('change', (e) => {
@@ -4042,18 +4737,28 @@ $('#dockRemoveFromAlbumBtn').addEventListener('click', async () => {
   }
 });
 
-// ── Bulk Actions: Add Location (Google Calendar Style) ──
-function openLocationModal() {
-  if (selectedPhotoIds.size === 0) return;
+// ── Bulk & Single Actions: Add Location (Google Calendar Style) ──
+function openLocationModal(targetPhotoId = null) {
+  currentLocationTargetPhotoId = targetPhotoId ? Number(targetPhotoId) : null;
   currentChosenLocation = null;
-  $('#locationModalTitle').textContent = `📍 Assign Location to ${selectedPhotoIds.size} Photos`;
-  $('#locationInput').value = '';
+
+  if (currentLocationTargetPhotoId) {
+    const p = allResults.find(x => Number(x.id) === currentLocationTargetPhotoId) || currentDetailPhoto;
+    const currentLoc = p?.place_name || '';
+    $('#locationModalTitle').textContent = `📍 Set Location for Photo #${currentLocationTargetPhotoId}`;
+    $('#locationInput').value = currentLoc;
+  } else {
+    if (selectedPhotoIds.size === 0) return;
+    $('#locationModalTitle').textContent = `📍 Assign Location to ${selectedPhotoIds.size} Photos`;
+    $('#locationInput').value = '';
+  }
+
   $('#locationSuggestionsList').innerHTML = '<div style="font-size: 0.78rem; color: var(--text-dim); padding: 0.75rem; text-align: center;">Type at least 2 characters to search global places offline...</div>';
   $('#locationPickerModal').classList.add('active');
   setTimeout(() => $('#locationInput').focus(), 100);
 }
 
-$('#dockAddLocationBtn').addEventListener('click', openLocationModal);
+$('#dockAddLocationBtn').addEventListener('click', () => openLocationModal(null));
 $('#locationCancelBtn').addEventListener('click', () => $('#locationPickerModal').classList.remove('active'));
 $('#locationModalClose').addEventListener('click', () => $('#locationPickerModal').classList.remove('active'));
 
@@ -4137,12 +4842,24 @@ $('#locationApplyBtn').addEventListener('click', async () => {
     return;
   }
 
+  const targetIds = currentLocationTargetPhotoId
+    ? [currentLocationTargetPhotoId]
+    : Array.from(selectedPhotoIds);
+
+  if (targetIds.length === 0) {
+    alert('No photos selected for location update.');
+    return;
+  }
+
   const placeName = currentChosenLocation ? (currentChosenLocation.place_name || currentChosenLocation.name) : customText;
   const payload = {
-    image_ids: Array.from(selectedPhotoIds),
+    image_ids: targetIds,
     place_name: placeName,
     latitude: currentChosenLocation ? currentChosenLocation.latitude : null,
     longitude: currentChosenLocation ? currentChosenLocation.longitude : null,
+    city: currentChosenLocation?.admin2 || currentChosenLocation?.name || '',
+    region: currentChosenLocation?.admin1 || '',
+    country: currentChosenLocation?.country_code || '',
   };
 
   try {
@@ -4153,11 +4870,33 @@ $('#locationApplyBtn').addEventListener('click', async () => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Failed to update locations');
-    showToast(`Updated location to "${placeName}" for ${data.updated_count} photos!`);
+    showToast(`Updated location to "${placeName}" for ${data.updated_count} photo(s)!`);
     $('#locationPickerModal').classList.remove('active');
-    clearSelection();
+
+    // Update in-memory photo objects
+    targetIds.forEach(id => {
+      const p = allResults.find(x => Number(x.id) === Number(id));
+      if (p) {
+        p.place_name = placeName;
+        p.latitude = data.latitude;
+        p.longitude = data.longitude;
+      }
+    });
+
+    if (currentDetailPhoto && targetIds.includes(Number(currentDetailPhoto.id))) {
+      currentDetailPhoto.place_name = placeName;
+      currentDetailPhoto.latitude = data.latitude;
+      currentDetailPhoto.longitude = data.longitude;
+      $('#modalTitle').textContent = placeName ? `Memory · ${placeName.split(',')[0]}` : 'Photo Memory';
+      $('#modalPlace').textContent = placeName || 'Not Geocoded';
+      $('#modalGPS').textContent = (data.latitude && data.longitude) ? `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}` : 'None';
+    }
+
+    if (!currentLocationTargetPhotoId) {
+      clearSelection();
+    }
     await loadPlatformStats();
-    doSearch(currentQuery);
+    applyFiltersAndRender();
   } catch (err) {
     alert(err.message);
   }

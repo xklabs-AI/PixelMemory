@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import THUMB_DIR, HOST, PORT, SEARCH_TOP_K
 from backend.db import (
     init_db, get_conn, get_image_by_id, get_stats,
-    create_album, get_all_albums, get_album_by_id,
+    create_album, get_all_albums, get_album_by_id, rename_album,
     add_photo_to_album, remove_photo_from_album,
     get_album_image_ids, get_photo_albums, delete_album,
     bulk_add_photos_to_album, bulk_remove_photos_from_album, bulk_move_photos_to_album,
@@ -44,7 +44,12 @@ class SetModelRequest(BaseModel):
 
 class CreateAlbumRequest(BaseModel):
     name: str
-    description: str = ""
+    description: Optional[str] = ""
+
+
+class UpdateAlbumRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
 
 
 class AddPhotoRequest(BaseModel):
@@ -84,6 +89,10 @@ class BulkLocationRequest(BaseModel):
 class BulkReprocessRequest(BaseModel):
     image_ids: list[int]
     vlm_model: Optional[str] = None
+
+
+class UpdateDescriptionRequest(BaseModel):
+    description: str
 
 
 app = FastAPI(title="PixelMemory", version="1.0.0")
@@ -569,6 +578,27 @@ def remove_photo_endpoint(album_id: int, image_id: int):
     return {"status": "ok", "album_id": album_id, "image_id": image_id}
 
 
+@app.put("/api/albums/{album_id}")
+def update_album_endpoint(album_id: int, req: UpdateAlbumRequest):
+    """Rename or update an album."""
+    new_name = req.name.strip()
+    if not new_name:
+        raise HTTPException(400, "Album name cannot be empty.")
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        try:
+            rename_album(conn, album_id, new_name, req.description or "")
+        except Exception as e:
+            if "UNIQUE constraint failed" in str(e):
+                raise HTTPException(400, f"An album named '{new_name}' already exists.")
+            raise HTTPException(500, f"Database error: {e}")
+
+        updated = get_album_by_id(conn, album_id)
+        return {"status": "ok", "album": updated}
+
+
 @app.delete("/api/albums/{album_id}")
 def delete_album_endpoint(album_id: int):
     """Delete an album."""
@@ -577,12 +607,55 @@ def delete_album_endpoint(album_id: int):
     return {"status": "ok", "deleted_id": album_id}
 
 
+
 @app.get("/api/photos/{image_id}/albums")
 def get_photo_albums_endpoint(image_id: int):
     """Get all albums containing a specific photo."""
     with get_conn() as conn:
         albums = get_photo_albums(conn, image_id)
     return {"albums": albums}
+
+
+@app.put("/api/photos/{image_id}/description")
+def update_photo_description(image_id: int, req: UpdateDescriptionRequest):
+    """Update a photo's description manually, re-enrich metadata, and re-embed in Zvec."""
+    raw_desc = req.description.strip()
+    with get_conn() as conn:
+        row = get_image_by_id(conn, image_id)
+        if not row:
+            raise HTTPException(404, f"Photo {image_id} not found.")
+
+        meta = {
+            "date_taken": row["date_taken"],
+            "place_name": row["place_name"],
+            "camera_model": row["camera_model"],
+        }
+        enriched = enrich_description(raw_desc, meta)
+        update_description(conn, image_id, raw=raw_desc, enriched=enriched)
+
+        # Re-index in Zvec
+        search = get_search()
+        search.add(image_id, enriched)
+
+        # Clear story cache for albums containing this photo so regenerated stories pick up the fix
+        conn.execute(
+            "DELETE FROM story_cache WHERE album_id IN (SELECT album_id FROM album_images WHERE image_id = ?)",
+            (image_id,),
+        )
+
+        updated_row = get_image_by_id(conn, image_id)
+        place = updated_row["place_name"] or ""
+        camera = updated_row["camera_model"] or ""
+        dt = updated_row["date_taken"] or ""
+
+        return {
+            "status": "ok",
+            "id": image_id,
+            "raw_description": raw_desc,
+            "enriched_text": enriched,
+            "tags": extract_tags(enriched, place, camera, dt),
+        }
+
 
 
 # ── Bulk Operations & Location Search ────────────────────
