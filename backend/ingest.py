@@ -306,28 +306,32 @@ def execute_import(directory: str, skip_describe: bool = False, vlm_model: Optio
         scan_stats = scan_directory(directory, callback=tracker.update_scan)
         tracker.stats.update(scan_stats)
 
-        # 2. Metadata extraction
-        tracker.phase_started_at = time.time()
-        tracker.phase = "metadata"
-        meta_count = run_metadata_extraction(callback=tracker.update_metadata)
-        tracker.stats["metadata_done"] = meta_count
-
-        # 3. AI Vision Descriptions
-        if not skip_describe:
+        # 2. Metadata extraction & AI description only for newly discovered files
+        if scan_stats.get("new", 0) > 0:
             tracker.phase_started_at = time.time()
-            tracker.phase = "describing"
-            desc_count = run_description_generation(vlm_model=vlm_model, callback=tracker.update_describing)
-            tracker.stats["described"] = desc_count
+            tracker.phase = "metadata"
+            meta_count = run_metadata_extraction(callback=tracker.update_metadata)
+            tracker.stats["metadata_done"] = meta_count
 
-            # 4. Vector Embedding
-            tracker.phase_started_at = time.time()
-            tracker.phase = "embedding"
-            embed_count = run_embedding(callback=tracker.update_embedding)
-            tracker.stats["embedded"] = embed_count
+            # 3. AI Vision Descriptions (applied only to new photos)
+            if not skip_describe:
+                tracker.phase_started_at = time.time()
+                tracker.phase = "describing"
+                desc_count = run_description_generation(vlm_model=vlm_model, callback=tracker.update_describing)
+                tracker.stats["described"] = desc_count
+
+                # 4. Vector Embedding
+                tracker.phase_started_at = time.time()
+                tracker.phase = "embedding"
+                embed_count = run_embedding(callback=tracker.update_embedding)
+                tracker.stats["embedded"] = embed_count
+        else:
+            tracker.phase_label = f"Rescan complete: all {scan_stats.get('duplicate', 0)} photos are already up-to-date."
 
         with get_conn() as conn:
             final_stats = get_stats(conn)
         tracker.complete(final_stats)
+
 
     except Exception as e:
         print(f"Import failed with error: {e}")

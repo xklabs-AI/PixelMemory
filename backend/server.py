@@ -413,6 +413,27 @@ def reset_database_endpoint():
 
 # ── Import Pipeline Routes ───────────────────────────────
 
+@app.get("/api/folders")
+def list_indexed_folders_endpoint():
+    """List all unique source directories currently indexed in the library with photo counts."""
+    with get_conn() as conn:
+        rows = conn.execute("SELECT file_path FROM images").fetchall()
+
+    folders_map = {}
+    for r in rows:
+        fp = Path(r["file_path"])
+        parent = str(fp.parent)
+        if parent not in folders_map:
+            folders_map[parent] = {
+                "folder_path": parent,
+                "folder_name": fp.parent.name or parent,
+                "count": 0,
+            }
+        folders_map[parent]["count"] += 1
+
+    return {"folders": sorted(list(folders_map.values()), key=lambda x: x["count"], reverse=True)}
+
+
 @app.post("/api/import/start")
 def start_import_endpoint(req: ImportRequest):
     """Start directory scan and AI ingestion or queue it if already running."""
@@ -447,12 +468,34 @@ def start_import_endpoint(req: ImportRequest):
         }
 
 
+@app.post("/api/import/rescan")
+def rescan_folder_endpoint(req: ImportRequest):
+    """
+    Rescan an existing folder for newly added photos.
+    Only newly added photos will have EXIF extracted, AI vision descriptions generated, and vectors embedded.
+    All existing photos are preserved.
+    """
+    fpath = Path(req.folder_path).resolve()
+    if not fpath.exists() or not fpath.is_dir():
+        raise HTTPException(400, f"Invalid folder directory: '{req.folder_path}' does not exist on disk.")
+
+    res = queue_manager.enqueue(str(fpath), skip_describe=req.skip_describe, vlm_model=req.vlm_model)
+    res["is_rescan"] = True
+    res["folder_path"] = str(fpath)
+    if res["status"] == "started":
+        res["message"] = f"Rescanning '{fpath.name}' for additional photos..."
+    elif res["status"] == "queued":
+        res["message"] = f"Added '{fpath.name}' rescan to queue (position #{res['queue_position']})"
+    return res
+
+
 @app.get("/api/import/status")
 def get_import_status_endpoint():
     """Poll live progress, queue status, and ETA for the active import."""
     status = tracker.to_dict()
     status.update(queue_manager.get_queue_info())
     return status
+
 
 
 @app.post("/api/import/cancel")

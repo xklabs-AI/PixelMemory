@@ -2254,6 +2254,10 @@
     <div class="header-center">Image Search</div>
 
     <div class="header-right">
+      <button class="tool-btn" id="rescanFolderHeaderBtn" style="padding: 0.38rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.45rem; border-color: rgba(99, 102, 241, 0.4); color: var(--text);">
+        <span>🔄</span>
+        <span>Rescan Folder</span>
+      </button>
       <button class="cta-btn" id="importFolderHeaderBtn" style="padding: 0.38rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);">
         <span>📥</span>
         <span>Import Folder</span>
@@ -2297,10 +2301,15 @@
       <div class="nav-section">
         <div class="section-title">Navigation</div>
         <div class="nav-group">
-          <div class="nav-item active" id="navAllPhotos">
-            <span>📁</span>
-            <span>My Local Photos</span>
-            <span class="nav-badge" id="navTotalCount">0</span>
+          <div class="nav-item active" id="navAllPhotos" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              <span>📁</span>
+              <span>My Local Photos</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <button type="button" class="tiny-edit-btn" id="sidebarQuickRescanBtn" title="Rescan folder for newly added photos" style="padding: 1px 5px; font-size: 0.68rem;">🔄 Rescan</button>
+              <span class="nav-badge" id="navTotalCount">0</span>
+            </div>
           </div>
           <div class="nav-item" id="navDateUnknown" title="Photos without date metadata">
             <span>📅</span>
@@ -2547,28 +2556,35 @@
   </div>
 </div>
 
-<!-- Import Folder Modal -->
+<!-- Import / Rescan Folder Modal -->
 <div class="modal-backdrop" id="importModal">
-  <div class="modal-window" style="max-width: 520px;">
+  <div class="modal-window" style="max-width: 540px;">
     <div class="modal-top">
-      <div class="modal-title">📥 Import & Analyze Photo Folder</div>
+      <div class="modal-title" id="importModalTitle">📥 Import or 🔄 Rescan Photo Folder</div>
       <button class="modal-close-btn" id="importModalClose">&times;</button>
     </div>
     <div class="settings-body">
       <div class="setting-row">
         <label>Photo Directory Path</label>
         <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. gallery/test or ./photos" value="gallery/test" />
-        <div style="display: flex; gap: 0.45rem; margin-top: 0.4rem; align-items: center;">
-          <span style="font-size: 0.72rem; color: var(--text-dim);">Quick Pick:</span>
-          <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">gallery/test</button>
-          <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">gallery</button>
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.45rem;">
+          <span style="font-size: 0.72rem; color: var(--text-dim);">Indexed Folders (Click to select & rescan):</span>
+          <div id="indexedFoldersList" style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 90px; overflow-y: auto;">
+            <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">📁 gallery/test</button>
+            <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">📁 gallery</button>
+          </div>
         </div>
+      </div>
+
+      <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.75rem; color: #93c5fd; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.4;">
+        <span style="font-size: 0.95rem; line-height: 1;">💡</span>
+        <span><strong>Incremental Rescan:</strong> When rescanning an existing folder, previously indexed photos are automatically detected and preserved. Only newly added photos will have EXIF extracted, AI descriptions generated, and vectors indexed into search.</span>
       </div>
 
       <div class="setting-row" style="flex-direction: row; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0;">
         <div>
           <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">AI Vision Analysis</div>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions & index into Zvec</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions & index into Zvec (new photos only)</div>
         </div>
         <input type="checkbox" id="importVisionCheck" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" />
       </div>
@@ -2597,9 +2613,12 @@
         </div>
       </div>
 
-      <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+      <div class="btn-row" style="justify-content: space-between; margin-top: 0.5rem;">
         <button class="tool-btn" id="importCancelBtn">Cancel</button>
-        <button class="cta-btn" id="importStartBtn">🚀 Start Import & Analysis</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="tool-btn" id="importRescanBtn" style="border-color: rgba(99,102,241,0.4); color: #a78bfa;">🔄 Rescan Folder</button>
+          <button class="cta-btn" id="importStartBtn">🚀 Start Scan / Import</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3930,13 +3949,89 @@ $('#inlineCreateAlbumBtn').addEventListener('click', async () => {
 $('#addToAlbumClose').addEventListener('click', () => $('#addToAlbumModal').classList.remove('active'));
 
 // ── Google Drive Style Floating Import Widget & Queue ───
-function openImportModal() {
+async function openImportModal(folderToPreselect = null, isRescanMode = false) {
+  if (folderToPreselect) {
+    $('#importFolderInput').value = folderToPreselect;
+  }
+  if (isRescanMode) {
+    $('#importModalTitle').textContent = '🔄 Rescan Photo Folder (Incremental)';
+  } else {
+    $('#importModalTitle').textContent = '📥 Import or 🔄 Rescan Photo Folder';
+  }
   $('#importModal').classList.add('active');
   setTimeout(() => $('#importFolderInput').focus(), 100);
+  await loadIndexedFolders();
 }
 
-$('#importFolderHeaderBtn').addEventListener('click', openImportModal);
-$('#railImport').addEventListener('click', openImportModal);
+async function loadIndexedFolders() {
+  const listEl = $('#indexedFoldersList');
+  if (!listEl) return;
+  try {
+    const res = await fetch(`${API}/api/folders`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const folders = data.folders || [];
+    if (folders.length === 0) {
+      listEl.innerHTML = `
+        <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">📁 gallery/test</button>
+        <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">📁 gallery</button>
+      `;
+      return;
+    }
+    listEl.innerHTML = folders.map(f => `
+      <div style="display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 0.2rem 0.5rem; font-size: 0.72rem;">
+        <span style="color: #fff; cursor: pointer;" onclick="$('#importFolderInput').value='${escapeHtml(f.folder_path)}'" title="${escapeHtml(f.folder_path)}">📁 ${escapeHtml(f.folder_name)} <span style="color: var(--text-dim);">(${f.count})</span></span>
+        <button type="button" class="tiny-edit-btn" style="padding: 1px 4px; font-size: 0.68rem;" onclick="event.stopPropagation(); startImportOrRescan(true, '${escapeHtml(f.folder_path)}')" title="Rescan this folder for new photos now">🔄</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Failed to load indexed folders:', e);
+  }
+}
+
+async function startImportOrRescan(isRescan = false, explicitFolder = null) {
+  const folderPath = explicitFolder || ($('#importFolderInput').value || '').trim() || 'gallery/test';
+  const skipDescribe = !$('#importVisionCheck').checked;
+  const selectedModel = document.querySelector('input[name="importVlmModel"]:checked')?.value || 'moondream:1.8b';
+  const endpoint = isRescan ? `${API}/api/import/rescan` : `${API}/api/import/start`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        folder_path: folderPath,
+        skip_describe: skipDescribe,
+        vlm_model: selectedModel
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || data.message || 'Failed to start import/rescan');
+    }
+
+    $('#importModal').classList.remove('active');
+
+    if (data.status === 'queued') {
+      showToast(data.message || `Queued folder (#${data.queue_position} in line)`);
+    } else {
+      showToast(isRescan ? `Rescanning "${folderPath}" for newly added photos...` : `Started import of "${folderPath}"`);
+    }
+
+    showFloatingWidget();
+    startProgressPolling();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+$('#importFolderHeaderBtn').addEventListener('click', () => openImportModal());
+$('#rescanFolderHeaderBtn').addEventListener('click', () => openImportModal(null, true));
+$('#sidebarQuickRescanBtn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openImportModal(null, true);
+});
+$('#railImport').addEventListener('click', () => openImportModal());
 $('#railAlbums').addEventListener('click', () => {
   if (allAlbums.length > 0) {
     showAlbumPhotos(allAlbums[0].id, allAlbums[0].name);
@@ -3961,41 +4056,9 @@ document.querySelectorAll('input[name="importVlmModel"]').forEach(radio => {
   });
 });
 
-$('#importStartBtn').addEventListener('click', async () => {
-  const folderPath = ($('#importFolderInput').value || '').trim() || 'gallery/test';
-  const skipDescribe = !$('#importVisionCheck').checked;
-  const selectedModel = document.querySelector('input[name="importVlmModel"]:checked')?.value || 'moondream:1.8b';
+$('#importStartBtn').addEventListener('click', () => startImportOrRescan(false));
+$('#importRescanBtn').addEventListener('click', () => startImportOrRescan(true));
 
-  try {
-    const res = await fetch(`${API}/api/import/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        folder_path: folderPath,
-        skip_describe: skipDescribe,
-        vlm_model: selectedModel
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.detail || data.message || 'Failed to start import');
-    }
-
-    // Close config modal — floating widget appears without blocking the page!
-    $('#importModal').classList.remove('active');
-
-    if (data.status === 'queued') {
-      showToast(data.message || `Queued folder for import (#${data.queue_position} in line)`);
-    } else {
-      showToast(`Started import of "${folderPath}"`);
-    }
-
-    showFloatingWidget();
-    startProgressPolling();
-  } catch (err) {
-    alert(err.message);
-  }
-});
 
 function showFloatingWidget() {
   const widget = $('#importFloatingWidget');
