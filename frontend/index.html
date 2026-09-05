@@ -5066,8 +5066,53 @@ function openStoryTimeline(albumId, albumName) {
     </div>
   `;
 
+  // Pre-populate date range from album photo dates
+  populateStoryDateRange(albumId);
+
   // Check if story already exists in cache
   loadExistingStory(albumId);
+}
+
+async function populateStoryDateRange(albumId) {
+  try {
+    let photos = [];
+    if (currentAlbumId === albumId && allResults && allResults.length > 0) {
+      photos = allResults;
+    } else {
+      const res = await fetch(`${API}/api/albums/${albumId}`);
+      if (res.ok) {
+        const data = await res.json();
+        photos = data.photos || [];
+      }
+    }
+
+    const dates = [];
+    for (const p of photos) {
+      const raw = p.date_taken;
+      if (!raw) continue;
+      const match = String(raw).match(/^(\d{4})[-:/](\d{2})[-:/](\d{2})/);
+      if (match) {
+        dates.push(`${match[1]}-${match[2]}-${match[3]}`);
+      } else {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          dates.push(d.toISOString().split('T')[0]);
+        }
+      }
+    }
+
+    if (dates.length > 0) {
+      dates.sort();
+      const minDate = dates[0];
+      const maxDate = dates[dates.length - 1];
+      const startEl = $('#storyStartDate');
+      const endEl = $('#storyEndDate');
+      if (startEl && !startEl.value) startEl.value = minDate;
+      if (endEl && !endEl.value) endEl.value = maxDate;
+    }
+  } catch (e) {
+    console.error('Failed to populate story date range:', e);
+  }
 }
 
 async function loadExistingStory(albumId) {
@@ -5081,6 +5126,12 @@ async function loadExistingStory(albumId) {
       const regen = $('#storyRegenerateBtn');
       if (regen) regen.style.display = '';
       $('#statsSummary').textContent = `${data.total_days} day${data.total_days > 1 ? 's' : ''} in story`;
+
+      // Also ensure date pickers match the story range if not already set
+      const startEl = $('#storyStartDate');
+      const endEl = $('#storyEndDate');
+      if (startEl && !startEl.value && data.days[0]?.date) startEl.value = data.days[0].date;
+      if (endEl && !endEl.value && data.days[data.days.length - 1]?.date) endEl.value = data.days[data.days.length - 1].date;
     }
   } catch (e) {
     console.error('Failed to load existing story:', e);
