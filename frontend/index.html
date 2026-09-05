@@ -1623,6 +1623,416 @@
     box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
     transform: translateY(-1px);
   }
+
+  /* ── Story Timeline ────────────────────────────────── */
+
+  .story-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .story-controls label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .story-controls select,
+  .story-controls input[type="date"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+  }
+
+  .story-controls select:focus,
+  .story-controls input[type="date"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .story-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    border: none;
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .story-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  }
+
+  .story-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .story-btn-secondary {
+    background: var(--bg-surface-hover);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .story-btn-secondary:hover {
+    background: var(--bg-card);
+    color: var(--text);
+    border-color: var(--border-highlight);
+  }
+
+  .story-autoplay-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--border);
+  }
+
+  .story-autoplay-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .story-autoplay-btn:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .story-autoplay-btn.playing {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: #6366f1;
+    color: #a78bfa;
+    animation: autoplayPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes autoplayPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+  }
+
+  .story-speed-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    width: 62px;
+  }
+
+  .story-progress-ring {
+    width: 28px;
+    height: 28px;
+    position: relative;
+  }
+
+  .story-progress-ring svg {
+    transform: rotate(-90deg);
+  }
+
+  .story-progress-ring circle {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .story-progress-ring .track {
+    stroke: var(--border);
+  }
+
+  .story-progress-ring .fill {
+    stroke: #6366f1;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.3s ease;
+  }
+
+  /* Timeline Container */
+  .story-timeline {
+    position: relative;
+    padding: 0.5rem 0 2rem 2.5rem;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  .story-timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      #6366f1 8%,
+      #3b82f6 50%,
+      #6366f1 92%,
+      transparent 100%
+    );
+    border-radius: 2px;
+  }
+
+  /* Day Card */
+  .story-day-card {
+    position: relative;
+    margin-bottom: 1.75rem;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: storyFadeIn 0.5s ease forwards;
+  }
+
+  .story-day-card:nth-child(1) { animation-delay: 0.05s; }
+  .story-day-card:nth-child(2) { animation-delay: 0.1s; }
+  .story-day-card:nth-child(3) { animation-delay: 0.15s; }
+  .story-day-card:nth-child(4) { animation-delay: 0.2s; }
+  .story-day-card:nth-child(5) { animation-delay: 0.25s; }
+  .story-day-card:nth-child(6) { animation-delay: 0.3s; }
+  .story-day-card:nth-child(7) { animation-delay: 0.35s; }
+
+  @keyframes storyFadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .story-day-card.active {
+    z-index: 2;
+  }
+
+  .story-day-card.active .story-card-body {
+    border-color: #6366f1;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .story-day-card.active .story-day-dot {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+    transform: scale(1.3);
+  }
+
+  /* Timeline dot */
+  .story-day-dot {
+    position: absolute;
+    left: -2.5rem;
+    top: 1rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #6366f1;
+    border: 2px solid var(--bg-main);
+    margin-left: 9px;
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+
+  .story-card-body {
+    background: linear-gradient(135deg, rgba(19, 24, 36, 0.95) 0%, rgba(17, 21, 32, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+  }
+
+  .story-card-body:hover {
+    border-color: var(--border-highlight);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .story-day-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .story-day-date {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .story-day-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a78bfa;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.02em;
+  }
+
+  .story-narrative {
+    font-size: 0.92rem;
+    line-height: 1.72;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+    padding: 0 0.15rem;
+  }
+
+  .story-thumbstrip {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .story-thumbstrip::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .story-thumbstrip::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .story-thumbstrip::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+
+  .story-thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .story-thumb:hover {
+    border-color: #6366f1;
+    transform: scale(1.08);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Story Generating Overlay */
+  .story-generating {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    gap: 1.25rem;
+  }
+
+  .story-generating .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .story-generating .gen-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .story-generating .gen-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    max-width: 400px;
+  }
+
+  .story-gen-progress {
+    width: 280px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .story-gen-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* Story empty state */
+  .story-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .story-empty .empty-icon {
+    font-size: 3rem;
+    opacity: 0.6;
+  }
+
+  .story-empty .empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .story-empty .empty-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    max-width: 440px;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -2644,7 +3054,8 @@ async function showAlbumPhotos(albumId, albumName) {
 
     $('#resultMeta').innerHTML = `
       Album: <span>"${escapeHtml(albumName)}"</span> (${allResults.length} photos)
-      <button class="small-add-btn" style="margin-left: 0.75rem;" onclick="showAllPhotos()">✕ View All Photos</button>
+      <button class="small-add-btn" style="margin-left: 0.75rem; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); color: #a78bfa;" onclick="openStoryTimeline(${albumId}, '${escapeHtml(albumName)}')">📖 Story Timeline</button>
+      <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
     `;
 
     applyFiltersAndRender();
@@ -3845,6 +4256,375 @@ function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+// ── Story Timeline ──────────────────────────────────────
+let storyAutoplayTimer = null;
+let storyAutoplayInterval = 10; // seconds
+let storyAutoplayPlaying = false;
+let storyCurrentDayIndex = 0;
+let storyDays = [];
+let storyAlbumId = null;
+let storyAlbumName = '';
+let storyPollTimer = null;
+let storyCountdownTimer = null;
+let storyCountdownRemaining = 0;
+
+function openStoryTimeline(albumId, albumName) {
+  storyAlbumId = albumId;
+  storyAlbumName = albumName;
+  storyCurrentDayIndex = 0;
+  stopStoryAutoplay();
+
+  const grid = $('#grid');
+  const viewport = $('#viewport');
+
+  $('#resultMeta').innerHTML = `
+    📖 Story Timeline: <span>"${escapeHtml(albumName)}"</span>
+    <button class="small-add-btn" style="margin-left: 0.75rem;" onclick="showAlbumPhotos(${albumId}, '${escapeHtml(albumName)}')">← Back to Photos</button>
+    <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
+  `;
+  $('#statsSummary').textContent = 'Loading story...';
+
+  // Show the story view with controls + content area
+  grid.innerHTML = `
+    <div style="grid-column: 1 / -1;">
+      <div class="story-controls" id="storyControls">
+        <label>From</label>
+        <input type="date" id="storyStartDate" />
+        <label>To</label>
+        <input type="date" id="storyEndDate" />
+        <button class="story-btn" id="storyGenerateBtn" onclick="generateStory()">
+          <span>✨</span> Generate Story
+        </button>
+        <button class="story-btn-secondary" id="storyRegenerateBtn" onclick="regenerateStory()" style="display: none;">
+          🔄 Regenerate
+        </button>
+
+        <div class="story-autoplay-controls">
+          <label style="font-size: 0.72rem;">Auto</label>
+          <select class="story-speed-select" id="storySpeedSelect" onchange="updateStorySpeed()">
+            <option value="5">5 sec</option>
+            <option value="10" selected>10 sec</option>
+            <option value="15">15 sec</option>
+          </select>
+          <button class="story-autoplay-btn" id="storyPlayBtn" onclick="toggleStoryAutoplay()" title="Auto-advance">
+            ▶
+          </button>
+          <div class="story-progress-ring" id="storyProgressRing" style="display: none;">
+            <svg width="28" height="28" viewBox="0 0 28 28">
+              <circle class="track" cx="14" cy="14" r="12" />
+              <circle class="fill" id="storyRingFill" cx="14" cy="14" r="12"
+                stroke-dasharray="75.4" stroke-dashoffset="75.4" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div id="storyContent">
+        <div class="story-empty">
+          <div class="empty-icon">📖</div>
+          <div class="empty-title">Generate your story</div>
+          <div class="empty-desc">Select a date range (or leave blank for all dates), then click <strong>"Generate Story"</strong> to create an AI-narrated journal from this album's photos using your local LLM.</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Check if story already exists in cache
+  loadExistingStory(albumId);
+}
+
+async function loadExistingStory(albumId) {
+  try {
+    const res = await fetch(`${API}/api/albums/${albumId}/story`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.days && data.days.length > 0) {
+      storyDays = data.days;
+      renderStoryTimeline();
+      const regen = $('#storyRegenerateBtn');
+      if (regen) regen.style.display = '';
+      $('#statsSummary').textContent = `${data.total_days} day${data.total_days > 1 ? 's' : ''} in story`;
+    }
+  } catch (e) {
+    console.error('Failed to load existing story:', e);
+  }
+}
+
+async function generateStory() {
+  const btn = $('#storyGenerateBtn');
+  if (btn) btn.disabled = true;
+
+  const startDate = $('#storyStartDate')?.value || null;
+  const endDate = $('#storyEndDate')?.value || null;
+
+  const content = $('#storyContent');
+  if (content) {
+    content.innerHTML = `
+      <div class="story-generating">
+        <div class="spinner"></div>
+        <div class="gen-title">Generating your story...</div>
+        <div class="gen-subtitle" id="storyGenStatus">Preparing photo descriptions for the AI narrator...</div>
+        <div class="story-gen-progress">
+          <div class="story-gen-progress-fill" id="storyGenProgressFill"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  try {
+    const body = { start_date: startDate, end_date: endDate };
+    const res = await fetch(`${API}/api/albums/${storyAlbumId}/story/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.status === 'started' || data.status === 'already_generating') {
+      pollStoryProgress();
+    }
+  } catch (err) {
+    if (content) {
+      content.innerHTML = `
+        <div class="story-empty">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-title">Generation Failed</div>
+          <div class="empty-desc">${err.message}. Make sure Ollama is running with gemma4:e4b.</div>
+        </div>
+      `;
+    }
+    if (btn) btn.disabled = false;
+  }
+}
+
+function pollStoryProgress() {
+  if (storyPollTimer) clearInterval(storyPollTimer);
+
+  storyPollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/api/albums/${storyAlbumId}/story/progress`);
+      const prog = await res.json();
+
+      const statusEl = $('#storyGenStatus');
+      const fillEl = $('#storyGenProgressFill');
+
+      if (prog.status === 'generating') {
+        const pct = prog.total > 0 ? Math.round((prog.current / prog.total) * 100) : 0;
+        if (statusEl) statusEl.textContent = `Writing day ${prog.current + 1} of ${prog.total}${prog.current_day ? ' (' + prog.current_day + ')' : ''}...`;
+        if (fillEl) fillEl.style.width = pct + '%';
+      } else if (prog.status === 'complete') {
+        clearInterval(storyPollTimer);
+        storyPollTimer = null;
+        // Load the completed story
+        await loadExistingStory(storyAlbumId);
+        const btn = $('#storyGenerateBtn');
+        if (btn) btn.disabled = false;
+        showToast('Story timeline generated!');
+      } else if (prog.status === 'error') {
+        clearInterval(storyPollTimer);
+        storyPollTimer = null;
+        const content = $('#storyContent');
+        if (content) {
+          content.innerHTML = `
+            <div class="story-empty">
+              <div class="empty-icon">⚠️</div>
+              <div class="empty-title">Generation Error</div>
+              <div class="empty-desc">${prog.error || 'Unknown error occurred'}</div>
+            </div>
+          `;
+        }
+        const btn = $('#storyGenerateBtn');
+        if (btn) btn.disabled = false;
+      }
+    } catch (e) {
+      console.error('Story progress poll error:', e);
+    }
+  }, 1500);
+}
+
+async function regenerateStory() {
+  try {
+    await fetch(`${API}/api/albums/${storyAlbumId}/story`, { method: 'DELETE' });
+    storyDays = [];
+    stopStoryAutoplay();
+    generateStory();
+  } catch (err) {
+    showToast('Failed to clear story cache');
+  }
+}
+
+function renderStoryTimeline() {
+  const content = $('#storyContent');
+  if (!content || storyDays.length === 0) return;
+
+  let html = '<div class="story-timeline" id="storyTimeline">';
+
+  storyDays.forEach((day, idx) => {
+    const isActive = idx === storyCurrentDayIndex;
+    const dateLabel = formatStoryDate(day.day_date);
+
+    html += `
+      <div class="story-day-card ${isActive ? 'active' : ''}" data-dayidx="${idx}" id="storyDay${idx}">
+        <div class="story-day-dot"></div>
+        <div class="story-card-body">
+          <div class="story-day-header">
+            <div class="story-day-date">${dateLabel}</div>
+            <div class="story-day-badge">${day.photo_count} photo${day.photo_count > 1 ? 's' : ''}</div>
+          </div>
+          <div class="story-narrative">${escapeHtml(day.narrative)}</div>
+          <div class="story-thumbstrip">
+            ${(day.photo_ids || []).map(pid =>
+              `<img class="story-thumb" src="${API}/api/thumb/${pid}" alt="Photo ${pid}" onclick="openStoryPhoto(${pid})" loading="lazy" />`
+            ).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  content.innerHTML = html;
+
+  const regen = $('#storyRegenerateBtn');
+  if (regen) regen.style.display = '';
+  $('#statsSummary').textContent = `${storyDays.length} day${storyDays.length > 1 ? 's' : ''} in story`;
+}
+
+function formatStoryDate(dateStr) {
+  if (!dateStr || dateStr === 'undated') return '📷 Undated Photos';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+function scrollToStoryDay(idx) {
+  storyCurrentDayIndex = idx;
+
+  // Update active state
+  document.querySelectorAll('.story-day-card').forEach((card, i) => {
+    card.classList.toggle('active', i === idx);
+  });
+
+  // Smooth scroll into view
+  const card = $(`#storyDay${idx}`);
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function openStoryPhoto(photoId) {
+  // Find in allResults or fetch
+  const photo = allResults.find(p => p.id === photoId);
+  if (photo) {
+    showDetail(photo);
+  } else {
+    // Minimal detail view with original image
+    window.open(`${API}/api/original/${photoId}`, '_blank');
+  }
+}
+
+// ── Auto-advance Slideshow ──────────────────────────────
+
+function toggleStoryAutoplay() {
+  if (storyAutoplayPlaying) {
+    stopStoryAutoplay();
+  } else {
+    startStoryAutoplay();
+  }
+}
+
+function startStoryAutoplay() {
+  if (storyDays.length === 0) return;
+  storyAutoplayPlaying = true;
+
+  const btn = $('#storyPlayBtn');
+  if (btn) {
+    btn.classList.add('playing');
+    btn.innerHTML = '⏸';
+  }
+
+  const ring = $('#storyProgressRing');
+  if (ring) ring.style.display = '';
+
+  // Start countdown for current card
+  startStoryCountdown();
+}
+
+function stopStoryAutoplay() {
+  storyAutoplayPlaying = false;
+  if (storyAutoplayTimer) {
+    clearInterval(storyAutoplayTimer);
+    storyAutoplayTimer = null;
+  }
+  if (storyCountdownTimer) {
+    clearInterval(storyCountdownTimer);
+    storyCountdownTimer = null;
+  }
+
+  const btn = $('#storyPlayBtn');
+  if (btn) {
+    btn.classList.remove('playing');
+    btn.innerHTML = '▶';
+  }
+
+  const ring = $('#storyProgressRing');
+  if (ring) ring.style.display = 'none';
+
+  // Reset ring
+  const fill = $('#storyRingFill');
+  if (fill) fill.style.strokeDashoffset = '75.4';
+}
+
+function startStoryCountdown() {
+  const totalMs = storyAutoplayInterval * 1000;
+  const circumference = 75.4; // 2 * π * 12
+  storyCountdownRemaining = totalMs;
+
+  if (storyCountdownTimer) clearInterval(storyCountdownTimer);
+
+  const tickMs = 100;
+  storyCountdownTimer = setInterval(() => {
+    storyCountdownRemaining -= tickMs;
+
+    // Update progress ring
+    const pct = 1 - (storyCountdownRemaining / totalMs);
+    const offset = circumference * (1 - pct);
+    const fill = $('#storyRingFill');
+    if (fill) fill.style.strokeDashoffset = offset;
+
+    if (storyCountdownRemaining <= 0) {
+      clearInterval(storyCountdownTimer);
+      storyCountdownTimer = null;
+
+      // Advance to next day
+      if (storyCurrentDayIndex < storyDays.length - 1) {
+        scrollToStoryDay(storyCurrentDayIndex + 1);
+        startStoryCountdown();
+      } else {
+        // Reached the end — loop back to start
+        scrollToStoryDay(0);
+        startStoryCountdown();
+      }
+    }
+  }, tickMs);
+}
+
+function updateStorySpeed() {
+  const select = $('#storySpeedSelect');
+  if (select) {
+    storyAutoplayInterval = parseInt(select.value, 10);
+  }
+  // If playing, restart countdown with new speed
+  if (storyAutoplayPlaying) {
+    startStoryCountdown();
+  }
 }
 
 // ── Startup ─────────────────────────────────────────────

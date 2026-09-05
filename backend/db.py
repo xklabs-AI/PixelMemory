@@ -63,6 +63,20 @@ CREATE TABLE IF NOT EXISTS album_images (
 
 CREATE INDEX IF NOT EXISTS idx_album_images_album ON album_images(album_id);
 CREATE INDEX IF NOT EXISTS idx_album_images_image ON album_images(image_id);
+
+-- Story Timeline cache
+CREATE TABLE IF NOT EXISTS story_cache (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    album_id    INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+    day_date    TEXT    NOT NULL,
+    narrative   TEXT    NOT NULL,
+    model_used  TEXT    NOT NULL,
+    photo_ids   TEXT    NOT NULL,
+    created_at  TEXT    DEFAULT (datetime('now')),
+    UNIQUE(album_id, day_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_story_cache_album ON story_cache(album_id);
 """
 
 
@@ -352,4 +366,47 @@ def get_all_image_paths(conn: sqlite3.Connection) -> list[tuple[int, str]]:
     """Return all (id, file_path) pairs for thumbnail regeneration."""
     rows = conn.execute("SELECT id, file_path FROM images").fetchall()
     return [(r["id"], r["file_path"]) for r in rows]
+
+
+# ── Story Cache Operations ──────────────────────────
+
+def get_cached_narrative(conn: sqlite3.Connection, album_id: int, day_date: str) -> dict | None:
+    """Fetch a cached narrative for a specific album + day."""
+    row = conn.execute(
+        "SELECT * FROM story_cache WHERE album_id = ? AND day_date = ?",
+        (album_id, day_date),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def upsert_narrative(
+    conn: sqlite3.Connection, album_id: int, day_date: str,
+    narrative: str, model_used: str, photo_ids: str,
+) -> None:
+    """Insert or update a cached day narrative."""
+    conn.execute(
+        """INSERT INTO story_cache (album_id, day_date, narrative, model_used, photo_ids)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(album_id, day_date) DO UPDATE SET
+               narrative = excluded.narrative,
+               model_used = excluded.model_used,
+               photo_ids = excluded.photo_ids,
+               created_at = datetime('now')""",
+        (album_id, day_date, narrative, model_used, photo_ids),
+    )
+
+
+def clear_story_cache(conn: sqlite3.Connection, album_id: int) -> int:
+    """Delete all cached narratives for an album. Returns rows deleted."""
+    cur = conn.execute("DELETE FROM story_cache WHERE album_id = ?", (album_id,))
+    return cur.rowcount
+
+
+def get_album_story(conn: sqlite3.Connection, album_id: int) -> list[dict]:
+    """Fetch all cached day narratives for an album, ordered chronologically."""
+    rows = conn.execute(
+        "SELECT * FROM story_cache WHERE album_id = ? ORDER BY day_date ASC",
+        (album_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
 

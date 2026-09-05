@@ -59,3 +59,13 @@ VLM_PROMPT = (
 HOST = "0.0.0.0"
 PORT = 8642
 SEARCH_TOP_K = 40
+
+# ── Story Timeline ──────────────────────────────────
+STORY_LLM_MODEL = "gemma4:e4b"
+STORY_PROMPT_TEMPLATE = (
+    "You are a warm, personal travel journal writer. Based on these photo descriptions "
+    "from {date}, write a short first-person narrative paragraph (3-5 sentences) "
+    "summarizing the day. Write naturally as if fondly recalling the day's highlights. "
+    "Include specific places, foods, and activities mentioned. Do not list the photos. "
+    "Do not mention photo numbers or that you are looking at photos. Just tell the story of the day."
+)

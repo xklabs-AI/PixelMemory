@@ -801,6 +801,144 @@ def get_original(image_id: int):
     return FileResponse(fpath, media_type=media_types.get(suffix, "application/octet-stream"))
 
 
+# ── Story Timeline ───────────────────────────────────────
+
+class StoryGenerateRequest(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    model: Optional[str] = None
+
+
+# Simple progress tracker for story generation
+_story_progress: dict = {}
+
+
+@app.post("/api/albums/{album_id}/story/generate")
+def generate_story_endpoint(album_id: int, req: StoryGenerateRequest):
+    """Kick off story timeline generation for an album (runs in background)."""
+    from backend.storyteller import generate_album_story
+    from backend.config import STORY_LLM_MODEL
+
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+    if not album:
+        raise HTTPException(404, f"Album {album_id} not found.")
+
+    model = (req.model or "").strip() or STORY_LLM_MODEL
+    progress_key = f"story_{album_id}"
+
+    # Check if already generating
+    if progress_key in _story_progress and _story_progress[progress_key].get("status") == "generating":
+        return {"status": "already_generating", "progress": _story_progress[progress_key]}
+
+    _story_progress[progress_key] = {
+        "status": "generating",
+        "current": 0,
+        "total": 0,
+        "current_day": "",
+        "album_id": album_id,
+    }
+
+    def _run():
+        try:
+            def progress_cb(idx, total, day_date):
+                _story_progress[progress_key].update({
+                    "current": idx,
+                    "total": total,
+                    "current_day": day_date,
+                })
+
+            results = generate_album_story(
+                album_id,
+                start_date=req.start_date,
+                end_date=req.end_date,
+                model=model,
+                progress_callback=progress_cb,
+            )
+            _story_progress[progress_key] = {
+                "status": "complete",
+                "current": len(results),
+                "total": len(results),
+                "current_day": "",
+                "album_id": album_id,
+            }
+        except Exception as e:
+            _story_progress[progress_key] = {
+                "status": "error",
+                "error": str(e),
+                "album_id": album_id,
+            }
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+
+    return {"status": "started", "progress": _story_progress[progress_key]}
+
+
+@app.get("/api/albums/{album_id}/story/progress")
+def story_progress_endpoint(album_id: int):
+    """Check story generation progress."""
+    progress_key = f"story_{album_id}"
+    progress = _story_progress.get(progress_key)
+    if not progress:
+        return {"status": "idle"}
+    return progress
+
+
+@app.get("/api/albums/{album_id}/story")
+def get_story_endpoint(album_id: int):
+    """Fetch the generated story timeline from cache."""
+    from backend.db import get_album_story
+
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+
+        stories = get_album_story(conn, album_id)
+
+    # Parse photo_ids JSON and attach thumbnail URLs
+    import json
+    days = []
+    for s in stories:
+        try:
+            photo_ids = json.loads(s["photo_ids"])
+        except (json.JSONDecodeError, TypeError):
+            photo_ids = []
+        days.append({
+            "day_date": s["day_date"],
+            "narrative": s["narrative"],
+            "model_used": s["model_used"],
+            "photo_ids": photo_ids,
+            "photo_count": len(photo_ids),
+            "created_at": s["created_at"],
+        })
+
+    return {
+        "album_id": album_id,
+        "album_name": album["name"],
+        "days": days,
+        "total_days": len(days),
+    }
+
+
+@app.delete("/api/albums/{album_id}/story")
+def clear_story_endpoint(album_id: int):
+    """Clear cached story for regeneration."""
+    from backend.db import clear_story_cache
+
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        deleted = clear_story_cache(conn, album_id)
+
+    # Clear progress too
+    _story_progress.pop(f"story_{album_id}", None)
+
+    return {"deleted": deleted, "album_id": album_id}
+
+
 # ── Frontend ─────────────────────────────────────────────
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
