@@ -2515,9 +2515,9 @@
             <span class="info-v" id="modalDate">-</span>
 
             <span class="info-k">Location</span>
-            <span class="info-v" style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
-              <span id="modalPlace" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">-</span>
-              <button type="button" class="tiny-edit-btn" id="modalEditLocationBtn" title="Assign or change location">📍 Set</button>
+            <span class="info-v" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+              <span id="modalPlace" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;" title="">-</span>
+              <button type="button" class="tiny-edit-btn" id="modalEditLocationBtn" title="Edit location">✏️ Edit</button>
             </span>
 
             <span class="info-k">GPS</span>
@@ -2536,14 +2536,10 @@
           <div class="info-path" id="modalPath"></div>
         </div>
 
-        <div class="info-block" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
-          <button class="cta-btn" id="modalAddToAlbumBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem;">
+        <div class="info-block" style="margin-top: 0.5rem;">
+          <button class="cta-btn" id="modalAddToAlbumBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem;">
             <span>➕</span>
             <span>Add to Album</span>
-          </button>
-          <button class="tool-btn" id="modalSetLocationBtn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem; border-color: rgba(99, 102, 241, 0.4); color: var(--text);">
-            <span>📍</span>
-            <span>Set Location</span>
           </button>
         </div>
       </div>
@@ -3471,6 +3467,9 @@ function showDetail(r) {
 
   $('#modalDate').textContent = r.date_taken ? new Date(r.date_taken).toLocaleString() : 'Unknown';
   $('#modalPlace').textContent = r.place_name || 'Not Geocoded';
+  $('#modalPlace').title = r.place_name || 'Not Geocoded';
+  $('#modalEditLocationBtn').innerHTML = r.place_name ? '✏️ Edit' : '📍 Set';
+  $('#modalEditLocationBtn').title = r.place_name ? 'Change location' : 'Assign location';
   $('#modalGPS').textContent = (r.latitude && r.longitude) ? `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}` : 'None';
   $('#modalCamera').textContent = [r.camera_make, r.camera_model].filter(Boolean).join(' ') || 'Unknown';
   $('#modalScore').textContent = `${(r.score * 100).toFixed(1)}% Match`;
@@ -3567,11 +3566,6 @@ $('#modalEditLocationBtn').addEventListener('click', () => {
   }
 });
 
-$('#modalSetLocationBtn').addEventListener('click', () => {
-  if (currentDetailPhoto) {
-    openLocationModal(currentDetailPhoto.id);
-  }
-});
 
 // ── Albums Logic ────────────────────────────────────────
 async function loadAlbums() {
@@ -4886,9 +4880,11 @@ $('#locationApplyBtn').addEventListener('click', async () => {
     if (currentDetailPhoto && targetIds.includes(Number(currentDetailPhoto.id))) {
       currentDetailPhoto.place_name = placeName;
       currentDetailPhoto.latitude = data.latitude;
-      currentDetailPhoto.longitude = data.longitude;
       $('#modalTitle').textContent = placeName ? `Memory · ${placeName.split(',')[0]}` : 'Photo Memory';
       $('#modalPlace').textContent = placeName || 'Not Geocoded';
+      $('#modalPlace').title = placeName || 'Not Geocoded';
+      $('#modalEditLocationBtn').innerHTML = placeName ? '✏️ Edit' : '📍 Set';
+      $('#modalEditLocationBtn').title = placeName ? 'Change location' : 'Assign location';
       $('#modalGPS').textContent = (data.latitude && data.longitude) ? `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}` : 'None';
     }
 
