@@ -95,6 +95,24 @@ class UpdateDescriptionRequest(BaseModel):
     description: str
 
 
+class SaveStoryNoteRequest(BaseModel):
+    day_date: str
+    title: str
+    content: str
+
+
+class CreateNoteRequest(BaseModel):
+    day_date: str = "General"
+    title: str
+    content: str
+
+
+class UpdateNoteRequest(BaseModel):
+    title: str
+    content: str
+    day_date: Optional[str] = None
+
+
 app = FastAPI(title="PixelMemory", version="1.0.0")
 
 # Lazy singleton
@@ -1053,6 +1071,111 @@ def clear_story_endpoint(album_id: int):
     _story_progress.pop(f"story_{album_id}", None)
 
     return {"deleted": deleted, "album_id": album_id}
+
+
+# ── Album Notes Endpoints ────────────────────────────────
+
+@app.get("/api/albums/{album_id}/notes")
+def get_album_notes_endpoint(album_id: int):
+    """List all saved notes for an album."""
+    from backend.db import get_album_notes
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        notes = get_album_notes(conn, album_id)
+    return {"album_id": album_id, "album_name": album["name"], "count": len(notes), "notes": notes}
+
+
+@app.post("/api/albums/{album_id}/notes")
+def create_album_note_endpoint(album_id: int, req: CreateNoteRequest):
+    """Create a new note for an album."""
+    from backend.db import create_album_note
+    if not req.title.strip() and not req.content.strip():
+        raise HTTPException(400, "Note title or content cannot be empty.")
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        note = create_album_note(
+            conn,
+            album_id=album_id,
+            day_date=req.day_date or "General",
+            title=req.title or "Album Note",
+            content=req.content,
+        )
+    return {"status": "ok", "note": note}
+
+
+@app.post("/api/albums/{album_id}/story/save-note")
+def save_story_as_note_endpoint(album_id: int, req: SaveStoryNoteRequest):
+    """Save or update a story day narrative as an editable album note."""
+    from backend.db import save_or_update_story_note
+    if not req.content.strip():
+        raise HTTPException(400, "Note content cannot be empty.")
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        note = save_or_update_story_note(
+            conn,
+            album_id=album_id,
+            day_date=req.day_date,
+            title=req.title,
+            content=req.content,
+        )
+    return {"status": "ok", "note": note}
+
+
+@app.get("/api/notes/search")
+def search_notes_endpoint(q: str = Query("", min_length=0), limit: int = Query(50, ge=1, le=100)):
+    """Search notes across all albums by title, content, date, or album name."""
+    from backend.db import search_all_notes
+    with get_conn() as conn:
+        notes = search_all_notes(conn, query=q, limit=limit)
+    return {"query": q, "count": len(notes), "notes": notes}
+
+
+@app.get("/api/notes/{note_id}")
+def get_single_note_endpoint(note_id: int):
+    """Get a single note by ID."""
+    from backend.db import get_note_by_id
+    with get_conn() as conn:
+        note = get_note_by_id(conn, note_id)
+    if not note:
+        raise HTTPException(404, f"Note {note_id} not found.")
+    return {"note": note}
+
+
+@app.put("/api/notes/{note_id}")
+def update_note_endpoint(note_id: int, req: UpdateNoteRequest):
+    """Update title, content, and date of an existing note."""
+    from backend.db import update_album_note
+    if not req.title.strip() and not req.content.strip():
+        raise HTTPException(400, "Note title or content cannot be empty.")
+    with get_conn() as conn:
+        note = update_album_note(
+            conn,
+            note_id=note_id,
+            title=req.title,
+            content=req.content,
+            day_date=req.day_date,
+        )
+    if not note:
+        raise HTTPException(404, f"Note {note_id} not found.")
+    return {"status": "ok", "note": note}
+
+
+@app.delete("/api/notes/{note_id}")
+def delete_note_endpoint(note_id: int):
+    """Delete a note."""
+    from backend.db import delete_album_note
+    with get_conn() as conn:
+        deleted = delete_album_note(conn, note_id)
+    if not deleted:
+        raise HTTPException(404, f"Note {note_id} not found.")
+    return {"status": "ok", "deleted": True}
+
 
 
 # ── Frontend ─────────────────────────────────────────────

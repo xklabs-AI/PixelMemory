@@ -2232,6 +2232,82 @@
     color: var(--accent);
     text-decoration: underline;
   }
+
+  /* ── Album Notes & Journals ── */
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 460px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+
+  .note-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .note-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .note-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .note-card-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .note-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
+  .note-card-content {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-main);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .note-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .notes-search-banner {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
 </style>
 </head>
 <body>
@@ -2282,6 +2358,10 @@
         <span class="rail-icon">🖼️</span>
         <span>Albums</span>
       </div>
+      <div class="rail-item" id="railNotes" title="Notes & Journals">
+        <span class="rail-icon">📝</span>
+        <span>Notes</span>
+      </div>
       <div class="rail-item" id="railImport" title="Import Folder">
         <span class="rail-icon">📥</span>
         <span>Import</span>
@@ -2310,6 +2390,11 @@
               <button type="button" class="tiny-edit-btn" id="sidebarQuickRescanBtn" title="Rescan folder for newly added photos" style="padding: 1px 5px; font-size: 0.68rem;">🔄 Rescan</button>
               <span class="nav-badge" id="navTotalCount">0</span>
             </div>
+          </div>
+          <div class="nav-item" id="navAllNotes" title="Album notes and story journals">
+            <span>📝</span>
+            <span>Notes & Stories</span>
+            <span class="nav-badge" id="navNotesCount" style="background: rgba(99, 102, 241, 0.15); color: #a78bfa; border-color: rgba(99, 102, 241, 0.3);">0</span>
           </div>
           <div class="nav-item" id="navDateUnknown" title="Photos without date metadata">
             <span>📅</span>
@@ -2914,6 +2999,60 @@
   </div>
 </div>
 
+<!-- Album Notes & Journals Modal -->
+<div class="modal-backdrop" id="notesModal">
+  <div class="modal-window" style="max-width: 680px;">
+    <div class="modal-top">
+      <div class="modal-title" id="notesModalTitle">📝 Album Notes & Journals</div>
+      <button class="modal-close-btn" id="notesModalClose">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <!-- Top controls: Search + New Note Button -->
+      <div style="display: flex; gap: 0.65rem; margin-bottom: 1rem; align-items: center;">
+        <div class="search-box" style="flex: 1; padding: 0.4rem 0.75rem;">
+          <span style="font-size: 0.85rem;">🔍</span>
+          <input type="text" id="notesSearchInput" class="search-input" placeholder="Search notes by keyword, title, date, or album..." style="font-size: 0.82rem;" />
+          <button class="search-clear" id="notesSearchClear" style="display: none;">&times;</button>
+        </div>
+        <button class="cta-btn" id="notesNewBtn" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap; display: flex; align-items: center; gap: 0.35rem;">
+          <span>➕</span> New Note
+        </button>
+      </div>
+
+      <!-- Inline Note Edit / Create Form (collapsible) -->
+      <div id="noteEditForm" style="display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(99,102,241,0.3); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; flex-direction: column; gap: 0.65rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span id="noteEditFormTitle" style="font-weight: 600; font-size: 0.88rem; color: #fff;">📝 Edit Note</span>
+          <span id="noteEditAlbumBadge" style="font-size: 0.72rem; color: var(--accent); background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 4px;">Album</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
+          <div>
+            <label style="font-size: 0.72rem; color: var(--text-dim);">Title</label>
+            <input type="text" id="noteFormTitle" class="setting-input" placeholder="Note Title (e.g. Day at Eleven Mile)" />
+          </div>
+          <div>
+            <label style="font-size: 0.72rem; color: var(--text-dim);">Day / Date</label>
+            <input type="text" id="noteFormDate" class="setting-input" placeholder="YYYY-MM-DD or General" />
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 0.72rem; color: var(--text-dim);">Note Content / Narrative</label>
+          <textarea id="noteFormContent" class="desc-edit-textarea" rows="5" placeholder="Write or edit your story/journal note..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem;">
+          <button type="button" class="tool-btn" id="noteCancelBtn">Cancel</button>
+          <button type="button" class="cta-btn" id="noteSaveBtn">💾 Save Note</button>
+        </div>
+      </div>
+
+      <!-- Notes List -->
+      <div id="notesContainer" class="notes-list">
+        <div style="text-align: center; color: var(--text-dim); padding: 1.5rem; font-size: 0.82rem;">Loading notes...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast" class="toast"></div>
 
@@ -3407,6 +3546,7 @@ function applyFiltersAndRender() {
         <div class="state-desc">${currentAlbumId ? 'This album has no photos matching the active date/location filters.' : 'No photos match the selected date or location criteria. Try broadening your filter range.'}</div>
       </div>
     `;
+    checkAndRenderNotesBanner(currentQuery);
     updateSelectionDock();
     return;
   }
@@ -3468,6 +3608,7 @@ function applyFiltersAndRender() {
     });
   }
 
+  checkAndRenderNotesBanner(currentQuery);
   updateSelectionDock();
 }
 
@@ -3670,6 +3811,7 @@ async function showAlbumPhotos(albumId, albumName) {
     $('#resultMeta').innerHTML = `
       Album: <span>"${escapeHtml(albumName)}"</span> (${allResults.length} photos)
       <button class="small-add-btn" style="margin-left: 0.6rem;" onclick="openRenameAlbumModal(${albumId}, '${escapeHtml(albumName)}')">✏️ Rename</button>
+      <button class="small-add-btn" style="margin-left: 0.4rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #c4b5fd;" onclick="openNotesModal(${albumId}, '${escapeHtml(albumName)}')">📝 Notes</button>
       <button class="small-add-btn" style="margin-left: 0.4rem; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); color: #a78bfa;" onclick="openStoryTimeline(${albumId}, '${escapeHtml(albumName)}')">📖 Story Timeline</button>
       <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
     `;
@@ -5080,6 +5222,7 @@ function openStoryTimeline(albumId, albumName) {
   $('#resultMeta').innerHTML = `
     📖 Story Timeline: <span>"${escapeHtml(albumName)}"</span>
     <button class="small-add-btn" style="margin-left: 0.75rem;" onclick="showAlbumPhotos(${albumId}, '${escapeHtml(albumName)}')">← Back to Photos</button>
+    <button class="small-add-btn" style="margin-left: 0.4rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #c4b5fd;" onclick="openNotesModal(${albumId}, '${escapeHtml(albumName)}')">📝 Album Notes</button>
     <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
   `;
   $('#statsSummary').textContent = 'Loading story...';
@@ -5320,7 +5463,10 @@ function renderStoryTimeline() {
         <div class="story-card-body">
           <div class="story-day-header">
             <div class="story-day-date">${dateLabel}</div>
-            <div class="story-day-badge">${day.photo_count} photo${day.photo_count > 1 ? 's' : ''}</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="story-day-badge">${day.photo_count} photo${day.photo_count > 1 ? 's' : ''}</div>
+              <button class="tool-btn" style="padding: 2px 8px; font-size: 0.72rem; border-color: rgba(99,102,241,0.35); color: #c4b5fd; background: rgba(99,102,241,0.1);" onclick="saveStoryDayAsNote(${idx})" title="Save narrative as editable album note">📝 Save as Note</button>
+            </div>
           </div>
           <div class="story-narrative">${escapeHtml(day.narrative)}</div>
           <div class="story-thumbstrip">
@@ -5339,6 +5485,30 @@ function renderStoryTimeline() {
   const regen = $('#storyRegenerateBtn');
   if (regen) regen.style.display = '';
   $('#statsSummary').textContent = `${storyDays.length} day${storyDays.length > 1 ? 's' : ''} in story`;
+}
+
+async function saveStoryDayAsNote(idx) {
+  const day = storyDays[idx];
+  if (!day || !storyAlbumId) return;
+  const title = `Story: ${formatStoryDate(day.day_date)}`;
+  try {
+    const res = await fetch(`${API}/api/albums/${storyAlbumId}/story/save-note`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        day_date: day.day_date || 'General',
+        title: title,
+        content: day.narrative || ''
+      })
+    });
+    if (!res.ok) throw new Error('Failed to save note');
+    const data = await res.json();
+    showToast('📝 Narrative saved as album note!');
+    updateNotesCountBadge();
+  } catch (e) {
+    console.error('Failed to save story note:', e);
+    showToast('Failed to save note: ' + e.message);
+  }
 }
 
 function formatStoryDate(dateStr) {
@@ -5476,10 +5646,355 @@ function updateStorySpeed() {
   }
 }
 
+// ── Album Notes & Journals Management ───────────────────
+let notesCurrentAlbumId = null;
+let notesCurrentAlbumName = '';
+let editingNoteId = null;
+let notesSearchTimeout = null;
+
+async function updateNotesCountBadge() {
+  try {
+    const res = await fetch(`${API}/api/notes/search?limit=1000`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = data.count || 0;
+    const badge = $('#navNotesCount');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch (e) {
+    console.error('Failed to update notes count:', e);
+  }
+}
+
+async function openNotesModal(albumId = null, albumName = '', initialQuery = '') {
+  notesCurrentAlbumId = albumId;
+  notesCurrentAlbumName = albumName;
+  hideNoteEditForm();
+
+  const titleEl = $('#notesModalTitle');
+  if (albumId && albumName) {
+    titleEl.innerHTML = `📝 Notes — <span>${escapeHtml(albumName)}</span>`;
+  } else {
+    titleEl.innerHTML = `📝 All Notes & Story Journals`;
+  }
+
+  const searchInput = $('#notesSearchInput');
+  const searchClear = $('#notesSearchClear');
+  if (searchInput) {
+    searchInput.value = initialQuery || '';
+    if (searchClear) searchClear.style.display = initialQuery ? 'block' : 'none';
+  }
+
+  $('#notesModal').classList.add('active');
+  await loadNotes(albumId, initialQuery);
+}
+
+function closeNotesModal() {
+  $('#notesModal').classList.remove('active');
+  hideNoteEditForm();
+}
+
+async function loadNotes(albumId = null, query = '') {
+  const container = $('#notesContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align: center; color: var(--text-dim); padding: 1.5rem; font-size: 0.82rem;">
+      <div class="live-dot" style="margin: 0 auto 0.5rem auto;"></div>
+      Loading notes...
+    </div>
+  `;
+
+  try {
+    let url;
+    if (query && query.trim()) {
+      url = `${API}/api/notes/search?q=${encodeURIComponent(query.trim())}`;
+    } else if (albumId) {
+      url = `${API}/api/albums/${albumId}/notes`;
+    } else {
+      url = `${API}/api/notes/search?limit=100`;
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to load notes');
+    const data = await res.json();
+    const notes = data.notes || [];
+
+    renderNotesList(notes);
+  } catch (e) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--danger); padding: 1.5rem; font-size: 0.82rem;">
+        ⚠️ Failed to load notes: ${escapeHtml(e.message)}
+      </div>
+    `;
+  }
+}
+
+function renderNotesList(notes) {
+  const container = $('#notesContainer');
+  if (!container) return;
+
+  if (notes.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-dim); padding: 2rem; font-size: 0.85rem; line-height: 1.5;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📝</div>
+        <div style="font-weight: 600; color: var(--text-main);">No notes found</div>
+        <div style="font-size: 0.76rem; margin-top: 0.35rem;">
+          Click <strong>"+ New Note"</strong> to write a journal entry, or generate a Story Timeline and click <strong>"Save as Note"</strong>.
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  notes.forEach(note => {
+    html += `
+      <div class="note-card" id="noteCard${note.id}">
+        <div class="note-card-header">
+          <div class="note-card-title">
+            <span>📝</span>
+            <span>${escapeHtml(note.title || 'Untitled Note')}</span>
+          </div>
+          <div class="note-card-meta">
+            ${note.album_name ? `<span style="background: rgba(99,102,241,0.15); color: #a78bfa; border: 1px solid rgba(99,102,241,0.25); padding: 1px 6px; border-radius: 4px; font-weight: 500;">🖼️ ${escapeHtml(note.album_name)}</span>` : ''}
+            <span style="background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">📅 ${escapeHtml(note.day_date || 'General')}</span>
+          </div>
+        </div>
+        <div class="note-card-content">${escapeHtml(note.content || '')}</div>
+        <div class="note-card-actions" style="margin-top: 0.35rem; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.5rem;">
+          ${note.album_id && (!notesCurrentAlbumId || notesCurrentAlbumId !== note.album_id) ? `
+            <button class="tool-btn" style="padding: 2px 7px; font-size: 0.72rem;" onclick="closeNotesModal(); showAlbumPhotos(${note.album_id}, '${escapeHtml(note.album_name)}')">🖼️ Open Album</button>
+          ` : ''}
+          <button class="tool-btn" style="padding: 2px 7px; font-size: 0.72rem;" onclick="startEditNote(${JSON.stringify(note).replace(/"/g, '&quot;')})">✏️ Edit</button>
+          <button class="tool-btn" style="padding: 2px 7px; font-size: 0.72rem; color: var(--danger);" onclick="deleteNote(${note.id})">🗑️ Delete</button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function startNewNote() {
+  editingNoteId = null;
+  const form = $('#noteEditForm');
+  const titleEl = $('#noteEditFormTitle');
+  const badgeEl = $('#noteEditAlbumBadge');
+
+  titleEl.textContent = '📝 New Album Note';
+  const albumName = notesCurrentAlbumName || (allAlbums[0] ? allAlbums[0].name : 'Default');
+  badgeEl.textContent = `Album: ${albumName}`;
+
+  $('#noteFormTitle').value = '';
+  $('#noteFormDate').value = new Date().toISOString().slice(0, 10);
+  $('#noteFormContent').value = '';
+
+  form.style.display = 'flex';
+  $('#noteFormTitle').focus();
+}
+
+function startEditNote(note) {
+  editingNoteId = note.id;
+  notesCurrentAlbumId = note.album_id;
+  notesCurrentAlbumName = note.album_name || notesCurrentAlbumName;
+
+  const form = $('#noteEditForm');
+  const titleEl = $('#noteEditFormTitle');
+  const badgeEl = $('#noteEditAlbumBadge');
+
+  titleEl.textContent = `📝 Edit Note #${note.id}`;
+  badgeEl.textContent = `Album: ${note.album_name || notesCurrentAlbumName || 'Album ' + note.album_id}`;
+
+  $('#noteFormTitle').value = note.title || '';
+  $('#noteFormDate').value = note.day_date || '';
+  $('#noteFormContent').value = note.content || '';
+
+  form.style.display = 'flex';
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('#noteFormTitle').focus();
+}
+
+function hideNoteEditForm() {
+  const form = $('#noteEditForm');
+  if (form) form.style.display = 'none';
+  editingNoteId = null;
+}
+
+async function saveNoteForm() {
+  const title = $('#noteFormTitle').value.trim();
+  const dayDate = $('#noteFormDate').value.trim() || 'General';
+  const content = $('#noteFormContent').value.trim();
+
+  if (!title && !content) {
+    showToast('Please enter a title or note content.');
+    return;
+  }
+
+  const targetAlbumId = notesCurrentAlbumId || currentAlbumId || (allAlbums[0] ? allAlbums[0].id : null);
+  if (!targetAlbumId) {
+    showToast('Please select or create an album first.');
+    return;
+  }
+
+  try {
+    if (editingNoteId) {
+      // Update existing note
+      const res = await fetch(`${API}/api/notes/${editingNoteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title || 'Album Note',
+          day_date: dayDate,
+          content: content
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update note');
+      showToast('Note updated successfully!');
+    } else {
+      // Create new note
+      const res = await fetch(`${API}/api/albums/${targetAlbumId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title || 'Album Note',
+          day_date: dayDate,
+          content: content
+        })
+      });
+      if (!res.ok) throw new Error('Failed to create note');
+      showToast('New note saved!');
+    }
+
+    hideNoteEditForm();
+    await loadNotes(notesCurrentAlbumId, $('#notesSearchInput')?.value || '');
+    updateNotesCountBadge();
+  } catch (e) {
+    console.error('Failed to save note:', e);
+    showToast('Error saving note: ' + e.message);
+  }
+}
+
+async function deleteNote(noteId) {
+  if (!confirm('Are you sure you want to delete this note?')) return;
+  try {
+    const res = await fetch(`${API}/api/notes/${noteId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete note');
+    showToast('Note deleted.');
+    await loadNotes(notesCurrentAlbumId, $('#notesSearchInput')?.value || '');
+    updateNotesCountBadge();
+  } catch (e) {
+    showToast('Delete error: ' + e.message);
+  }
+}
+
+async function openAndEditNote(noteId) {
+  try {
+    const res = await fetch(`${API}/api/notes/${noteId}`);
+    if (!res.ok) throw new Error('Note not found');
+    const data = await res.json();
+    const note = data.note;
+    openNotesModal(note.album_id, note.album_name);
+    startEditNote(note);
+  } catch (e) {
+    showToast('Failed to open note: ' + e.message);
+  }
+}
+
+async function checkAndRenderNotesBanner(query) {
+  const q = (query || '').trim();
+  const bannerId = 'notesSearchBanner';
+  const existing = document.getElementById(bannerId);
+
+  if (!q || q.length < 2) {
+    if (existing) existing.remove();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/notes/search?q=${encodeURIComponent(q)}&limit=4`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const notes = data.notes || [];
+
+    const curGrid = document.getElementById('grid');
+    if (!curGrid) return;
+    const oldBanner = document.getElementById(bannerId);
+
+    if (notes.length === 0) {
+      if (oldBanner) oldBanner.remove();
+      return;
+    }
+
+    const banner = oldBanner || document.createElement('div');
+    banner.id = bannerId;
+    banner.className = 'notes-search-banner';
+    banner.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="font-size: 0.82rem; font-weight: 600; color: #c4b5fd; display: flex; align-items: center; gap: 0.4rem;">
+          <span>📝</span> Matching Album Notes (${notes.length})
+        </div>
+        <button class="small-add-btn" style="font-size: 0.72rem; padding: 2px 8px; background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #e0e7ff;" onclick="openNotesModal(null, '', '${escapeHtml(q)}')">View All Matching Notes →</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.5rem; margin-top: 0.25rem;">
+        ${notes.map(n => `
+          <div style="background: rgba(255,255,255,0.035); border: 1px solid rgba(99,102,241,0.25); border-radius: 6px; padding: 0.55rem 0.75rem; cursor: pointer; transition: all 0.2s ease;" 
+               onmouseover="this.style.background='rgba(99,102,241,0.12)'; this.style.borderColor='rgba(99,102,241,0.5)';" 
+               onmouseout="this.style.background='rgba(255,255,255,0.035)'; this.style.borderColor='rgba(99,102,241,0.25)';"
+               onclick="openAndEditNote(${n.id})">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(n.title || 'Untitled Note')}</span>
+              <span style="font-size: 0.68rem; color: var(--accent); background: rgba(99,102,241,0.15); padding: 1px 5px; border-radius: 3px; white-space: nowrap; margin-left: 0.35rem;">${escapeHtml(n.album_name || 'Album')}</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.25rem;">📅 ${escapeHtml(n.day_date || 'General')}</div>
+            <div style="font-size: 0.75rem; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${escapeHtml(n.content || '')}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    if (!oldBanner) {
+      if (curGrid.firstChild) {
+        curGrid.insertBefore(banner, curGrid.firstChild);
+      } else {
+        curGrid.appendChild(banner);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to search notes banner:', e);
+  }
+}
+
+// ── Notes Event Listeners ───────────────────────────────
+$('#railNotes')?.addEventListener('click', () => openNotesModal());
+$('#navAllNotes')?.addEventListener('click', () => openNotesModal());
+$('#notesModalClose')?.addEventListener('click', closeNotesModal);
+$('#notesNewBtn')?.addEventListener('click', startNewNote);
+$('#noteCancelBtn')?.addEventListener('click', hideNoteEditForm);
+$('#noteSaveBtn')?.addEventListener('click', saveNoteForm);
+
+$('#notesSearchInput')?.addEventListener('input', (e) => {
+  const val = e.target.value;
+  $('#notesSearchClear').style.display = val ? 'block' : 'none';
+  if (notesSearchTimeout) clearTimeout(notesSearchTimeout);
+  notesSearchTimeout = setTimeout(() => {
+    loadNotes(notesCurrentAlbumId, val);
+  }, 250);
+});
+
+$('#notesSearchClear')?.addEventListener('click', () => {
+  $('#notesSearchInput').value = '';
+  $('#notesSearchClear').style.display = 'none';
+  loadNotes(notesCurrentAlbumId, '');
+});
+
 // ── Startup ─────────────────────────────────────────────
 (async () => {
   await loadPlatformStats();
   await loadAlbums();
+  await updateNotesCountBadge();
   doSearch('');
 })();
 </script>

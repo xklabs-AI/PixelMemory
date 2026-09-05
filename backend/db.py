@@ -77,6 +77,20 @@ CREATE TABLE IF NOT EXISTS story_cache (
 );
 
 CREATE INDEX IF NOT EXISTS idx_story_cache_album ON story_cache(album_id);
+
+-- Album Notes (Editable Journal Entries & Saved Story Narratives)
+CREATE TABLE IF NOT EXISTS album_notes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    album_id    INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+    day_date    TEXT    NOT NULL,           -- e.g. '2026-04-25' or 'General'
+    title       TEXT    NOT NULL,           -- e.g. 'Day 1: Hike at Eleven Mile State Park'
+    content     TEXT    NOT NULL,           -- note text / narrative
+    created_at  TEXT    DEFAULT (datetime('now')),
+    updated_at  TEXT    DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_album_notes_album ON album_notes(album_id);
+CREATE INDEX IF NOT EXISTS idx_album_notes_date ON album_notes(day_date);
 """
 
 
@@ -419,4 +433,163 @@ def get_album_story(conn: sqlite3.Connection, album_id: int) -> list[dict]:
         (album_id,),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ── Album Notes Operations ───────────────────────────
+
+def create_album_note(
+    conn: sqlite3.Connection,
+    album_id: int,
+    day_date: str,
+    title: str,
+    content: str,
+) -> dict:
+    """Create a new note for an album."""
+    cur = conn.execute(
+        """INSERT INTO album_notes (album_id, day_date, title, content, created_at, updated_at)
+           VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))""",
+        (album_id, day_date.strip(), title.strip(), content.strip()),
+    )
+    note_id = cur.lastrowid
+    row = conn.execute(
+        """SELECT n.*, a.name AS album_name 
+           FROM album_notes n 
+           JOIN albums a ON n.album_id = a.id 
+           WHERE n.id = ?""",
+        (note_id,),
+    ).fetchone()
+    return dict(row) if row else {}
+
+
+def save_or_update_story_note(
+    conn: sqlite3.Connection,
+    album_id: int,
+    day_date: str,
+    title: str,
+    content: str,
+) -> dict:
+    """
+    Save a story day narrative as a note.
+    If a note for this album + day already exists, updates it; otherwise creates a new note.
+    """
+    existing = conn.execute(
+        "SELECT id FROM album_notes WHERE album_id = ? AND day_date = ?",
+        (album_id, day_date),
+    ).fetchone()
+
+    if existing:
+        conn.execute(
+            """UPDATE album_notes 
+               SET title = ?, content = ?, updated_at = datetime('now')
+               WHERE id = ?""",
+            (title.strip(), content.strip(), existing["id"]),
+        )
+        note_id = existing["id"]
+    else:
+        cur = conn.execute(
+            """INSERT INTO album_notes (album_id, day_date, title, content, created_at, updated_at)
+               VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))""",
+            (album_id, day_date.strip(), title.strip(), content.strip()),
+        )
+        note_id = cur.lastrowid
+
+    row = conn.execute(
+        """SELECT n.*, a.name AS album_name 
+           FROM album_notes n 
+           JOIN albums a ON n.album_id = a.id 
+           WHERE n.id = ?""",
+        (note_id,),
+    ).fetchone()
+    return dict(row) if row else {}
+
+
+def get_album_notes(conn: sqlite3.Connection, album_id: int) -> list[dict]:
+    """Retrieve all notes for a specific album, ordered chronologically."""
+    rows = conn.execute(
+        """SELECT n.*, a.name AS album_name 
+           FROM album_notes n 
+           JOIN albums a ON n.album_id = a.id 
+           WHERE n.album_id = ? 
+           ORDER BY n.day_date ASC, n.created_at ASC""",
+        (album_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_note_by_id(conn: sqlite3.Connection, note_id: int) -> dict | None:
+    """Fetch a single note by ID with album metadata."""
+    row = conn.execute(
+        """SELECT n.*, a.name AS album_name 
+           FROM album_notes n 
+           JOIN albums a ON n.album_id = a.id 
+           WHERE n.id = ?""",
+        (note_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def update_album_note(
+    conn: sqlite3.Connection,
+    note_id: int,
+    title: str,
+    content: str,
+    day_date: str | None = None,
+) -> dict | None:
+    """Update title, content, and optional date of an existing note."""
+    if day_date:
+        conn.execute(
+            """UPDATE album_notes 
+               SET title = ?, content = ?, day_date = ?, updated_at = datetime('now')
+               WHERE id = ?""",
+            (title.strip(), content.strip(), day_date.strip(), note_id),
+        )
+    else:
+        conn.execute(
+            """UPDATE album_notes 
+               SET title = ?, content = ?, updated_at = datetime('now')
+               WHERE id = ?""",
+            (title.strip(), content.strip(), note_id),
+        )
+    return get_note_by_id(conn, note_id)
+
+
+def delete_album_note(conn: sqlite3.Connection, note_id: int) -> bool:
+    """Delete a note by ID."""
+    cur = conn.execute("DELETE FROM album_notes WHERE id = ?", (note_id,))
+    return cur.rowcount > 0
+
+
+def search_all_notes(conn: sqlite3.Connection, query: str, limit: int = 50) -> list[dict]:
+    """
+    Search notes across all albums by matching title, content, date, or album name.
+    """
+    q = (query or "").strip().lower()
+    if not q:
+        rows = conn.execute(
+            """SELECT n.*, a.name AS album_name 
+               FROM album_notes n 
+               JOIN albums a ON n.album_id = a.id 
+               ORDER BY n.updated_at DESC 
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    like_pat = f"%{q}%"
+    rows = conn.execute(
+        """SELECT n.*, a.name AS album_name 
+           FROM album_notes n 
+           JOIN albums a ON n.album_id = a.id 
+           WHERE LOWER(n.title) LIKE ? 
+              OR LOWER(n.content) LIKE ? 
+              OR LOWER(n.day_date) LIKE ? 
+              OR LOWER(a.name) LIKE ? 
+           ORDER BY 
+              CASE WHEN LOWER(n.title) LIKE ? THEN 0 ELSE 1 END,
+              n.updated_at DESC 
+           LIMIT ?""",
+        (like_pat, like_pat, like_pat, like_pat, like_pat, limit),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
 
