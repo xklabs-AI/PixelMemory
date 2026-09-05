@@ -62,6 +62,21 @@ SEARCH_TOP_K = 40
 
 # ── Story Timeline ──────────────────────────────────
 STORY_LLM_MODEL = "gemma4:e4b"
+
+AVAILABLE_STORY_MODELS = [
+    {
+        "id": "gemma4:e4b",
+        "name": "Gemma 4 (E4B)",
+        "tag": "🧠 Rich Prose · ~4B",
+        "description": "Higher quality narratives, more vivid storytelling.",
+    },
+    {
+        "id": "gemma4:e2b",
+        "name": "Gemma 4 (E2B)",
+        "tag": "⚡ Fast · ~2B",
+        "description": "Faster generation, great for quick story previews.",
+    },
+]
 STORY_PROMPT_TEMPLATE = (
     "You are a warm, personal travel journal writer. Based on these photo descriptions "
     "from {date}, write a short first-person narrative paragraph (3-5 sentences) "

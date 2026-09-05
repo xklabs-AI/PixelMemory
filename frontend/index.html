@@ -1719,6 +1719,44 @@
     border-color: var(--border-highlight);
   }
 
+  .story-model-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .story-model-pill {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .story-model-pill:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .story-model-pill.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .story-model-pill:not(.active):hover {
+    background: var(--bg-surface-hover);
+    color: var(--text);
+  }
+
   .story-autoplay-controls {
     display: flex;
     align-items: center;
@@ -5201,9 +5239,17 @@ let storyCurrentDayIndex = 0;
 let storyDays = [];
 let storyAlbumId = null;
 let storyAlbumName = '';
+let storyLlmModel = 'gemma4:e4b';
 let storyPollTimer = null;
 let storyCountdownTimer = null;
 let storyCountdownRemaining = 0;
+
+function setStoryModel(modelId) {
+  storyLlmModel = modelId;
+  // Update pill active states
+  $('#storyModelE4B')?.classList.toggle('active', modelId === 'gemma4:e4b');
+  $('#storyModelE2B')?.classList.toggle('active', modelId === 'gemma4:e2b');
+}
 
 function openStoryTimeline(albumId, albumName) {
   storyAlbumId = albumId;
@@ -5230,6 +5276,16 @@ function openStoryTimeline(albumId, albumName) {
         <input type="date" id="storyStartDate" />
         <label>To</label>
         <input type="date" id="storyEndDate" />
+
+        <div class="story-model-toggle" title="LLM model used for narration">
+          <button class="story-model-pill active" id="storyModelE4B" onclick="setStoryModel('gemma4:e4b')">
+            🧠 E4B
+          </button>
+          <button class="story-model-pill" id="storyModelE2B" onclick="setStoryModel('gemma4:e2b')">
+            ⚡ E2B
+          </button>
+        </div>
+
         <button class="story-btn" id="storyGenerateBtn" onclick="generateStory()">
           <span>✨</span> Generate Story
         </button>
@@ -5361,7 +5417,7 @@ async function generateStory() {
   }
 
   try {
-    const body = { start_date: startDate, end_date: endDate };
+    const body = { start_date: startDate, end_date: endDate, model: storyLlmModel };
     const res = await fetch(`${API}/api/albums/${storyAlbumId}/story/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5378,7 +5434,7 @@ async function generateStory() {
         <div class="story-empty">
           <div class="empty-icon">⚠️</div>
           <div class="empty-title">Generation Failed</div>
-          <div class="empty-desc">${err.message}. Make sure Ollama is running with gemma4:e4b.</div>
+          <div class="empty-desc">${err.message}. Make sure Ollama is running with <code>${storyLlmModel}</code>.</div>
         </div>
       `;
     }
