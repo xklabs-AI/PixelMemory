@@ -326,7 +326,7 @@ def _generate_artistic_fixture(filepath: Path, item: dict, size: tuple[int, int]
 
 
 def seed_demo_archive(clear_existing: bool = False) -> dict:
-    """Generates sample photos, populates SQLite, and embeds in ChromaDB."""
+    """Generates sample photos, populates SQLite, and embeds in Zvec."""
     init_db()
     DEMO_DIR.mkdir(parents=True, exist_ok=True)
     THUMB_DIR.mkdir(parents=True, exist_ok=True)
@@ -386,7 +386,7 @@ def seed_demo_archive(clear_existing: bool = False) -> dict:
             batch_embed_items.append((image_id, enriched))
             seeded += 1
 
-    # 6. Batch embed all enriched descriptions into ChromaDB
+    # 6. Batch embed all enriched descriptions into Zvec
     if batch_embed_items:
         search.add_batch(batch_embed_items)
         with get_conn() as conn:

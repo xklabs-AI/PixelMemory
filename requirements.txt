@@ -13,7 +13,7 @@ reverse_geocoder>=1.5.1
 
 # Embeddings and vector search
 sentence-transformers>=2.7.0
-chromadb>=0.5.0
+zvec>=0.7.0
 
 # Database
 # (sqlite3 is stdlib)

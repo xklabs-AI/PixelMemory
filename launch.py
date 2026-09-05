@@ -29,7 +29,7 @@ if VENV_PYTHON.exists() and Path(sys.executable).resolve() != VENV_PYTHON.resolv
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-from backend.config import DATA_DIR, DB_PATH, THUMB_DIR, CHROMA_DIR, PORT, HOST
+from backend.config import DATA_DIR, DB_PATH, THUMB_DIR, ZVEC_DIR, PORT, HOST
 from backend.db import init_db, get_conn, get_stats
 
 
@@ -128,10 +128,13 @@ def print_system_status():
     else:
         print(f"  GPU Compute:  {C_YELLOW}⚠ Disabled{C_RESET} (Running in CPU mode)")
 
-    from backend.describer import is_ollama_ready
-    from backend.config import OLLAMA_HOST, OLLAMA_MODEL
+    from backend.describer import is_ollama_ready, get_active_vlm_model, get_available_vlm_models
+    from backend.config import OLLAMA_HOST
     if is_ollama_ready():
-        print(f"  Ollama VLM:   {C_GREEN}✔ Connected{C_RESET} ({OLLAMA_HOST} · {OLLAMA_MODEL})")
+        active_vlm = get_active_vlm_model()
+        available = [m["id"] for m in get_available_vlm_models() if m.get("installed")]
+        models_str = ", ".join(available) if available else active_vlm
+        print(f"  Ollama VLM:   {C_GREEN}✔ Connected{C_RESET} ({OLLAMA_HOST} · Active: {C_BOLD}{active_vlm}{C_RESET} | Models: {models_str})")
     else:
         print(f"  Ollama VLM:   {C_YELLOW}⚠ Offline{C_RESET} (Fallback: local HuggingFace PyTorch)")
 
@@ -139,7 +142,7 @@ def print_system_status():
     print(f"  Data Root:    {DATA_DIR}")
     print(f"  Database:     {stats.get('total', 0)} total images (DB: {db_size_mb} MB)")
     print(f"  Processed:    {stats.get('metadata_done', 0)} with metadata | {stats.get('described', 0)} described by VLM")
-    print(f"  Searchable:   {C_GREEN}{vector_count}{C_RESET} vectors in ChromaDB")
+    print(f"  Searchable:   {C_GREEN}{vector_count}{C_RESET} vectors in Zvec")
     print(f"  Thumbnails:   {thumb_count} cached images ({thumb_size_mb} MB)")
     print(f"{C_BOLD}────────────────────────────────────────────────────────────────────{C_RESET}\n")
 

@@ -124,7 +124,8 @@ class ImportProgressTracker:
                 remaining_imgs = max(0, total - current)
                 self.eta_seconds = remaining_imgs * sec_per_img
                 self.speed_label = f"{sec_per_img:.1f}s / photo"
-            self.phase_label = f"AI Vision captioning with Moondream2 ({current}/{total})"
+            model_tag = "LLaVA:7b" if "llava" in str(getattr(self, "vlm_model", "")).lower() else "Moondream2"
+            self.phase_label = f"AI Vision captioning with {model_tag} ({current}/{total})"
 
     def update_embedding(self, current: int, total: int, filename: str):
         with self._lock:
@@ -136,7 +137,7 @@ class ImportProgressTracker:
             # Embedding is 90% - 100%
             pct = 90.0 + (current / max(1, total)) * 10.0
             self.percent = min(99.0, pct)
-            self.phase_label = f"Embedding semantic vectors into ChromaDB ({current}/{total})"
+            self.phase_label = f"Embedding semantic vectors into Zvec ({current}/{total})"
             self.eta_seconds = 1.0
 
     def complete(self, stats: dict):
@@ -232,7 +233,7 @@ def run_metadata_extraction(callback: Optional[Callable] = None) -> int:
     return processed
 
 
-def run_description_generation(callback: Optional[Callable] = None) -> int:
+def run_description_generation(vlm_model: Optional[str] = None, callback: Optional[Callable] = None) -> int:
     """Generate VLM descriptions for all pending images. GPU-bound."""
     with get_conn() as conn:
         pending = get_pending_descriptions(conn, limit=10_000)
@@ -240,7 +241,7 @@ def run_description_generation(callback: Optional[Callable] = None) -> int:
     if not pending:
         return 0
 
-    describer = ImageDescriber()
+    describer = ImageDescriber(model_name=vlm_model)
     describer.load()
 
     items = [(row["id"], row["file_path"]) for row in pending]
@@ -269,7 +270,7 @@ def run_description_generation(callback: Optional[Callable] = None) -> int:
 
 
 def run_embedding(callback: Optional[Callable] = None) -> int:
-    """Embed all described-but-not-yet-embedded images into ChromaDB."""
+    """Embed all described-but-not-yet-embedded images into Zvec."""
     with get_conn() as conn:
         pending = get_pending_embeds(conn, limit=10_000)
 
@@ -295,10 +296,11 @@ def run_embedding(callback: Optional[Callable] = None) -> int:
     return len(items)
 
 
-def execute_import(directory: str, skip_describe: bool = False):
+def execute_import(directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None):
     """Executes the full import pipeline in sequence, updating tracker."""
     try:
         tracker.start(directory)
+        tracker.vlm_model = vlm_model or "moondream:1.8b"
 
         # 1. Scan directory
         scan_stats = scan_directory(directory, callback=tracker.update_scan)
@@ -310,11 +312,11 @@ def execute_import(directory: str, skip_describe: bool = False):
         meta_count = run_metadata_extraction(callback=tracker.update_metadata)
         tracker.stats["metadata_done"] = meta_count
 
-        # 3. AI Vision Descriptions (Moondream2)
+        # 3. AI Vision Descriptions
         if not skip_describe:
             tracker.phase_started_at = time.time()
             tracker.phase = "describing"
-            desc_count = run_description_generation(callback=lambda c, t, f: tracker.update_describing(c, t, f, skip_describe))
+            desc_count = run_description_generation(vlm_model=vlm_model, callback=tracker.update_describing)
             tracker.stats["described"] = desc_count
 
             # 4. Vector Embedding
@@ -343,10 +345,10 @@ class ImportQueueManager:
         self.worker_thread = None
         self.is_running = False
 
-    def enqueue(self, directory: str, skip_describe: bool = False) -> dict:
+    def enqueue(self, directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None) -> dict:
         with self.lock:
             # Avoid duplicate queuing of exact same folder
-            for d, _ in self.queue:
+            for d, _, _ in self.queue:
                 if Path(d).resolve() == Path(directory).resolve():
                     pos = [x[0] for x in self.queue].index(d) + 1
                     return {
@@ -355,7 +357,7 @@ class ImportQueueManager:
                         "queue_length": len(self.queue),
                     }
 
-            self.queue.append((directory, skip_describe))
+            self.queue.append((directory, skip_describe, vlm_model))
             queue_len = len(self.queue)
 
             if not self.is_running:
@@ -381,11 +383,11 @@ class ImportQueueManager:
                 if not self.queue:
                     self.is_running = False
                     return
-                directory, skip_describe = self.queue.popleft()
+                directory, skip_describe, vlm_model = self.queue.popleft()
                 remaining = len(self.queue)
 
             self.tracker.set_queue_info(remaining, Path(directory).name)
-            execute_import(directory, skip_describe)
+            execute_import(directory, skip_describe, vlm_model=vlm_model)
 
             if self.tracker.cancel_requested:
                 with self.lock:
@@ -398,7 +400,7 @@ class ImportQueueManager:
             return {
                 "is_running": self.is_running,
                 "queue_length": len(self.queue),
-                "queued_folders": [Path(d).name for d, _ in self.queue]
+                "queued_folders": [Path(d).name for d, _, _ in self.queue]
             }
 
     def cancel(self):
@@ -411,9 +413,9 @@ class ImportQueueManager:
 queue_manager = ImportQueueManager(tracker)
 
 
-def start_background_import(directory: str, skip_describe: bool = False) -> dict:
+def start_background_import(directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None) -> dict:
     """Enqueue directory to import pipeline."""
-    return queue_manager.enqueue(directory, skip_describe)
+    return queue_manager.enqueue(directory, skip_describe, vlm_model=vlm_model)
 
 
 def main():

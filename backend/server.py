@@ -22,7 +22,8 @@ from backend.db import (
     create_album, get_all_albums, get_album_by_id,
     add_photo_to_album, remove_photo_from_album,
     get_album_image_ids, get_photo_albums, delete_album,
-    bulk_add_photos_to_album, delete_images, bulk_update_location,
+    bulk_add_photos_to_album, bulk_remove_photos_from_album, bulk_move_photos_to_album,
+    delete_images, bulk_update_location,
     get_all_image_paths, update_description, mark_embedded,
 )
 from backend.search import SemanticSearch
@@ -34,6 +35,11 @@ from backend.describer import enrich_description
 class ImportRequest(BaseModel):
     folder_path: str
     skip_describe: bool = False
+    vlm_model: Optional[str] = None
+
+
+class SetModelRequest(BaseModel):
+    model: str
 
 
 class CreateAlbumRequest(BaseModel):
@@ -47,6 +53,17 @@ class AddPhotoRequest(BaseModel):
 
 class BulkAlbumRequest(BaseModel):
     album_id: int
+    image_ids: list[int]
+
+
+class BulkRemoveAlbumRequest(BaseModel):
+    album_id: int
+    image_ids: list[int]
+
+
+class BulkMoveAlbumRequest(BaseModel):
+    source_album_id: int
+    target_album_id: int
     image_ids: list[int]
 
 
@@ -66,6 +83,7 @@ class BulkLocationRequest(BaseModel):
 
 class BulkReprocessRequest(BaseModel):
     image_ids: list[int]
+    vlm_model: Optional[str] = None
 
 
 app = FastAPI(title="PixelMemory", version="1.0.0")
@@ -291,11 +309,12 @@ def get_system_status():
     except Exception:
         pass
 
-    from backend.describer import is_ollama_ready
-    from backend.config import OLLAMA_HOST, OLLAMA_MODEL
+    from backend.describer import is_ollama_ready, get_active_vlm_model, get_available_vlm_models
+    from backend.config import OLLAMA_HOST
 
-    ollama_ok = is_ollama_ready()
-    vlm_label = f"Ollama · {OLLAMA_MODEL}" if ollama_ok else "Moondream2 (PyTorch)"
+    active_model = get_active_vlm_model()
+    ollama_ok = is_ollama_ready(OLLAMA_HOST, active_model)
+    vlm_label = f"Ollama · {active_model}" if ollama_ok else "Moondream2 (PyTorch)"
 
     with get_conn() as conn:
         stats = get_stats(conn)
@@ -307,11 +326,35 @@ def get_system_status():
         "vram_gb": vram,
         "vlm_provider": "Ollama" if ollama_ok else "PyTorch",
         "vlm_model": vlm_label,
+        "active_vlm_model": active_model,
+        "available_vlm_models": get_available_vlm_models(),
         "ollama_ready": ollama_ok,
         "ollama_host": OLLAMA_HOST,
         "embedding_model": "all-MiniLM-L6-v2",
         "total_images": stats.get("total", 0),
         "total_vectors": search.count,
+    }
+
+
+@app.get("/api/models/vlm")
+def get_vlm_models_endpoint():
+    """Return available VLM models and current active selection."""
+    from backend.describer import get_available_vlm_models, get_active_vlm_model
+    return {
+        "active_model": get_active_vlm_model(),
+        "models": get_available_vlm_models(),
+    }
+
+
+@app.post("/api/models/vlm")
+def set_vlm_model_endpoint(req: SetModelRequest):
+    """Set global active VLM model."""
+    from backend.describer import set_active_vlm_model, get_available_vlm_models
+    active = set_active_vlm_model(req.model)
+    return {
+        "status": "ok",
+        "active_model": active,
+        "models": get_available_vlm_models(),
     }
 
 
@@ -355,14 +398,7 @@ def reset_database_endpoint():
         conn.execute("DELETE FROM albums")
         conn.execute("DELETE FROM album_images")
     search = get_search()
-    try:
-        search._client.delete_collection("image_descriptions")
-        search._collection = search._client.get_or_create_collection(
-            name="image_descriptions",
-            metadata={"hnsw:space": "cosine"},
-        )
-    except Exception:
-        pass
+    search.reset()
     return {"status": "ok", "message": "Database and vector index cleared"}
 
 
@@ -375,7 +411,7 @@ def start_import_endpoint(req: ImportRequest):
     if not fpath.exists() or not fpath.is_dir():
         raise HTTPException(400, f"Invalid folder directory: '{req.folder_path}' does not exist on disk.")
 
-    res = queue_manager.enqueue(str(fpath), skip_describe=req.skip_describe)
+    res = queue_manager.enqueue(str(fpath), skip_describe=req.skip_describe, vlm_model=req.vlm_model)
     if res["status"] == "started":
         return {
             "status": "started",
@@ -616,6 +652,49 @@ def bulk_album_endpoint(req: BulkAlbumRequest):
     }
 
 
+@app.post("/api/photos/bulk-remove-from-album")
+def bulk_remove_from_album_endpoint(req: BulkRemoveAlbumRequest):
+    """Remove multiple photos from a specific album."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+    with get_conn() as conn:
+        album = get_album_by_id(conn, req.album_id)
+        if not album:
+            raise HTTPException(404, f"Album {req.album_id} not found.")
+        removed_count = bulk_remove_photos_from_album(conn, req.album_id, req.image_ids)
+    return {
+        "status": "ok",
+        "album_id": req.album_id,
+        "album_name": album["name"],
+        "removed_count": removed_count,
+    }
+
+
+@app.post("/api/photos/bulk-move-album")
+def bulk_move_album_endpoint(req: BulkMoveAlbumRequest):
+    """Move multiple photos from source album to target album."""
+    if not req.image_ids:
+        raise HTTPException(400, "No photos selected.")
+    with get_conn() as conn:
+        source = get_album_by_id(conn, req.source_album_id)
+        target = get_album_by_id(conn, req.target_album_id)
+        if not source:
+            raise HTTPException(404, f"Source album {req.source_album_id} not found.")
+        if not target:
+            raise HTTPException(404, f"Target album {req.target_album_id} not found.")
+        moved_count = bulk_move_photos_to_album(
+            conn, req.source_album_id, req.target_album_id, req.image_ids
+        )
+    return {
+        "status": "ok",
+        "source_album_id": req.source_album_id,
+        "target_album_id": req.target_album_id,
+        "source_name": source["name"],
+        "target_name": target["name"],
+        "moved_count": moved_count,
+    }
+
+
 @app.post("/api/photos/bulk-delete")
 def bulk_delete_endpoint(req: BulkDeleteRequest):
     """Remove selected photos from library database, thumbnails, and vector index (original files preserved)."""
@@ -634,11 +713,8 @@ def bulk_delete_endpoint(req: BulkDeleteRequest):
             except Exception:
                 pass
 
-    # Delete from ChromaDB
-    try:
-        get_search()._collection.delete(ids=[str(i) for i in req.image_ids])
-    except Exception as e:
-        print(f"Chroma delete error: {e}")
+    # Delete from vector index
+    get_search().delete(req.image_ids)
 
     return {"status": "ok", "deleted_count": len(req.image_ids)}
 
@@ -651,9 +727,10 @@ def bulk_reprocess_endpoint(req: BulkReprocessRequest):
 
     target_ids = list(req.image_ids)
 
+    chosen_model = req.vlm_model
     def reprocess_worker():
         from backend.describer import ImageDescriber
-        describer = ImageDescriber()
+        describer = ImageDescriber(model_name=chosen_model)
         describer.load()
         search = get_search()
 

@@ -273,6 +273,40 @@ def bulk_add_photos_to_album(conn: sqlite3.Connection, album_id: int, image_ids:
     return count
 
 
+def bulk_remove_photos_from_album(conn: sqlite3.Connection, album_id: int, image_ids: list[int]) -> int:
+    """Batch remove multiple images from a specific album (images remain in other albums and library)."""
+    if not image_ids:
+        return 0
+    placeholders = ",".join("?" for _ in image_ids)
+    cur = conn.execute(
+        f"DELETE FROM album_images WHERE album_id = ? AND image_id IN ({placeholders})",
+        [album_id] + image_ids,
+    )
+    conn.execute("UPDATE albums SET updated_at = datetime('now') WHERE id = ?", (album_id,))
+    return cur.rowcount
+
+
+def bulk_move_photos_to_album(conn: sqlite3.Connection, source_album_id: int, target_album_id: int, image_ids: list[int]) -> int:
+    """Move multiple images from a source album to a target album."""
+    if not image_ids:
+        return 0
+    # Add to target album
+    for iid in image_ids:
+        conn.execute(
+            "INSERT OR IGNORE INTO album_images (album_id, image_id) VALUES (?, ?)",
+            (target_album_id, iid),
+        )
+    # Remove from source album
+    placeholders = ",".join("?" for _ in image_ids)
+    conn.execute(
+        f"DELETE FROM album_images WHERE album_id = ? AND image_id IN ({placeholders})",
+        [source_album_id] + image_ids,
+    )
+    conn.execute("UPDATE albums SET updated_at = datetime('now') WHERE id = ?", (source_album_id,))
+    conn.execute("UPDATE albums SET updated_at = datetime('now') WHERE id = ?", (target_album_id,))
+    return len(image_ids)
+
+
 def delete_images(conn: sqlite3.Connection, image_ids: list[int]) -> list[str]:
     """Delete multiple images from database and return their file paths for disk cleanup."""
     if not image_ids:

@@ -3,7 +3,7 @@
 > **Find any photo using natural language.** Fully offline and privacy-first — powered by local Vision AI, offline reverse geocoding, and vector search. No photos or metadata ever leave your machine.
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![Ollama Moondream](https://img.shields.io/badge/VLM-Moondream2%20(Ollama)-purple.svg)](https://ollama.com/)
 
@@ -35,13 +35,13 @@
 │  Directory Scanner ──► Moondream2 Vision VLM (Local GPU) ───┘          │
 │                        (detailed visual captioning)                    │
 │                                                                        │
-│  Metadata Enrichment ──► sentence-transformers ──► ChromaDB Vector DB │
+│  Metadata Enrichment ──► sentence-transformers ──► Zvec Vector DB     │
 └────────────────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          SEARCH & DISCOVERY                            │
 │                                                                        │
-│  Natural Language Query ──► Neural Conjunction Filter ──► ChromaDB     │
+│  Natural Language Query ──► Neural Conjunction Filter ──► Zvec         │
 │                                      │                                 │
 │                               Ranked Results                           │
 │                                      │                                 │
@@ -107,7 +107,7 @@ Open your browser at:
 
 You can import photos directly from the **Web Interface**:
 1. Click **Import Photos** in the sidebar.
-2. Enter the path to any local directory of photos (e.g. `C:\Users\Username\Pictures` or `/home/user/Photos`).
+2. Enter the path to any local directory of photos (e.g. `./photos` or `/path/to/photos`).
 3. Click **Start Import**.
 4. The **Floating Progress Dock** will track progress in the background while you continue searching and browsing. Additional folder imports will be automatically queued sequentially!
 
@@ -124,9 +124,9 @@ Key settings can be modified in [`backend/config.py`](backend/config.py):
 
 | Setting | Default | Description |
 |---|---|---|
-| `DATA_DIR` | `~/.pixelmemory` | Root data directory for SQLite DB, ChromaDB, and thumbnails |
+| `DATA_DIR` | `~/.pixelmemory` | Root data directory for SQLite DB, Zvec, and thumbnails |
 | `DB_PATH` | `~/.pixelmemory/pixelmemory.db` | SQLite library database path |
-| `CHROMA_DIR` | `~/.pixelmemory/chroma` | ChromaDB vector persistence directory |
+| `ZVEC_DIR` | `~/.pixelmemory/zvec` | Zvec vector persistence directory |
 | `USE_OLLAMA` | `True` | Whether to use Ollama for Moondream2 inference |
 | `OLLAMA_MODEL` | `moondream:1.8b` | Ollama model tag |
 | `EMBEDDING_MODEL`| `all-MiniLM-L6-v2` | Sentence transformer model for embeddings |
@@ -144,4 +144,4 @@ Key settings can be modified in [`backend/config.py`](backend/config.py):
 
 ## 📄 License
 
-This project is open-source software licensed under the [MIT License](LICENSE).
+This project is open-source software licensed under the [Apache 2.0 License](LICENSE).

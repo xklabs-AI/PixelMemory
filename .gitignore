@@ -33,6 +33,7 @@ uploads/
 *.sqlite3
 .pixelmemory/
 chroma/
+zvec/
 thumbnails/
 
 # ── Secrets, Credentials & Local Configs ─────────────────────────────────────

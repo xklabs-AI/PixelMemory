@@ -1,48 +1,50 @@
-"""Pure semantic search over image descriptions using ChromaDB and SentenceTransformers."""
+"""Pure semantic search over image descriptions using Zvec and SentenceTransformers."""
 
-import chromadb
-from chromadb.config import Settings
+import zvec
 from sentence_transformers import SentenceTransformer
 import torch
 import torch.nn.functional as F
 
-from backend.config import CHROMA_DIR, EMBEDDING_MODEL, SEARCH_TOP_K
+from backend.config import ZVEC_DIR, ZVEC_DIMENSION, EMBEDDING_MODEL, SEARCH_TOP_K
+from backend.synonyms import get_entity_synonyms, expand_query_text
 
 
 def calibrate_score(raw_score: float) -> float:
     """
     Continuous calibration of cosine similarity to intuitive UI percentages.
-    Spans [0.20, 0.65] smoothly without flat clipping ceilings.
+    Spans [0.18, 0.58] smoothly without flat clipping ceilings.
     """
-    if raw_score <= 0.20:
+    if raw_score <= 0.18:
         return 0.0
-    val = (raw_score - 0.20) / (0.65 - 0.20)
+    val = (raw_score - 0.18) / (0.58 - 0.18)
     val = max(0.0, min(1.0, val))
     return round(0.50 + 0.48 * (val ** 0.8), 4)
 
 
-STOP_WORDS = {
+RELATIONAL_CONNECTORS = {
     "a", "an", "the", "in", "on", "at", "by", "for", "with", "about",
     "against", "between", "into", "through", "during", "before", "after",
     "above", "below", "to", "from", "up", "down", "of", "and", "or", "is",
     "are", "was", "were", "be", "been", "being", "have", "has", "had",
-    "photo", "photos", "image", "images", "picture", "pictures"
+    "photo", "photos", "image", "images", "picture", "pictures", "showing",
+    "there", "this", "that", "these", "those", "near", "next", "behind",
+    "front", "holding", "standing", "sitting", "lying", "laying", "beside",
+    "under", "over", "along", "across"
 }
 
 
 def token_satisfaction(sim_val: float) -> float:
     """
-    Continuous transfer function mapping token cosine similarity to query facet satisfaction.
-    - >= 0.88: 1.0 (exact or near-exact word)
-    - 0.76 - 0.87: 0.60 - 0.95 (strong synonym e.g. kitten/cat)
-    - 0.65 - 0.75: 0.05 - 0.35 (contrast / co-hyponym e.g. blue/red)
-    - <= 0.60: 0.0 (unrelated)
+    Continuous transfer function mapping token cosine similarity to query entity satisfaction.
+    - >= 0.78: 1.0 (exact match or direct synonym, e.g. noodles for pasta, sea for ocean)
+    - 0.62 - 0.78: smooth transition for close hyponyms
+    - <= 0.62: 0.0 (distractors and sibling categories, e.g. pizza vs pasta @ 0.617, river vs ocean @ 0.509)
     """
-    if sim_val <= 0.60:
+    if sim_val <= 0.62:
         return 0.0
-    val = (sim_val - 0.60) / (0.88 - 0.60)
-    val = min(1.0, max(0.0, val))
-    return val ** 1.6
+    if sim_val >= 0.78:
+        return 1.0
+    return (sim_val - 0.62) / (0.78 - 0.62)
 
 
 def split_sentences(text: str) -> list[str]:
@@ -51,19 +53,49 @@ def split_sentences(text: str) -> list[str]:
     return sents if sents else [text]
 
 
+# ── Zvec collection schema ──────────────────────────────
+
+_ZVEC_SCHEMA = zvec.CollectionSchema(
+    name="image_descriptions",
+    fields=[
+        zvec.FieldSchema(
+            name="image_id",
+            data_type=zvec.DataType.INT64,
+        ),
+        zvec.FieldSchema(
+            name="document",
+            data_type=zvec.DataType.STRING,
+        ),
+    ],
+    vectors=[
+        zvec.VectorSchema(
+            name="embedding",
+            data_type=zvec.DataType.VECTOR_FP32,
+            dimension=ZVEC_DIMENSION,
+            index_param=zvec.HnswIndexParam(
+                metric_type=zvec.MetricType.COSINE,
+            ),
+        ),
+    ],
+)
+
+
 class SemanticSearch:
-    """Manages ChromaDB vector collection and natural language semantic query embedding."""
+    """Manages Zvec vector collection and natural language semantic query embedding."""
 
     def __init__(self):
-        CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-        self._client = chromadb.PersistentClient(
-            path=str(CHROMA_DIR),
-            settings=Settings(anonymized_telemetry=False),
-        )
-        self._collection = self._client.get_or_create_collection(
-            name="image_descriptions",
-            metadata={"hnsw:space": "cosine"},
-        )
+        ZVEC_DIR.mkdir(parents=True, exist_ok=True)
+        collection_path = str(ZVEC_DIR / "image_descriptions")
+
+        try:
+            # Try opening an existing collection first
+            self._collection = zvec.open(path=collection_path)
+        except Exception:
+            # Collection doesn't exist yet — create it
+            self._collection = zvec.create_and_open(
+                path=collection_path,
+                schema=_ZVEC_SCHEMA,
+            )
         self._embedder = None
 
     @property
@@ -78,152 +110,254 @@ class SemanticSearch:
         doc_id = str(image_id)
         embedding = self.embedder.encode(enriched_text).tolist()
         self._collection.upsert(
-            ids=[doc_id],
-            embeddings=[embedding],
-            documents=[enriched_text],
-            metadatas=[{"image_id": image_id}],
+            zvec.Doc(
+                id=doc_id,
+                vectors={"embedding": embedding},
+                fields={"image_id": image_id, "document": enriched_text},
+            )
         )
 
     def add_batch(self, items: list[tuple[int, str]]) -> None:
         """Add multiple (image_id, enriched_text) pairs."""
         if not items:
             return
-        ids = [str(iid) for iid, _ in items]
         texts = [t for _, t in items]
         embeddings = self.embedder.encode(texts, show_progress_bar=True).tolist()
-        metadatas = [{"image_id": iid} for iid, _ in items]
-        self._collection.upsert(
-            ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas,
+
+        docs = []
+        for i, (iid, text) in enumerate(items):
+            docs.append(
+                zvec.Doc(
+                    id=str(iid),
+                    vectors={"embedding": embeddings[i]},
+                    fields={"image_id": iid, "document": text},
+                )
+            )
+        self._collection.upsert(docs)
+        self._collection.optimize()
+
+    def delete(self, image_ids: list[int]) -> None:
+        """Delete documents by image IDs."""
+        if not image_ids:
+            return
+        str_ids = [str(i) for i in image_ids]
+        try:
+            self._collection.delete(ids=str_ids)
+        except Exception as e:
+            print(f"Zvec delete error: {e}")
+
+    def reset(self) -> None:
+        """Delete and recreate the entire collection."""
+        import shutil
+        collection_path = str(ZVEC_DIR / "image_descriptions")
+        try:
+            self._collection = None
+        except Exception:
+            pass
+        # Remove the collection directory
+        coll_path = ZVEC_DIR / "image_descriptions"
+        if coll_path.exists():
+            shutil.rmtree(str(coll_path), ignore_errors=True)
+        # Recreate fresh
+        self._collection = zvec.create_and_open(
+            path=collection_path,
+            schema=_ZVEC_SCHEMA,
         )
 
     def query(self, text: str, top_k: int = SEARCH_TOP_K, filter_mode: str = "balanced") -> list[dict]:
         """
-        Multi-granularity semantic search with neural sentence-level aspect conjunction
-        and dynamic topological elbow cutoff.
-        
-        Zero hardcoded keywords:
-        1. Multi-scale dense alignment (whole document + sharpest local sentence).
-        2. Sentence-level soft-AND conjunction ensuring multi-facet queries (e.g. 'red sky')
-           require co-occurrence with real semantic satisfaction, eliminating attribute mismatches.
-        3. Dynamic elbow gap filtering cutting off step-drops into background noise.
+        Two-stage retrieval pipeline:
+        Stage 1: Fast Zvec HNSW vector retrieval over 384-d semantic embedding space.
+        Stage 2: Subject/Object Semantic Intersection Filtering (strict intersection gate 
+                 requiring all query entities, rather than union/partial blending) + multi-scale ranking.
         """
         import math
         query_text = text.strip()
         if not query_text:
             return []
 
-        # 1. First-stage retrieval: dense vector similarity over document collection
+        # Extract substantive entities (subjects and objects)
         q_clean = query_text.strip()
         q_words = [w.strip(".,;:?!'\"()[]{}").lower() for w in q_clean.split()]
-        substantive = [w for w in q_words if w and w not in STOP_WORDS]
+        entities = [w for w in q_words if w and w not in RELATIONAL_CONNECTORS]
+        if not entities:
+            entities = q_words
 
         q_emb = self.embedder.encode(q_clean, convert_to_tensor=True, normalize_embeddings=True)
         embedding = q_emb.tolist()
 
-        total_in_db = self._collection.count() or 1
-        results = self._collection.query(
-            query_embeddings=[embedding],
-            n_results=min(top_k * 2, total_in_db),
-            include=["documents", "distances", "metadatas"],
-        )
+        # Generate synonym expansion if applicable
+        expanded_query = expand_query_text(q_clean)
+        exp_emb = None
+        if expanded_query != q_clean:
+            exp_emb = self.embedder.encode(expanded_query, convert_to_tensor=True, normalize_embeddings=True)
 
-        if not results or not results["ids"] or not results["ids"][0]:
+        # ── Stage 1: Zvec ANN Candidate Retrieval ──
+        total_in_db = self.count or 1
+        fetch_k = min(max(top_k * 3, 50), total_in_db)
+
+        raw_results = self._collection.query(
+            queries=zvec.Query(
+                field_name="embedding",
+                vector=embedding,
+            ),
+            topk=fetch_k,
+        ) or []
+
+        # If synonyms exist, fetch candidates for the expanded query as well
+        if exp_emb is not None:
+            exp_results = self._collection.query(
+                queries=zvec.Query(
+                    field_name="embedding",
+                    vector=exp_emb.tolist(),
+                ),
+                topk=fetch_k,
+            ) or []
+        else:
+            exp_results = []
+
+        # Deduplicate candidates by image_id, preserving best raw similarity
+        candidates_by_id = {}
+        for doc in list(raw_results) + list(exp_results):
+            raw_sim = max(0.0, 1.0 - float(doc.score))
+            doc_text = doc.fields.get("document", "") if doc.fields else ""
+            image_id = doc.fields.get("image_id", 0) if doc.fields else 0
+            if not image_id:
+                try:
+                    image_id = int(doc.id)
+                except (ValueError, TypeError):
+                    continue
+
+            if image_id not in candidates_by_id or raw_sim > candidates_by_id[image_id]["raw_score"]:
+                candidates_by_id[image_id] = {
+                    "image_id": image_id,
+                    "raw_score": raw_sim,
+                    "doc_sim": raw_sim,
+                    "enriched_text": doc_text,
+                    "sents": split_sentences(doc_text),
+                }
+
+        candidates = list(candidates_by_id.values())
+        if not candidates:
             return []
 
-        candidates = []
-        for i, doc_id in enumerate(results["ids"][0]):
-            raw_sim = 1.0 - results["distances"][0][i]
-            doc_text = results["documents"][0][i]
-            sents = split_sentences(doc_text)
-            candidates.append({
-                "image_id": results["metadatas"][0][i]["image_id"],
-                "raw_score": raw_sim,
-                "doc_sim": raw_sim,
-                "enriched_text": doc_text,
-                "sents": sents,
-            })
+        # Build entity synonym map for Stage 2
+        entity_syn_map = {e: [e] + get_entity_synonyms(e) for e in entities}
+        encoded_syn_map = {
+            e: self.embedder.encode(syns, convert_to_tensor=True, normalize_embeddings=True)
+            for e, syns in entity_syn_map.items()
+        }
 
-        # Pre-encode substantive query facets for multi-term queries
-        sub_embs = None
-        if len(substantive) > 1:
-            sub_embs = self.embedder.encode(substantive, convert_to_tensor=True, normalize_embeddings=True)
-
-        # 2. Multi-granularity blending & sentence-level aspect conjunction
+        # ── Stage 2: Subject/Object Semantic Intersection Filtering & Ranking ──
+        survived = []
         for c in candidates:
-            # Sentence-level max dense score
+            # Multi-scale sentence-level dense similarity
             s_embs = self.embedder.encode(c["sents"], convert_to_tensor=True, normalize_embeddings=True)
             sent_sims = F.cosine_similarity(q_emb.unsqueeze(0), s_embs)
             max_sent_sim = sent_sims.max().item()
 
+            if exp_emb is not None:
+                exp_sent_sims = F.cosine_similarity(exp_emb.unsqueeze(0), s_embs)
+                max_sent_sim = max(max_sent_sim, 0.95 * exp_sent_sims.max().item())
+
             base_dense = 0.50 * c["doc_sim"] + 0.50 * max_sent_sim
 
-            conjunction_mult = 1.0
-            if sub_embs is not None:
-                best_sent_conjunction = 0.0
+            # Candidate words
+            all_words = [w.strip(".,;:?!'\"()[]{}").lower() for w in c["enriched_text"].split()]
+            all_words = [w for w in all_words if len(w) > 1]
+            if not all_words:
+                continue
 
-                for sent in c["sents"]:
-                    sent_words = [w.strip(".,;:?!'\"()[]{}").lower() for w in sent.split()]
-                    sent_words = [w for w in sent_words if len(w) > 1]
-                    if not sent_words:
-                        continue
-                    w_embs = self.embedder.encode(sent_words, convert_to_tensor=True, normalize_embeddings=True)
-                    t_sims = F.cosine_similarity(sub_embs.unsqueeze(1), w_embs.unsqueeze(0), dim=2)
-                    aspect_max = t_sims.max(dim=1).values
-                    aspect_sats = [token_satisfaction(s.item()) for s in aspect_max]
+            all_w_embs = self.embedder.encode(all_words, convert_to_tensor=True, normalize_embeddings=True)
 
-                    sent_min = min(aspect_sats)
-                    sent_geom = math.prod(aspect_sats) ** (1.0 / len(aspect_sats))
-                    sent_score = 0.50 * sent_min + 0.50 * sent_geom
-                    if sent_score > best_sent_conjunction:
-                        best_sent_conjunction = sent_score
+            # Evaluate each required entity across document words (with synonym bridge)
+            doc_sats = []
+            for e, s_embs_tensor in encoded_syn_map.items():
+                t_sims = F.cosine_similarity(s_embs_tensor.unsqueeze(1), all_w_embs.unsqueeze(0), dim=2)
+                aspect_max = t_sims.max(dim=1).values
+                direct_sat = token_satisfaction(aspect_max[0].item())
+                syn_sat = max([token_satisfaction(x.item()) for x in aspect_max[1:]]) if len(aspect_max) > 1 else 0.0
+                best_entity_sat = max(direct_sat, 0.92 * syn_sat)
+                doc_sats.append(best_entity_sat)
 
-                # Document-wide fallback for loosely coupled facets
-                all_words = [w.strip(".,;:?!'\"()[]{}").lower() for w in c["enriched_text"].split()]
-                all_words = [w for w in all_words if len(w) > 1]
-                if all_words:
-                    all_w_embs = self.embedder.encode(all_words, convert_to_tensor=True, normalize_embeddings=True)
-                    doc_t_sims = F.cosine_similarity(sub_embs.unsqueeze(1), all_w_embs.unsqueeze(0), dim=2)
-                    doc_aspect_max = doc_t_sims.max(dim=1).values
-                    doc_sats = [token_satisfaction(s.item()) for s in doc_aspect_max]
-                    doc_geom = math.prod(doc_sats) ** (1.0 / len(doc_sats))
-                    doc_min = min(doc_sats)
-                    doc_fallback = 0.50 * doc_min + 0.50 * doc_geom
-                else:
-                    doc_fallback = 0.0
+            # ── Entity Presence & Intersection Constraint ──
+            # Required query entities must be semantically satisfied in the candidate document.
+            min_doc_sat = min(doc_sats)
+            if min_doc_sat <= 0.05:
+                # Fails entity presence filter
+                continue
 
-                conjunction_mult = max(best_sent_conjunction, 0.40 * doc_fallback)
+            # Sentence-level co-occurrence (sharpest local conjunction)
+            best_sent_sat = 0.0
+            for sent in c["sents"]:
+                sent_words = [w.strip(".,;:?!'\"()[]{}").lower() for w in sent.split()]
+                sent_words = [w for w in sent_words if len(w) > 1]
+                if not sent_words:
+                    continue
+                w_embs = self.embedder.encode(sent_words, convert_to_tensor=True, normalize_embeddings=True)
 
-            final_raw = base_dense * conjunction_mult
+                sent_entity_sats = []
+                for e, s_embs_tensor in encoded_syn_map.items():
+                    st_sims = F.cosine_similarity(s_embs_tensor.unsqueeze(1), w_embs.unsqueeze(0), dim=2)
+                    st_max = st_sims.max(dim=1).values
+                    st_direct = token_satisfaction(st_max[0].item())
+                    st_syn = max([token_satisfaction(x.item()) for x in st_max[1:]]) if len(st_max) > 1 else 0.0
+                    sent_entity_sats.append(max(st_direct, 0.92 * st_syn))
+
+                s_min = min(sent_entity_sats)
+                s_geom = math.prod(sent_entity_sats) ** (1.0 / len(sent_entity_sats))
+                sent_score = 0.50 * s_min + 0.50 * s_geom
+                if sent_score > best_sent_sat:
+                    best_sent_sat = sent_score
+
+            doc_geom = math.prod(doc_sats) ** (1.0 / len(doc_sats))
+            doc_conj = 0.60 * min_doc_sat + 0.40 * doc_geom
+
+            intersection_score = max(best_sent_sat, 0.70 * doc_conj)
+
+            final_raw = base_dense * intersection_score
             c["raw_score"] = round(final_raw, 4)
             c["score"] = calibrate_score(c["raw_score"])
+            survived.append(c)
 
-        candidates.sort(key=lambda x: x["raw_score"], reverse=True)
+        survived.sort(key=lambda x: x["raw_score"], reverse=True)
 
-        if filter_mode == "all" or not candidates:
-            return candidates[:top_k]
+        if filter_mode == "all" or not survived:
+            return survived[:top_k]
 
-        # 3. Dynamic Topological Elbow Cutoff
-        # Filters out step drops into background noise while preserving dense categorical clusters
-        min_noise_floor = 0.22 if filter_mode != "broad" else 0.16
-        drop_threshold = 0.070 if filter_mode != "broad" else 0.095
+        # ── Stage 3: Dynamic Topological Elbow Cutoff ──
+        min_noise_floor = 0.18 if filter_mode != "broad" else 0.14
+        drop_threshold = 0.080 if filter_mode != "broad" else 0.10
 
         filtered = []
-        if candidates and candidates[0]["raw_score"] >= min_noise_floor:
-            filtered.append(candidates[0])
-            for i in range(1, len(candidates)):
-                curr = candidates[i]
-                prev = candidates[i - 1]
+        if survived and survived[0]["raw_score"] >= min_noise_floor:
+            filtered.append(survived[0])
+            for i in range(1, len(survived)):
+                curr = survived[i]
+                prev = survived[i - 1]
                 if curr["raw_score"] < min_noise_floor:
                     break
                 drop = prev["raw_score"] - curr["raw_score"]
                 if drop >= drop_threshold:
                     break
-                if curr["raw_score"] < candidates[0]["raw_score"] * 0.48:
+                if curr["raw_score"] < survived[0]["raw_score"] * 0.45:
                     break
                 filtered.append(curr)
 
         return filtered[:top_k]
 
+        return filtered[:top_k]
+
     @property
     def count(self) -> int:
-        return self._collection.count()
+        try:
+            stats = self._collection.stats
+            if hasattr(stats, 'doc_count'):
+                return int(stats.doc_count)
+            if hasattr(stats, 'total_doc_count'):
+                return int(stats.total_doc_count)
+            if isinstance(stats, dict):
+                return int(stats.get('doc_count', stats.get('total_doc_count', 0)))
+            return 0
+        except Exception:
+            return 0

@@ -5,17 +5,38 @@ from pathlib import Path
 # ── Paths ────────────────────────────────────────────
 DATA_DIR = Path.home() / ".pixelmemory"
 DB_PATH = DATA_DIR / "pixelmemory.db"
-CHROMA_DIR = DATA_DIR / "chroma"
+CHROMA_DIR = DATA_DIR / "chroma"  # kept for migration script
+ZVEC_DIR = DATA_DIR / "zvec"
+ZVEC_DIMENSION = 384              # all-MiniLM-L6-v2 output dimensionality
 THUMB_DIR = DATA_DIR / "thumbnails"
 THUMB_SIZE = (320, 320)
 
 # ── Models ───────────────────────────────────────────
 USE_OLLAMA = True
 OLLAMA_HOST = "http://localhost:11434"
-OLLAMA_MODEL = "moondream:1.8b"
-VLM_MODEL = "vikhyatk/moondream2"
+DEFAULT_VLM_MODEL = "moondream:1.8b"
+ACTIVE_VLM_MODEL = "moondream:1.8b"
+OLLAMA_MODEL = "moondream:1.8b"        # fallback / legacy reference
+VLM_MODEL = "vikhyatk/moondream2"      # HuggingFace fallback
 VLM_REVISION = "2025-01-09"           # pin for reproducibility (HuggingFace fallback)
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+
+AVAILABLE_VLM_MODELS = [
+    {
+        "id": "moondream:1.8b",
+        "name": "Moondream2 (1.8B)",
+        "tag": "⚡ Fast · 1.8GB VRAM",
+        "vram": "1.8 GB",
+        "description": "Ultra-fast local captioning (~0.8s/img), great for high-volume photo indexing.",
+    },
+    {
+        "id": "llava:7b",
+        "name": "LLaVA (7B)",
+        "tag": "🧠 Deep Detail · 4.5GB VRAM",
+        "vram": "4.5 GB",
+        "description": "Higher compute & deeper visual reasoning (~2-3s/img), highly nuanced scene descriptions.",
+    },
+]
 
 # ── Ingest ───────────────────────────────────────────
 SUPPORTED_EXTENSIONS = {

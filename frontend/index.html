@@ -811,6 +811,12 @@
     background: rgba(239, 68, 68, 0.15);
   }
 
+  .dock-btn-warning:hover {
+    color: #fbbf24;
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+  }
+
   .dock-close-btn {
     background: none;
     border: none;
@@ -1560,11 +1566,62 @@
   .widget-v { color: #fff; font-family: var(--font-mono); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .widget-v.highlight { color: #34d399; font-weight: 600; }
 
-  .widget-actions {
+  /* ── VLM Model Toggle Cards ────────────────────────── */
+  .vlm-card {
     display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.2rem;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    user-select: none;
+  }
+
+  .vlm-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .vlm-card.active {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: #3b82f6;
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.25);
+  }
+
+  .vlm-card .vlm-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .vlm-card.active .vlm-badge {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .vlm-card:not(.active) .vlm-badge {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-dim);
+  }
+
+  .model-pill {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .model-pill:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
   }
 </style>
 </head>
@@ -1860,7 +1917,7 @@
     <div class="settings-body">
       <div class="setting-row">
         <label>Photo Directory Path</label>
-        <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. gallery/test or C:\Users\dirkk\Pictures" value="gallery/test" />
+        <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. gallery/test or ./photos" value="gallery/test" />
         <div style="display: flex; gap: 0.45rem; margin-top: 0.4rem; align-items: center;">
           <span style="font-size: 0.72rem; color: var(--text-dim);">Quick Pick:</span>
           <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">gallery/test</button>
@@ -1868,12 +1925,36 @@
         </div>
       </div>
 
-      <div class="setting-row" style="flex-direction: row; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+      <div class="setting-row" style="flex-direction: row; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0;">
         <div>
           <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">AI Vision Analysis</div>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions with Moondream2 & index into ChromaDB</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions & index into Zvec</div>
         </div>
         <input type="checkbox" id="importVisionCheck" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" />
+      </div>
+
+      <!-- Vision Model Selector Toggle (Moondream2 vs LLaVA 7B) -->
+      <div id="importModelSelectionWrap" style="display: flex; flex-direction: column; gap: 0.45rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-main);">AI Vision Model (Ollama GPU)</span>
+          <span id="importModelVramBadge" style="font-size: 0.68rem; color: #93c5fd; background: rgba(59,130,246,0.14); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(59,130,246,0.25);">⚡ Fast (1.8 GB VRAM)</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <label class="vlm-card active" id="cardModelMoondream">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">⚡ Moondream2</span>
+              <input type="radio" name="importVlmModel" value="moondream:1.8b" checked style="accent-color: var(--accent); cursor: pointer;" />
+            </div>
+            <span style="font-size: 0.68rem; color: var(--text-muted);">1.8B · Fast Ingest (~0.8s)</span>
+          </label>
+          <label class="vlm-card" id="cardModelLlava">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">🧠 LLaVA 7B</span>
+              <input type="radio" name="importVlmModel" value="llava:7b" style="accent-color: var(--accent); cursor: pointer;" />
+            </div>
+            <span style="font-size: 0.68rem; color: var(--text-muted);">7B · Deep Detail (Higher Compute)</span>
+          </label>
+        </div>
       </div>
 
       <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
@@ -2003,15 +2084,44 @@
 
 <!-- Settings Modal -->
 <div class="modal-backdrop" id="settingsModal">
-  <div class="modal-window" style="max-width: 540px;">
+  <div class="modal-window" style="max-width: 560px;">
     <div class="modal-top">
-      <div class="modal-title">Library & Model Settings</div>
+      <div class="modal-title">⚙️ Library & AI Model Settings</div>
       <button class="modal-close-btn" id="settingsClose">&times;</button>
     </div>
-    <div class="settings-body">
+    <div class="settings-body" style="gap: 1.1rem;">
+      <!-- VLM Model Selection Card Group -->
+      <div class="setting-row" style="margin-bottom: 0;">
+        <label style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Default AI Vision Model (VLM)</span>
+          <span id="settingsOllamaBadge" style="font-size: 0.7rem; color: #10b981; font-weight: 600;">Ollama Connected ✔</span>
+        </label>
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+          Select the model used for local GPU scene understanding & visual description:
+        </div>
+        <div class="vlm-model-grid" id="settingsVlmGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+          <div class="vlm-card active" data-model="moondream:1.8b" id="settingsCardMoondream">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #fff; font-size: 0.85rem;">⚡ Moondream2</span>
+              <span class="vlm-badge">1.8B</span>
+            </div>
+            <span style="font-size: 0.72rem; color: #93c5fd;">⚡ Fast · 1.8 GB VRAM</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.3;">Ultra-fast local captioning (~0.8s/img), great for general photo libraries.</span>
+          </div>
+          <div class="vlm-card" data-model="llava:7b" id="settingsCardLlava">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #fff; font-size: 0.85rem;">🧠 LLaVA 7B</span>
+              <span class="vlm-badge">7B</span>
+            </div>
+            <span style="font-size: 0.72rem; color: #c084fc;">🧠 Deep Detail · 4.5 GB VRAM</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.3;">Higher precision & richer visual detail for complex scenes and fine objects.</span>
+          </div>
+        </div>
+      </div>
+
       <div class="setting-row">
         <label>Index Photo Directory</label>
-        <input type="text" id="ingestFolderInput" class="setting-input" placeholder="e.g. C:\Users\dirkk\Pictures\Archive" />
+        <input type="text" id="ingestFolderInput" class="setting-input" placeholder="e.g. ./photos/archive" />
       </div>
 
       <div class="setting-row">
@@ -2028,14 +2138,54 @@
   </div>
 </div>
 
+<!-- Reprocess Confirmation Modal -->
+<div class="modal-backdrop" id="reprocessModal">
+  <div class="modal-window" style="max-width: 480px;">
+    <div class="modal-top">
+      <div class="modal-title">🔄 AI Vision Re-Analysis</div>
+      <button class="modal-close-btn" id="reprocessModalClose">&times;</button>
+    </div>
+    <div class="settings-body" style="gap: 0.9rem;">
+      <div id="reprocessPhotoCountText" style="font-size: 0.82rem; color: var(--text-main);">
+        Re-run AI vision captioning and re-embed selected photos in the background:
+      </div>
+      <div class="setting-row" style="margin-bottom: 0;">
+        <label>Select Vision Model for Re-analysis:</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.35rem;">
+          <label class="vlm-card active" id="reprocessCardMoondream">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: #fff; font-size: 0.8rem;">⚡ Moondream2</span>
+              <input type="radio" name="reprocessVlmModel" value="moondream:1.8b" checked style="accent-color: var(--accent);" />
+            </div>
+            <span style="font-size: 0.68rem; color: var(--text-muted);">1.8B · Fast Ingest</span>
+          </label>
+          <label class="vlm-card" id="reprocessCardLlava">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: #fff; font-size: 0.8rem;">🧠 LLaVA 7B</span>
+              <input type="radio" name="reprocessVlmModel" value="llava:7b" style="accent-color: var(--accent);" />
+            </div>
+            <span style="font-size: 0.68rem; color: var(--text-muted);">7B · Deep Detail</span>
+          </label>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content: flex-end; margin-top: 0.5rem;">
+        <button class="tool-btn" id="reprocessCancelBtn">Cancel</button>
+        <button class="cta-btn" id="reprocessConfirmBtn">Start Re-Analysis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Floating Selection Action Dock -->
 <div class="floating-selection-dock" id="floatingSelectionDock">
   <div class="dock-count-badge" id="dockSelectedCount">0 selected</div>
   <button class="dock-btn" id="dockSelectAllBtn">Select All</button>
-  <button class="dock-btn" id="dockAddAlbumBtn">🖼️ Album</button>
-  <button class="dock-btn" id="dockAddLocationBtn">📍 Location</button>
+  <button class="dock-btn" id="dockAddAlbumBtn" title="Add selected photos to an album">➕ Album</button>
+  <button class="dock-btn" id="dockMoveAlbumBtn" title="Move selected photos to another album">↗️ Move</button>
+  <button class="dock-btn dock-btn-warning" id="dockRemoveFromAlbumBtn" title="Remove selected photos from this album" style="display: none;">⏏️ From Album</button>
+  <button class="dock-btn" id="dockAddLocationBtn" title="Assign location to photos">📍 Location</button>
   <button class="dock-btn" id="dockReprocessBtn" title="Re-run AI Vision Captioning on selected photos">🔄 Re-process</button>
-  <button class="dock-btn dock-btn-danger" id="dockDeleteBtn" title="Remove selected from gallery">🗑️ Remove</button>
+  <button class="dock-btn dock-btn-danger" id="dockDeleteBtn" title="Remove selected photos completely from gallery">🗑️ From Gallery</button>
   <button class="dock-close-btn" id="dockCloseBtn" title="Clear selection">&times;</button>
 </div>
 
@@ -2096,6 +2246,7 @@ let allResults = [];
 let currentQuery = '';
 let allAlbums = [];
 let currentAlbumId = null;
+let currentAlbumName = '';
 let currentDetailPhoto = null;
 let currentAddToAlbumPhotoId = null;
 let importPollTimer = null;
@@ -2105,6 +2256,7 @@ let selectedPhotoIds = new Set();
 let currentFilteredPhotos = [];
 let locationSearchTimeout = null;
 let currentChosenLocation = null;
+let bulkAlbumMode = 'add'; // 'add' or 'move'
 
 // ── Multi-criteria Filter State ─────────────────────────
 let activeFilters = {
@@ -2323,7 +2475,7 @@ function applyFiltersAndRender() {
 
   grid.innerHTML = '';
   filtered.forEach(r => {
-    const isSelected = selectedPhotoIds.has(r.id);
+    const isSelected = selectedPhotoIds.has(Number(r.id));
     const card = document.createElement('div');
     card.className = `photo-card ${isSelected ? 'selected-multi' : ''}`;
     card.setAttribute('data-photoid', r.id);
@@ -2467,6 +2619,7 @@ async function loadAlbums() {
 
 async function showAlbumPhotos(albumId, albumName) {
   currentAlbumId = albumId;
+  currentAlbumName = albumName;
 
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   // Find album nav item
@@ -2508,6 +2661,7 @@ async function showAlbumPhotos(albumId, albumName) {
 
 function showAllPhotos() {
   currentAlbumId = null;
+  currentAlbumName = '';
   $('#queryInput').value = '';
   doSearch('');
 }
@@ -2722,15 +2876,34 @@ $('#railAlbums').addEventListener('click', () => {
 $('#importModalClose').addEventListener('click', () => $('#importModal').classList.remove('active'));
 $('#importCancelBtn').addEventListener('click', () => $('#importModal').classList.remove('active'));
 
+$('#importVisionCheck').addEventListener('change', (e) => {
+  $('#importModelSelectionWrap').style.display = e.target.checked ? 'flex' : 'none';
+});
+
+document.querySelectorAll('input[name="importVlmModel"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const val = e.target.value;
+    $('#cardModelMoondream').classList.toggle('active', val === 'moondream:1.8b');
+    $('#cardModelLlava').classList.toggle('active', val === 'llava:7b');
+    $('#importModelVramBadge').textContent = val === 'llava:7b' ? '🧠 Deep Detail (4.5 GB VRAM)' : '⚡ Fast (1.8 GB VRAM)';
+    $('#importModelVramBadge').style.color = val === 'llava:7b' ? '#c084fc' : '#93c5fd';
+  });
+});
+
 $('#importStartBtn').addEventListener('click', async () => {
   const folderPath = ($('#importFolderInput').value || '').trim() || 'gallery/test';
   const skipDescribe = !$('#importVisionCheck').checked;
+  const selectedModel = document.querySelector('input[name="importVlmModel"]:checked')?.value || 'moondream:1.8b';
 
   try {
     const res = await fetch(`${API}/api/import/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folder_path: folderPath, skip_describe: skipDescribe }),
+      body: JSON.stringify({
+        folder_path: folderPath,
+        skip_describe: skipDescribe,
+        vlm_model: selectedModel
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -2900,6 +3073,36 @@ $('#widgetAbortBtn').addEventListener('click', async (e) => {
   }
 });
 
+function updateActiveVlmCards(activeModel) {
+  const isLlava = (activeModel || '').includes('llava');
+  const cardMoon = $('#settingsCardMoondream');
+  const cardLlava = $('#settingsCardLlava');
+  if (cardMoon) cardMoon.classList.toggle('active', !isLlava);
+  if (cardLlava) cardLlava.classList.toggle('active', isLlava);
+}
+
+async function setGlobalVlmModel(modelId) {
+  try {
+    const res = await fetch(`${API}/api/models/vlm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelId }),
+    });
+    const data = await res.json();
+    if (data.active_model) {
+      updateActiveVlmCards(data.active_model);
+      const name = modelId.includes('llava') ? 'LLaVA 7B' : 'Moondream2 1.8B';
+      showToast(`Default AI model set to ${name}`);
+      await loadPlatformStats();
+    }
+  } catch (err) {
+    showToast('Failed to switch model');
+  }
+}
+
+$('#settingsCardMoondream')?.addEventListener('click', () => setGlobalVlmModel('moondream:1.8b'));
+$('#settingsCardLlava')?.addEventListener('click', () => setGlobalVlmModel('llava:7b'));
+
 // ── Stats & Dynamic Tags ────────────────────────────────
 async function loadPlatformStats() {
   try {
@@ -2907,6 +3110,20 @@ async function loadPlatformStats() {
     const sys = await res.json();
     if (sys.vlm_model) {
       $('#modelText').textContent = `Local Model: ${sys.vlm_model}`;
+    }
+    if (sys.active_vlm_model) {
+      updateActiveVlmCards(sys.active_vlm_model);
+    }
+    if (sys.ollama_ready) {
+      if ($('#settingsOllamaBadge')) {
+        $('#settingsOllamaBadge').textContent = 'Ollama Connected ✔';
+        $('#settingsOllamaBadge').style.color = '#10b981';
+      }
+    } else {
+      if ($('#settingsOllamaBadge')) {
+        $('#settingsOllamaBadge').textContent = 'Ollama Offline (HF Fallback)';
+        $('#settingsOllamaBadge').style.color = '#f59e0b';
+      }
     }
   } catch (e) {}
 
@@ -3194,10 +3411,11 @@ $('#resetModalBtn').addEventListener('click', async () => {
 
 // ── Multi-select Management ─────────────────────────────
 function togglePhotoSelection(photoId) {
-  if (selectedPhotoIds.has(photoId)) {
-    selectedPhotoIds.delete(photoId);
+  const id = Number(photoId);
+  if (selectedPhotoIds.has(id)) {
+    selectedPhotoIds.delete(id);
   } else {
-    selectedPhotoIds.add(photoId);
+    selectedPhotoIds.add(id);
   }
   updateSelectionDock();
 }
@@ -3207,26 +3425,38 @@ function updateSelectionDock() {
   const count = selectedPhotoIds.size;
   const countBadge = $('#dockSelectedCount');
   const selectAllBtn = $('#dockSelectAllBtn');
+  const removeAlbumBtn = $('#dockRemoveFromAlbumBtn');
+  const moveAlbumBtn = $('#dockMoveAlbumBtn');
 
   if (count > 0) {
     document.body.classList.add('selection-active');
     dock.classList.add('active');
     countBadge.textContent = `${count} selected`;
 
-    const allFilteredSelected = currentFilteredPhotos.length > 0 && currentFilteredPhotos.every(p => selectedPhotoIds.has(p.id));
+    const allFilteredSelected = currentFilteredPhotos.length > 0 && currentFilteredPhotos.every(p => selectedPhotoIds.has(Number(p.id)));
     selectAllBtn.textContent = allFilteredSelected ? 'Deselect All' : 'Select All';
+
+    // Show 'From Album' button when currently viewing an album
+    if (currentAlbumId) {
+      if (removeAlbumBtn) removeAlbumBtn.style.display = 'inline-flex';
+      if (moveAlbumBtn) moveAlbumBtn.style.display = 'inline-flex';
+    } else {
+      if (removeAlbumBtn) removeAlbumBtn.style.display = 'none';
+      if (moveAlbumBtn) moveAlbumBtn.style.display = 'inline-flex';
+    }
   } else {
     document.body.classList.remove('selection-active');
     dock.classList.remove('active');
     countBadge.textContent = `0 selected`;
     selectAllBtn.textContent = 'Select All';
+    if (removeAlbumBtn) removeAlbumBtn.style.display = 'none';
   }
 
-  // Sync card elements in the DOM
+  // Sync card elements in the DOM with Number(pid)
   document.querySelectorAll('.photo-card').forEach(card => {
     const btn = card.querySelector('.card-select-btn');
     if (!btn) return;
-    const pid = btn.getAttribute('data-photoid');
+    const pid = Number(btn.getAttribute('data-photoid'));
     if (selectedPhotoIds.has(pid)) {
       card.classList.add('selected-multi');
       btn.classList.add('active');
@@ -3241,11 +3471,11 @@ function updateSelectionDock() {
 
 function selectAllToggle() {
   if (currentFilteredPhotos.length === 0) return;
-  const allFilteredSelected = currentFilteredPhotos.every(p => selectedPhotoIds.has(p.id));
+  const allFilteredSelected = currentFilteredPhotos.every(p => selectedPhotoIds.has(Number(p.id)));
   if (allFilteredSelected) {
-    currentFilteredPhotos.forEach(p => selectedPhotoIds.delete(p.id));
+    currentFilteredPhotos.forEach(p => selectedPhotoIds.delete(Number(p.id)));
   } else {
-    currentFilteredPhotos.forEach(p => selectedPhotoIds.add(p.id));
+    currentFilteredPhotos.forEach(p => selectedPhotoIds.add(Number(p.id)));
   }
   updateSelectionDock();
 }
@@ -3258,10 +3488,16 @@ function clearSelection() {
 $('#dockSelectAllBtn').addEventListener('click', selectAllToggle);
 $('#dockCloseBtn').addEventListener('click', clearSelection);
 
-// ── Bulk Actions: Add to Album ──────────────────────────
-async function openBulkAlbumModal() {
+// ── Bulk Actions: Add / Move to Album ───────────────────
+async function openBulkAlbumModal(mode = 'add') {
   if (selectedPhotoIds.size === 0) return;
-  $('#bulkAlbumModalTitle').textContent = `🖼️ Add ${selectedPhotoIds.size} Photos to Album`;
+  bulkAlbumMode = mode;
+  const isMove = mode === 'move';
+
+  $('#bulkAlbumModalTitle').textContent = isMove
+    ? `↗️ Move ${selectedPhotoIds.size} Photos to Album`
+    : `➕ Add ${selectedPhotoIds.size} Photos to Album`;
+  $('#bulkCreateAlbumBtn').textContent = isMove ? 'Create & Move' : 'Create & Add';
   $('#bulkNewAlbumTitle').value = '';
   $('#bulkAlbumModal').classList.add('active');
 
@@ -3273,13 +3509,17 @@ async function openBulkAlbumModal() {
     const data = await res.json();
     allAlbums = data.albums || [];
 
-    if (allAlbums.length === 0) {
-      list.innerHTML = '<div style="font-size:0.82rem; color:var(--text-dim); padding:0.75rem; text-align:center;">No albums yet. Enter a title above to create your first album!</div>';
+    const eligibleAlbums = isMove && currentAlbumId 
+      ? allAlbums.filter(a => a.id !== currentAlbumId) 
+      : allAlbums;
+
+    if (eligibleAlbums.length === 0) {
+      list.innerHTML = '<div style="font-size:0.82rem; color:var(--text-dim); padding:0.75rem; text-align:center;">No other albums available. Create a new album above!</div>';
       return;
     }
 
     list.innerHTML = '';
-    allAlbums.forEach(album => {
+    eligibleAlbums.forEach(album => {
       const card = document.createElement('div');
       card.className = 'album-picker-card';
       card.innerHTML = `
@@ -3291,11 +3531,11 @@ async function openBulkAlbumModal() {
           </div>
         </div>
         <div>
-          <span class="small-add-btn">+ Add All</span>
+          <span class="small-add-btn">${isMove ? '↗ Move Here' : '+ Add All'}</span>
         </div>
       `;
       card.addEventListener('click', async () => {
-        await executeBulkAddToAlbum(album.id, album.name);
+        await executeBulkAlbumAction(album.id, album.name);
       });
       list.appendChild(card);
     });
@@ -3304,26 +3544,45 @@ async function openBulkAlbumModal() {
   }
 }
 
-async function executeBulkAddToAlbum(albumId, albumName) {
+async function executeBulkAlbumAction(targetAlbumId, targetAlbumName) {
   const ids = Array.from(selectedPhotoIds);
   try {
-    const res = await fetch(`${API}/api/photos/bulk-album`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ album_id: albumId, image_ids: ids })
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.detail || 'Failed to add photos to album');
-    showToast(`Added ${result.added_count} photos to "${albumName}"`);
-    $('#bulkAlbumModal').classList.remove('active');
-    clearSelection();
-    await loadAlbums();
+    if (bulkAlbumMode === 'move' && currentAlbumId) {
+      const res = await fetch(`${API}/api/photos/bulk-move-album`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_album_id: currentAlbumId, target_album_id: targetAlbumId, image_ids: ids })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.detail || 'Failed to move photos');
+      showToast(`Moved ${result.moved_count} photos to "${targetAlbumName}"`);
+      $('#bulkAlbumModal').classList.remove('active');
+      clearSelection();
+      await loadAlbums();
+      showAlbumPhotos(currentAlbumId, currentAlbumName);
+    } else {
+      const res = await fetch(`${API}/api/photos/bulk-album`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ album_id: targetAlbumId, image_ids: ids })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.detail || 'Failed to add photos to album');
+      showToast(`Added ${result.added_count} photos to "${targetAlbumName}"`);
+      $('#bulkAlbumModal').classList.remove('active');
+      clearSelection();
+      await loadAlbums();
+      if (currentAlbumId) {
+        showAlbumPhotos(currentAlbumId, currentAlbumName);
+      }
+    }
   } catch (err) {
     showToast(err.message);
   }
 }
 
-$('#dockAddAlbumBtn').addEventListener('click', openBulkAlbumModal);
+$('#dockAddAlbumBtn').addEventListener('click', () => openBulkAlbumModal('add'));
+$('#dockMoveAlbumBtn').addEventListener('click', () => openBulkAlbumModal('move'));
 $('#bulkAlbumModalClose').addEventListener('click', () => $('#bulkAlbumModal').classList.remove('active'));
 
 $('#bulkCreateAlbumBtn').addEventListener('click', async () => {
@@ -3343,9 +3602,32 @@ $('#bulkCreateAlbumBtn').addEventListener('click', async () => {
       throw new Error(err.detail || 'Failed to create album');
     }
     const album = await res.json();
-    await executeBulkAddToAlbum(album.id, album.name);
+    await executeBulkAlbumAction(album.id, album.name);
   } catch (err) {
     alert(err.message);
+  }
+});
+
+// ── Bulk Actions: Remove from Current Album ─────────────
+$('#dockRemoveFromAlbumBtn').addEventListener('click', async () => {
+  if (selectedPhotoIds.size === 0 || !currentAlbumId) return;
+  const count = selectedPhotoIds.size;
+  if (!confirm(`Remove ${count} photo(s) from "${currentAlbumName || 'this album'}"?\n\nNote: The photos will still remain in your library and any other albums.`)) return;
+
+  try {
+    const res = await fetch(`${API}/api/photos/bulk-remove-from-album`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ album_id: currentAlbumId, image_ids: Array.from(selectedPhotoIds) })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.detail || 'Failed to remove photos from album');
+    showToast(`Removed ${result.removed_count} photos from "${currentAlbumName}"`);
+    clearSelection();
+    await loadAlbums();
+    showAlbumPhotos(currentAlbumId, currentAlbumName);
+  } catch (err) {
+    showToast(err.message);
   }
 });
 
@@ -3470,21 +3752,43 @@ $('#locationApplyBtn').addEventListener('click', async () => {
   }
 });
 
-// ── Bulk Actions: Re-process (Moondream2) ────────────────
-$('#dockReprocessBtn').addEventListener('click', async () => {
+// ── Bulk Actions: Re-process (Moondream2 or LLaVA 7B) ───
+$('#dockReprocessBtn').addEventListener('click', () => {
   if (selectedPhotoIds.size === 0) return;
   const count = selectedPhotoIds.size;
-  if (!confirm(`Re-run AI vision captioning (Moondream2) and re-embed ${count} photo(s)?\n\nThis will run in the background.`)) return;
+  $('#reprocessPhotoCountText').textContent = `Re-run AI vision captioning and re-embed ${count} selected photo(s) in the background:`;
+  $('#reprocessModal').classList.add('active');
+});
+
+$('#reprocessModalClose').addEventListener('click', () => $('#reprocessModal').classList.remove('active'));
+$('#reprocessCancelBtn').addEventListener('click', () => $('#reprocessModal').classList.remove('active'));
+
+document.querySelectorAll('input[name="reprocessVlmModel"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const val = e.target.value;
+    $('#reprocessCardMoondream')?.classList.toggle('active', val === 'moondream:1.8b');
+    $('#reprocessCardLlava')?.classList.toggle('active', val === 'llava:7b');
+  });
+});
+
+$('#reprocessConfirmBtn').addEventListener('click', async () => {
+  const count = selectedPhotoIds.size;
+  const chosenModel = document.querySelector('input[name="reprocessVlmModel"]:checked')?.value || 'moondream:1.8b';
+  $('#reprocessModal').classList.remove('active');
 
   try {
     const res = await fetch(`${API}/api/photos/bulk-reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_ids: Array.from(selectedPhotoIds) })
+      body: JSON.stringify({
+        image_ids: Array.from(selectedPhotoIds),
+        vlm_model: chosenModel
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Failed to start re-processing');
-    showToast(`Started AI re-processing for ${count} photos in the background...`);
+    const modelTag = chosenModel.includes('llava') ? 'LLaVA 7B' : 'Moondream2';
+    showToast(`Started AI re-processing for ${count} photo(s) using ${modelTag}...`);
     clearSelection();
   } catch (err) {
     alert(err.message);
@@ -3521,6 +3825,7 @@ document.addEventListener('keydown', (e) => {
     $('#modal').classList.remove('active');
     $('#settingsModal').classList.remove('active');
     $('#importModal').classList.remove('active');
+    $('#reprocessModal')?.classList.remove('active');
     $('#createAlbumModal').classList.remove('active');
     $('#addToAlbumModal').classList.remove('active');
     $('#locationPickerModal').classList.remove('active');

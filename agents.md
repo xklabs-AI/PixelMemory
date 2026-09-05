@@ -26,10 +26,10 @@ PixelMemory is decomposed into specialized agents, each owning a distinct respon
   └────────────────────────────────────────────────┘
                          │
                          ▼
-                 ┌───────────────┐
-                 │   ChromaDB    │
-                 │ (vector store)│
-                 └───────────────┘
+                  ┌───────────────┐
+                  │     Zvec      │
+                  │ (vector store)│
+                  └───────────────┘
                          │
                          ▼
               ┌─────────────────────┐
@@ -154,16 +154,16 @@ PixelMemory is decomposed into specialized agents, each owning a distinct respon
 
 ### 5. Embedder Agent
 
-**Role:** Convert enriched text descriptions into vector embeddings and store in ChromaDB.
+**Role:** Convert enriched text descriptions into vector embeddings and store in Zvec.
 
 **Owns:**
 - Embedding model loading (`all-MiniLM-L6-v2` via sentence-transformers)
 - Batch encoding of text → vectors
-- ChromaDB upsert (persistent collection, cosine similarity, HNSW index)
+- Zvec upsert (persistent collection, cosine similarity, HNSW index)
 
 **Input:** Rows where `description_done = 1 AND embedded = 0`. Reads `enriched_text`.
 
-**Output:** Vectors stored in ChromaDB, `embedded = 1` in SQLite.
+**Output:** Vectors stored in Zvec, `embedded = 1` in SQLite.
 
 **Concurrency model:** Single process. Batch size 256 for encoding efficiency. Can run on CPU or GPU — the embedding model is small enough that CPU is fast.
 
@@ -173,7 +173,7 @@ PixelMemory is decomposed into specialized agents, each owning a distinct respon
 
 **Decisions made by this agent:**
 - Batch size for encoding (256 — balances memory and throughput)
-- ChromaDB collection configuration (cosine space, HNSW)
+- Zvec collection configuration (cosine space, HNSW)
 
 **Does NOT do:**
 - Search or query handling
@@ -187,7 +187,7 @@ PixelMemory is decomposed into specialized agents, each owning a distinct respon
 
 **Owns:**
 - Query embedding (same model as Embedder Agent for consistency)
-- ChromaDB approximate nearest neighbor search
+- Zvec approximate nearest neighbor search
 - Result enrichment: join vector hits with SQLite metadata for the response
 - Thumbnail and original image serving
 - Static frontend (HTML/CSS/JS)
@@ -206,7 +206,7 @@ PixelMemory is decomposed into specialized agents, each owning a distinct respon
 | `GET /api/stats` | Pipeline progress counts |
 | `GET /` | Frontend HTML |
 
-**Concurrency model:** Async FastAPI with uvicorn. Multiple concurrent queries supported. ChromaDB and SQLite reads are thread-safe.
+**Concurrency model:** Async FastAPI with uvicorn. Multiple concurrent queries supported. Zvec and SQLite reads are thread-safe.
 
 **Does NOT do:**
 - Ingest, describe, or embed — read-only at runtime
