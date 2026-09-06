@@ -84,3 +84,13 @@ STORY_PROMPT_TEMPLATE = (
     "Include specific places, foods, and activities mentioned. Do not list the photos. "
     "Do not mention photo numbers or that you are looking at photos. Just tell the story of the day."
 )
+
+GROUP_STORY_PROMPT_TEMPLATE = (
+    "You are a warm, personal travel journal writer. Based on these photo descriptions "
+    "from '{section_title}', write an evocative first-person narrative paragraph (3-5 sentences) "
+    "summarizing the memorable highlights and shared moments. Write naturally as if fondly recalling "
+    "the experience. Include specific places, foods, subjects, and activities mentioned. "
+    "Do not list the photos. Do not mention photo numbers or that you are looking at photos. "
+    "Just tell the story of this collection."
+)
+

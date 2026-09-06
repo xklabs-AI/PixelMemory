@@ -426,6 +426,16 @@ def clear_story_cache(conn: sqlite3.Connection, album_id: int) -> int:
     return cur.rowcount
 
 
+def delete_day_narrative(conn: sqlite3.Connection, album_id: int, day_date: str) -> int:
+    """Delete a single cached day/group narrative for an album. Returns rows deleted."""
+    cur = conn.execute(
+        "DELETE FROM story_cache WHERE album_id = ? AND day_date = ?",
+        (album_id, day_date),
+    )
+    return cur.rowcount
+
+
+
 def get_album_story(conn: sqlite3.Connection, album_id: int) -> list[dict]:
     """Fetch all cached day narratives for an album, ordered chronologically."""
     rows = conn.execute(

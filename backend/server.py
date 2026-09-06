@@ -935,16 +935,122 @@ def get_original(image_id: int):
     return FileResponse(fpath, media_type=media_types.get(suffix, "application/octet-stream"))
 
 
-# ── Story Timeline ───────────────────────────────────────
-
 class StoryGenerateRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     model: Optional[str] = None
 
 
+class StoryGroupGenerateRequest(BaseModel):
+    album_id: Optional[int] = None
+    group_title: str
+    group_key: Optional[str] = None
+    image_ids: list[int]
+    model: Optional[str] = None
+    save_to_cache: bool = True
+
+
+class StorySingleDayRequest(BaseModel):
+    day_date: str
+    model: Optional[str] = None
+    force: bool = True
+
+
 # Simple progress tracker for story generation
 _story_progress: dict = {}
+
+
+@app.post("/api/story/generate-group")
+def generate_group_story_endpoint(req: StoryGroupGenerateRequest):
+    """Generate a story narrative for an arbitrary group of photos or section."""
+    from backend.storyteller import generate_group_narrative
+    from backend.config import STORY_LLM_MODEL
+    from backend.db import get_image_by_id, upsert_narrative
+
+    if not req.image_ids:
+        raise HTTPException(400, "No photos provided for group story.")
+
+    model = (req.model or "").strip() or STORY_LLM_MODEL
+
+    with get_conn() as conn:
+        photos = []
+        for img_id in req.image_ids:
+            row = get_image_by_id(conn, img_id)
+            if row:
+                photos.append(dict(row))
+
+    if not photos:
+        raise HTTPException(404, "None of the specified photos were found.")
+
+    try:
+        narrative = generate_group_narrative(req.group_title, photos, model=model)
+    except Exception as e:
+        raise HTTPException(500, f"Story generation error: {e}")
+
+    # If associated with an album and group_key / day_date is provided, cache it
+    if req.album_id and req.save_to_cache and req.group_key:
+        import json
+        with get_conn() as conn:
+            upsert_narrative(
+                conn,
+                album_id=req.album_id,
+                day_date=req.group_key,
+                narrative=narrative,
+                model_used=model,
+                photo_ids=json.dumps([p["id"] for p in photos]),
+            )
+
+    return {
+        "status": "ok",
+        "narrative": narrative,
+        "model_used": model,
+        "group_title": req.group_title,
+        "group_key": req.group_key,
+        "photo_ids": [p["id"] for p in photos],
+        "photo_count": len(photos),
+        "album_id": req.album_id,
+    }
+
+
+@app.post("/api/albums/{album_id}/story/day/generate")
+def generate_single_day_story_endpoint(album_id: int, req: StorySingleDayRequest):
+    """Generate or regenerate story for a single day in an album."""
+    from backend.storyteller import generate_single_day_story
+    from backend.config import STORY_LLM_MODEL
+
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+    if not album:
+        raise HTTPException(404, f"Album {album_id} not found.")
+
+    model = (req.model or "").strip() or STORY_LLM_MODEL
+
+    try:
+        res = generate_single_day_story(
+            album_id=album_id,
+            day_date=req.day_date,
+            model=model,
+            force=req.force,
+        )
+        return {"status": "ok", "album_id": album_id, **res}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"Story generation failed: {e}")
+
+
+@app.delete("/api/albums/{album_id}/story/day/{day_date}")
+def delete_single_day_story_endpoint(album_id: int, day_date: str):
+    """Delete a single cached day narrative from an album."""
+    from backend.db import delete_day_narrative
+
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        deleted = delete_day_narrative(conn, album_id, day_date)
+
+    return {"deleted": deleted, "album_id": album_id, "day_date": day_date}
 
 
 @app.post("/api/albums/{album_id}/story/generate")

@@ -6,7 +6,7 @@ import urllib.error
 from collections import OrderedDict
 from datetime import datetime
 
-from backend.config import OLLAMA_HOST, STORY_LLM_MODEL, STORY_PROMPT_TEMPLATE
+from backend.config import OLLAMA_HOST, STORY_LLM_MODEL, STORY_PROMPT_TEMPLATE, GROUP_STORY_PROMPT_TEMPLATE
 from backend.db import (
     get_conn, get_album_image_ids, get_image_by_id,
     get_cached_narrative, upsert_narrative,
@@ -71,17 +71,15 @@ def build_day_prompt(day_date: str, photos: list[dict]) -> str:
             date_label = day_date
 
     header = STORY_PROMPT_TEMPLATE.format(date=date_label)
-
     lines = [header, "", f"Photos from {date_label}:", ""]
 
     for i, p in enumerate(photos, 1):
-        # Extract time of day
         dt_str = p.get("date_taken") or ""
         time_part = ""
         if dt_str and "T" in dt_str:
             try:
                 dt = datetime.fromisoformat(dt_str)
-                time_part = dt.strftime("%I:%M %p")  # e.g. "01:19 PM"
+                time_part = dt.strftime("%I:%M %p")
             except ValueError:
                 pass
 
@@ -90,6 +88,39 @@ def build_day_prompt(day_date: str, photos: list[dict]) -> str:
 
         location_info = f", {place}" if place else ""
         time_info = f"{time_part}" if time_part else "unknown time"
+
+        lines.append(f"Photo {i} ({time_info}{location_info}): \"{desc}\"")
+
+    return "\n".join(lines)
+
+
+def build_group_prompt(group_title: str, photos: list[dict]) -> str:
+    """
+    Construct the LLM prompt for an arbitrary group/section of photos.
+    Handles date groups, location groups, camera groups, or custom selections.
+    """
+    title_label = group_title.strip() if group_title else "Photo Group"
+    header = GROUP_STORY_PROMPT_TEMPLATE.format(section_title=title_label)
+    lines = [header, "", f"Photos from \"{title_label}\":", ""]
+
+    for i, p in enumerate(photos, 1):
+        dt_str = p.get("date_taken") or ""
+        time_part = ""
+        if dt_str:
+            try:
+                if "T" in dt_str:
+                    dt = datetime.fromisoformat(dt_str)
+                    time_part = dt.strftime("%b %d, %Y %I:%M %p")
+                else:
+                    time_part = dt_str[:10]
+            except ValueError:
+                time_part = dt_str
+
+        place = p.get("place_name") or ""
+        desc = p.get("raw_description") or p.get("enriched_text") or "(no description)"
+
+        location_info = f", {place}" if place else ""
+        time_info = f"{time_part}" if time_part else "undated"
 
         lines.append(f"Photo {i} ({time_info}{location_info}): \"{desc}\"")
 
@@ -130,6 +161,16 @@ def generate_day_narrative(
     return call_ollama_llm(prompt, model)
 
 
+def generate_group_narrative(
+    group_title: str,
+    photos: list[dict],
+    model: str = STORY_LLM_MODEL,
+) -> str:
+    """Build prompt and generate narrative for an arbitrary grouped section or selection."""
+    prompt = build_group_prompt(group_title, photos)
+    return call_ollama_llm(prompt, model)
+
+
 def fetch_album_photos(album_id: int) -> list[dict]:
     """Load all photos for an album with full metadata."""
     with get_conn() as conn:
@@ -142,12 +183,64 @@ def fetch_album_photos(album_id: int) -> list[dict]:
         return photos
 
 
+def generate_single_day_story(
+    album_id: int,
+    day_date: str,
+    model: str = STORY_LLM_MODEL,
+    force: bool = True,
+) -> dict:
+    """
+    Generate or regenerate a story narrative for a single day/group in an album.
+    Updates the story_cache and returns the narrative info.
+    """
+    photos = fetch_album_photos(album_id)
+    day_groups = group_photos_by_day(photos)
+    day_photos = day_groups.get(day_date, [])
+
+    if not day_photos:
+        # Fallback: check if day_date matches any date prefix
+        day_photos = [p for p in photos if (p.get("date_taken") or "")[:10] == day_date]
+
+    if not day_photos:
+        raise ValueError(f"No photos found for day '{day_date}' in album {album_id}")
+
+    photo_ids = [p["id"] for p in day_photos]
+    photo_ids_json = json.dumps(photo_ids)
+
+    if not force:
+        with get_conn() as conn:
+            cached = get_cached_narrative(conn, album_id, day_date)
+        if cached and cached.get("model_used") == model and cached.get("photo_ids") == photo_ids_json:
+            return {
+                "day_date": day_date,
+                "narrative": cached["narrative"],
+                "photo_ids": photo_ids,
+                "photo_count": len(day_photos),
+                "model_used": cached.get("model_used", model),
+                "cached": True,
+            }
+
+    narrative = generate_day_narrative(day_date, day_photos, model)
+    with get_conn() as conn:
+        upsert_narrative(conn, album_id, day_date, narrative, model, photo_ids_json)
+
+    return {
+        "day_date": day_date,
+        "narrative": narrative,
+        "photo_ids": photo_ids,
+        "photo_count": len(day_photos),
+        "model_used": model,
+        "cached": False,
+    }
+
+
 def generate_album_story(
     album_id: int,
     start_date: str | None = None,
     end_date: str | None = None,
     model: str = STORY_LLM_MODEL,
     progress_callback=None,
+    force_all: bool = False,
 ) -> list[dict]:
     """
     Full story generation pipeline for an album.
@@ -177,7 +270,8 @@ def generate_album_story(
         with get_conn() as conn:
             cached = get_cached_narrative(conn, album_id, day_date)
 
-        if cached and cached.get("model_used") == model:
+        # If cache exists, uses the same model, and photo_ids haven't changed (unless forced)
+        if not force_all and cached and cached.get("model_used") == model and cached.get("photo_ids") == photo_ids_json:
             narrative = cached["narrative"]
         else:
             # Generate fresh narrative via LLM
