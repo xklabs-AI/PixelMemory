@@ -62,6 +62,7 @@ SEARCH_TOP_K = 40
 
 # ── Story Timeline ──────────────────────────────────
 STORY_LLM_MODEL = "gemma4:e4b"
+STORY_LLM_THINKING = False  # Set to False to disable Gemma/reasoning model thinking mode for high-speed generation
 
 AVAILABLE_STORY_MODELS = [
     {

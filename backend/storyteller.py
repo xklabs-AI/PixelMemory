@@ -6,7 +6,10 @@ import urllib.error
 from collections import OrderedDict
 from datetime import datetime
 
-from backend.config import OLLAMA_HOST, STORY_LLM_MODEL, STORY_PROMPT_TEMPLATE, GROUP_STORY_PROMPT_TEMPLATE
+from backend.config import (
+    OLLAMA_HOST, STORY_LLM_MODEL, STORY_LLM_THINKING,
+    STORY_PROMPT_TEMPLATE, GROUP_STORY_PROMPT_TEMPLATE,
+)
 from backend.db import (
     get_conn, get_album_image_ids, get_image_by_id,
     get_cached_narrative, upsert_narrative,
@@ -127,16 +130,18 @@ def build_group_prompt(group_title: str, photos: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def call_ollama_llm(prompt: str, model: str = STORY_LLM_MODEL) -> str:
+def call_ollama_llm(prompt: str, model: str = STORY_LLM_MODEL, think: bool = STORY_LLM_THINKING) -> str:
     """Call Ollama text generation API and return the response text."""
     payload = {
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "think": think,
         "options": {
             "temperature": 0.7,
             "top_p": 0.9,
-            "num_predict": 1200,  # Accommodate reasoning models (e.g. gemma4 thinking tokens) + narrative
+            "think": think,
+            "num_predict": 600,
         },
     }
 
