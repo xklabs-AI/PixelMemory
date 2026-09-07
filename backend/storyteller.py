@@ -12,8 +12,43 @@ from backend.config import (
 )
 from backend.db import (
     get_conn, get_album_image_ids, get_image_by_id,
-    get_cached_narrative, upsert_narrative,
+    get_cached_narrative, upsert_narrative, get_people_for_photos,
 )
+
+
+def format_people_phrase(people_list: list[dict]) -> str:
+    """Format list of tagged people into a warm, natural phrase like ', featuring my spouse Sarah and pet dog Charlie'."""
+    if not people_list:
+        return ""
+    phrases = []
+    for p in people_list:
+        name = p.get("name", "").strip()
+        rel = (p.get("relationship") or "").strip().lower()
+        if not name:
+            continue
+        if rel in ("self", "me"):
+            phrases.append(f"myself ({name})")
+        elif rel in ("pet (dog)", "pet dog", "dog"):
+            phrases.append(f"my pet dog {name}")
+        elif rel in ("pet (cat)", "pet cat", "cat"):
+            phrases.append(f"my pet cat {name}")
+        elif rel.startswith("pet"):
+            phrases.append(f"my pet {name}")
+        elif rel and rel != "friend":
+            phrases.append(f"my {rel} {name}")
+        elif rel == "friend":
+            phrases.append(f"my friend {name}")
+        else:
+            phrases.append(name)
+
+    if not phrases:
+        return ""
+    if len(phrases) == 1:
+        return f", featuring {phrases[0]}"
+    elif len(phrases) == 2:
+        return f", featuring {phrases[0]} and {phrases[1]}"
+    else:
+        return f", featuring {', '.join(phrases[:-1])}, and {phrases[-1]}"
 
 
 def group_photos_by_day(
@@ -62,7 +97,7 @@ def group_photos_by_day(
 def build_day_prompt(day_date: str, photos: list[dict]) -> str:
     """
     Construct the LLM prompt for a single day's photos.
-    Includes timestamps, locations, and VLM descriptions.
+    Includes timestamps, locations, tagged people/pets, and VLM descriptions.
     """
     if day_date == "undated":
         date_label = "an unknown date"
@@ -75,6 +110,15 @@ def build_day_prompt(day_date: str, photos: list[dict]) -> str:
 
     header = STORY_PROMPT_TEMPLATE.format(date=date_label)
     lines = [header, "", f"Photos from {date_label}:", ""]
+
+    photo_ids = [p["id"] for p in photos if "id" in p]
+    people_by_photo = {}
+    if photo_ids:
+        try:
+            with get_conn() as conn:
+                people_by_photo = get_people_for_photos(conn, photo_ids)
+        except Exception:
+            pass
 
     for i, p in enumerate(photos, 1):
         dt_str = p.get("date_taken") or ""
@@ -92,7 +136,10 @@ def build_day_prompt(day_date: str, photos: list[dict]) -> str:
         location_info = f", {place}" if place else ""
         time_info = f"{time_part}" if time_part else "unknown time"
 
-        lines.append(f"Photo {i} ({time_info}{location_info}): \"{desc}\"")
+        photo_people = people_by_photo.get(p.get("id"), [])
+        people_info = format_people_phrase(photo_people)
+
+        lines.append(f"Photo {i} ({time_info}{location_info}{people_info}): \"{desc}\"")
 
     return "\n".join(lines)
 
@@ -105,6 +152,15 @@ def build_group_prompt(group_title: str, photos: list[dict]) -> str:
     title_label = group_title.strip() if group_title else "Photo Group"
     header = GROUP_STORY_PROMPT_TEMPLATE.format(section_title=title_label)
     lines = [header, "", f"Photos from \"{title_label}\":", ""]
+
+    photo_ids = [p["id"] for p in photos if "id" in p]
+    people_by_photo = {}
+    if photo_ids:
+        try:
+            with get_conn() as conn:
+                people_by_photo = get_people_for_photos(conn, photo_ids)
+        except Exception:
+            pass
 
     for i, p in enumerate(photos, 1):
         dt_str = p.get("date_taken") or ""
@@ -125,7 +181,10 @@ def build_group_prompt(group_title: str, photos: list[dict]) -> str:
         location_info = f", {place}" if place else ""
         time_info = f"{time_part}" if time_part else "undated"
 
-        lines.append(f"Photo {i} ({time_info}{location_info}): \"{desc}\"")
+        photo_people = people_by_photo.get(p.get("id"), [])
+        people_info = format_people_phrase(photo_people)
+
+        lines.append(f"Photo {i} ({time_info}{location_info}{people_info}): \"{desc}\"")
 
     return "\n".join(lines)
 

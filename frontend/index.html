@@ -2582,6 +2582,446 @@
       flex-direction: column;
       gap: 0.55rem;
     }
+
+    /* ── Face Tagging & Overlay ────────────────────────── */
+    .modal-img-pane {
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .face-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .face-box {
+      position: absolute;
+      border: 2px solid #3b82f6;
+      border-radius: 6px;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+      background: rgba(59, 130, 246, 0.08);
+      z-index: 11;
+    }
+
+    .face-box:hover {
+      border-color: #60a5fa;
+      box-shadow: 0 0 14px rgba(96, 165, 250, 0.7);
+      background: rgba(59, 130, 246, 0.18);
+    }
+
+    .face-box.tagged {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .face-box.tagged:hover {
+      border-color: #34d399;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.7);
+      background: rgba(16, 185, 129, 0.18);
+    }
+
+    .face-box.pet {
+      border-color: #a855f7;
+      background: rgba(168, 85, 247, 0.08);
+    }
+    .face-box.pet:hover {
+      border-color: #c084fc;
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.7);
+      background: rgba(168, 85, 247, 0.18);
+    }
+
+    .face-box.untagged {
+      border: 2px dashed #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .face-box.untagged:hover {
+      border-color: #fbbf24;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
+      background: rgba(245, 158, 11, 0.18);
+    }
+
+    .face-box-tag {
+      position: absolute;
+      top: -26px;
+      left: 0;
+      white-space: nowrap;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
+    }
+
+    .face-overlay-toolbar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 0.4rem;
+      z-index: 15;
+    }
+
+    .face-tool-toggle {
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      backdrop-filter: blur(8px);
+      transition: all 0.18s ease;
+    }
+    .face-tool-toggle:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .face-tool-toggle.active {
+      background: var(--accent);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    }
+
+    .draw-box-preview {
+      position: absolute;
+      border: 2px dashed #60a5fa;
+      background: rgba(96, 165, 250, 0.18);
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    /* Face Tag Popover */
+    .face-tag-popover {
+      position: absolute;
+      width: 270px;
+      background: #0f172a;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+      padding: 0.85rem;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .popover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popover-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .popover-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .popover-close-btn:hover {
+      color: #fff;
+    }
+
+    .popover-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .popover-field label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .people-autocomplete-list {
+      background: #1e293b;
+      border: 1px solid var(--border-highlight);
+      border-radius: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .autocomplete-item {
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .autocomplete-item:hover {
+      background: rgba(99, 102, 241, 0.25);
+      color: #fff;
+    }
+
+    .popover-suggestion-wrap {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 5px;
+      padding: 0.45rem 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .suggestion-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .btn-accept-suggestion {
+      background: #10b981;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-accept-suggestion:hover {
+      background: #059669;
+    }
+
+    .popover-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.3rem;
+    }
+
+    /* Modal People Chips in Right Pane */
+    .modal-people-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.3rem;
+    }
+    .modal-person-chip {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-highlight);
+      border-radius: 20px;
+      padding: 0.25rem 0.6rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      color: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .modal-person-chip:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .modal-person-chip.untagged-chip {
+      border: 1px dashed #f59e0b;
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .modal-person-chip .remove-face-tag {
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-left: 2px;
+    }
+    .modal-person-chip .remove-face-tag:hover {
+      color: #ef4444;
+    }
+
+    /* ── People & Pets Explorer View ───────────────────── */
+    .people-explorer-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      overflow-y: auto;
+      gap: 1.25rem;
+    }
+
+    .people-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .people-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .people-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+    .people-actions {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .people-filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+    }
+    .people-tab {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      color: var(--text-muted);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .people-tab:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .people-tab.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #93c5fd;
+    }
+
+    .unconfirmed-banner {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .banner-text {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .banner-icon {
+      font-size: 1.2rem;
+    }
+
+    .people-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .person-card {
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.65rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      position: relative;
+    }
+    .person-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .person-avatar-wrap {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      overflow: hidden;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .person-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .person-avatar-fallback {
+      font-size: 2rem;
+    }
+    .person-rel-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #1e293b;
+      border: 1px solid var(--border-highlight);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+    }
+
+    .person-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .person-rel-text {
+      font-size: 0.72rem;
+      color: #93c5fd;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.12);
+      border-radius: 12px;
+      padding: 0.15rem 0.55rem;
+    }
+    .person-count {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
   </style>
 </head>
 
@@ -2638,6 +3078,10 @@
         <div class="rail-item" id="railNotes" title="Notes & Journals">
           <span class="rail-icon">📝</span>
           <span>Notes</span>
+        </div>
+        <div class="rail-item" id="railPeople" title="People & Pets">
+          <span class="rail-icon">👥</span>
+          <span>People</span>
         </div>
         <div class="rail-item" id="railImport" title="Import Folder">
           <span class="rail-icon">📥</span>
@@ -2849,6 +3293,40 @@
         <!-- Photo Grid Gallery -->
         <div class="gallery-viewport" id="viewport">
           <div class="gallery-grid" id="grid"></div>
+
+          <!-- People & Pets Explorer View -->
+          <div class="people-explorer-view" id="peopleView" style="display: none;">
+            <div class="people-header">
+              <div class="people-title-group">
+                <div class="people-title">👥 People & Pets</div>
+                <div class="people-subtitle">Tag family, friends, and pets to make photo searches and story summaries deeply personal.</div>
+              </div>
+              <div class="people-actions">
+                <button class="tool-btn" id="scanLibraryFacesBtn">🔍 Scan Library for Faces</button>
+                <button class="cta-btn" id="addPersonBtn">+ Add Person / Pet</button>
+              </div>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="people-filter-tabs">
+              <button class="people-tab active" data-filter="all">All (<span id="countAllPeople">0</span>)</button>
+              <button class="people-tab" data-filter="family">Family (<span id="countFamily">0</span>)</button>
+              <button class="people-tab" data-filter="friends">Friends (<span id="countFriends">0</span>)</button>
+              <button class="people-tab" data-filter="pets">Pets (<span id="countPets">0</span>)</button>
+            </div>
+
+            <!-- Unconfirmed matches alert banner if suggestions exist -->
+            <div id="unconfirmedMatchesBanner" class="unconfirmed-banner" style="display: none;">
+              <div class="banner-text">
+                <span class="banner-icon">✨</span>
+                <span id="unconfirmedBannerText">We found untagged photos that match people in your library!</span>
+              </div>
+              <button class="cta-btn banner-btn" id="reviewMatchesBtn">Review Matches</button>
+            </div>
+
+            <!-- People Grid -->
+            <div class="people-grid" id="peopleGrid"></div>
+          </div>
         </div>
 
         <!-- Floating Bottom AI Assistant Bar (from inspiration screenshot) -->
@@ -2877,10 +3355,40 @@
         <button class="modal-close-btn" id="modalClose">&times;</button>
       </div>
       <div class="modal-content-split">
-        <div class="modal-img-pane">
+        <div class="modal-img-pane" id="modalImgPane">
           <img id="modalImg" src="" alt="" />
+          <!-- Face detection & tagging interactive overlay -->
+          <div id="faceOverlay" class="face-overlay"></div>
+          <!-- Manual drawing box preview -->
+          <div id="drawBoxPreview" class="draw-box-preview" style="display: none;"></div>
+          <!-- Toolbar over image -->
+          <div class="face-overlay-toolbar">
+            <button type="button" class="face-tool-toggle" id="toggleTagModeBtn" title="Click or drag to tag a person or pet">
+              <span>🏷️</span>
+              <span id="tagModeLabel">Tag Photo</span>
+            </button>
+            <button type="button" class="face-tool-toggle" id="detectFacesBtn" title="Auto-detect faces on this photo">
+              <span>🔍</span>
+              <span>Detect Faces</span>
+            </button>
+          </div>
         </div>
         <div class="modal-info-pane">
+          <!-- People & Pets Tagged in this Photo -->
+          <div class="info-block" id="modalPeopleBlock">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+              <h4 style="margin: 0; display: flex; align-items: center; gap: 0.35rem;">
+                <span>👥</span>
+                <span>People & Pets</span>
+                <span id="modalFaceCountBadge" class="vlm-badge" style="display: none; font-size: 0.65rem;">0</span>
+              </h4>
+              <button type="button" class="tiny-edit-btn" id="modalAddTagInlineBtn">+ Tag</button>
+            </div>
+            <div id="modalPeopleChipsList" class="modal-people-chips">
+              <span style="font-size: 0.76rem; color: var(--text-muted); font-style: italic;">No people or pets tagged yet. Click on faces or 'Tag Photo' to add.</span>
+            </div>
+          </div>
+
           <div class="info-block">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
               <h4>Visual AI Description</h4>
@@ -3453,6 +3961,128 @@
         <div id="notesContainer" class="notes-list">
           <div style="text-align: center; color: var(--text-dim); padding: 1.5rem; font-size: 0.82rem;">Loading notes...
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Facebook-Style Face Tagging Popover -->
+  <div id="faceTagPopover" class="face-tag-popover" style="display: none;">
+    <div class="popover-header">
+      <span class="popover-title" id="popoverTitle">Who is this?</span>
+      <button type="button" class="popover-close-btn" id="popoverCloseBtn">&times;</button>
+    </div>
+    <div class="popover-body">
+      <!-- Suggested Match Chip -->
+      <div id="popoverSuggestionWrap" class="popover-suggestion-wrap" style="display: none; margin-bottom: 0.5rem;">
+        <span style="font-size: 0.72rem; color: #93c5fd; font-weight: 600;">Suggested Match:</span>
+        <div class="suggestion-chip">
+          <span id="popoverSuggestionName">Sarah</span>
+          <span id="popoverSuggestionScore" class="vlm-badge">92%</span>
+          <button type="button" class="btn-accept-suggestion" id="btnAcceptSuggestion">✔ Confirm</button>
+        </div>
+      </div>
+
+      <!-- Search or Enter Name -->
+      <div class="popover-field">
+        <label>Name</label>
+        <input type="text" id="popoverNameInput" class="setting-input" placeholder="Person or pet name..." autocomplete="off" />
+        <div id="popoverPeopleSuggestions" class="people-autocomplete-list" style="display: none;"></div>
+      </div>
+
+      <!-- Relationship Selector -->
+      <div class="popover-field" style="margin-top: 0.4rem;">
+        <label>Relationship to you</label>
+        <select id="popoverRelSelect" class="filter-select" style="width: 100%;">
+          <option value="Spouse">💍 Spouse / Partner</option>
+          <option value="Parent">👨‍👩‍👦 Parent</option>
+          <option value="Grandparent">👵 Grandparent</option>
+          <option value="Child">👶 Child</option>
+          <option value="Sibling">👫 Sibling</option>
+          <option value="Friend" selected>🤝 Friend</option>
+          <option value="Pet (Dog)">🐶 Pet (Dog)</option>
+          <option value="Pet (Cat)">🐱 Pet (Cat)</option>
+          <option value="Pet (Other)">🐾 Pet (Other)</option>
+          <option value="Colleague">💼 Colleague</option>
+          <option value="Self">👤 Myself</option>
+          <option value="Other">🏷️ Other</option>
+        </select>
+      </div>
+
+      <div class="popover-actions">
+        <button type="button" class="tool-btn" id="popoverDeleteFaceBtn" style="color: #ef4444; font-size: 0.75rem; padding: 0.3rem 0.5rem;">🗑️ Delete</button>
+        <div style="display: flex; gap: 0.4rem;">
+          <button type="button" class="tool-btn" id="popoverCancelBtn" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">Cancel</button>
+          <button type="button" class="cta-btn" id="popoverSaveBtn" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">Save Tag</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Person Profile Edit / Create Modal -->
+  <div class="modal-backdrop" id="personModal">
+    <div class="modal-window" style="max-width: 440px;">
+      <div class="modal-top">
+        <div class="modal-title" id="personModalTitle">👤 Person / Pet Profile</div>
+        <button class="modal-close-btn" id="personModalClose">&times;</button>
+      </div>
+      <div class="settings-body">
+        <div class="setting-row">
+          <label>Name *</label>
+          <input type="text" id="personNameInput" class="setting-input" placeholder="e.g. Sarah, Buddy, Grandma" />
+        </div>
+        <div class="setting-row">
+          <label>Relationship to you</label>
+          <select id="personRelSelect" class="filter-select" style="width: 100%;">
+            <option value="Spouse">💍 Spouse / Partner</option>
+            <option value="Parent">👨‍👩‍👦 Parent</option>
+            <option value="Grandparent">👵 Grandparent</option>
+            <option value="Child">👶 Child</option>
+            <option value="Sibling">👫 Sibling</option>
+            <option value="Friend" selected>🤝 Friend</option>
+            <option value="Pet (Dog)">🐶 Pet (Dog)</option>
+            <option value="Pet (Cat)">🐱 Pet (Cat)</option>
+            <option value="Pet (Other)">🐾 Pet (Other)</option>
+            <option value="Colleague">💼 Colleague</option>
+            <option value="Self">👤 Myself</option>
+            <option value="Other">🏷️ Other</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Notes / Breed / Description (Optional)</label>
+          <input type="text" id="personNotesInput" class="setting-input" placeholder="e.g. Golden Retriever, Sister, etc." />
+        </div>
+        <div class="btn-row" style="justify-content: space-between; margin-top: 0.5rem;">
+          <button class="tool-btn" id="personDeleteBtn" style="display: none; color: #ef4444;">Delete Person</button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button class="tool-btn" id="personCancelBtn">Cancel</button>
+            <button class="cta-btn" id="personSaveBtn">Save Profile</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Unconfirmed Face Matches Modal -->
+  <div class="modal-backdrop" id="reviewMatchesModal">
+    <div class="modal-window" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-top">
+        <div class="modal-title" id="reviewMatchesTitle">✨ Review Suggested Face Matches</div>
+        <button class="modal-close-btn" id="reviewMatchesClose">&times;</button>
+      </div>
+      <div class="settings-body" style="overflow-y: auto; flex: 1;">
+        <div id="reviewMatchesIntro" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Select the photos that match and click Confirm to tag them all at once.
+        </div>
+        <div id="reviewMatchesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="tool-btn" id="reviewMatchesSelectAllBtn">Select All</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="tool-btn" id="reviewMatchesCancelBtn">Cancel</button>
+          <button type="button" class="cta-btn" id="reviewMatchesConfirmBtn">Confirm & Tag Selected</button>
         </div>
       </div>
     </div>
@@ -4043,11 +4673,25 @@
       $('#modalScore').textContent = `${(r.score * 100).toFixed(1)}% Match`;
       $('#modalPath').textContent = r.file_path;
 
+      // Face detection and interactive tagging
+      hideFaceTagPopover();
+      isManualTagMode = false;
+      $('#toggleTagModeBtn')?.classList.remove('active');
+      if ($('#modalImgPane')) $('#modalImgPane').style.cursor = 'default';
+      if ($('#tagModeLabel')) $('#tagModeLabel').textContent = 'Tag Photo';
+      loadImageFaces(r.id, true);
+
       $('#modal').classList.add('active');
     }
 
-    $('#modalClose').addEventListener('click', () => $('#modal').classList.remove('active'));
-    $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) $('#modal').classList.remove('active'); });
+    function closeModal() {
+      $('#modal').classList.remove('active');
+      hideFaceTagPopover();
+      isManualTagMode = false;
+    }
+
+    $('#modalClose').addEventListener('click', closeModal);
+    $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) closeModal(); });
 
     $('#modalAddToAlbumBtn').addEventListener('click', (e) => {
       if (currentDetailPhoto) {
@@ -6684,11 +7328,782 @@
       loadNotes(notesCurrentAlbumId, '');
     });
 
+    // ── People & Face Tagging System ────────────────────────
+    let allPeople = [];
+    let currentImageFaces = [];
+    let activeFacePopoverFace = null;
+    let isManualTagMode = false;
+    let manualDrawStart = null;
+    let currentPeopleFilter = 'all';
+    let viewingPerson = null;
+
+    function getRelationshipIcon(rel) {
+      const r = (rel || '').toLowerCase();
+      if (r.includes('spouse') || r.includes('partner') || r.includes('wife') || r.includes('husband')) return '💍';
+      if (r.includes('parent') || r.includes('mother') || r.includes('father') || r.includes('mom') || r.includes('dad')) return '👨‍👩‍👦';
+      if (r.includes('grandparent') || r.includes('grandma') || r.includes('grandpa')) return '👵';
+      if (r.includes('child') || r.includes('son') || r.includes('daughter') || r.includes('baby') || r.includes('kid')) return '👶';
+      if (r.includes('sibling') || r.includes('brother') || r.includes('sister')) return '👫';
+      if (r.includes('dog')) return '🐶';
+      if (r.includes('cat')) return '🐱';
+      if (r.includes('pet')) return '🐾';
+      if (r.includes('colleague') || r.includes('work')) return '💼';
+      if (r.includes('self') || r.includes('me')) return '👤';
+      return '🤝';
+    }
+
+    async function loadPeople() {
+      try {
+        const res = await fetch(`${API}/api/people`);
+        const data = await res.json();
+        allPeople = data.people || [];
+        updatePeopleCounts();
+        if ($('#peopleView') && $('#peopleView').style.display !== 'none') {
+          renderPeopleGrid();
+        }
+      } catch (e) {
+        console.error('Failed to load people:', e);
+      }
+    }
+
+    function updatePeopleCounts() {
+      const allCount = allPeople.length;
+      const familyCount = allPeople.filter(p => {
+        const r = (p.relationship || '').toLowerCase();
+        return r.includes('spouse') || r.includes('partner') || r.includes('parent') ||
+               r.includes('grandparent') || r.includes('child') || r.includes('sibling') || r.includes('relative');
+      }).length;
+      const friendsCount = allPeople.filter(p => (p.relationship || '').toLowerCase().includes('friend') || (p.relationship || '').toLowerCase().includes('colleague')).length;
+      const petsCount = allPeople.filter(p => (p.relationship || '').toLowerCase().includes('pet') || (p.relationship || '').toLowerCase().includes('dog') || (p.relationship || '').toLowerCase().includes('cat')).length;
+
+      if ($('#countAllPeople')) $('#countAllPeople').textContent = allCount;
+      if ($('#countFamily')) $('#countFamily').textContent = familyCount;
+      if ($('#countFriends')) $('#countFriends').textContent = friendsCount;
+      if ($('#countPets')) $('#countPets').textContent = petsCount;
+    }
+
+    function renderPeopleGrid() {
+      const grid = $('#peopleGrid');
+      if (!grid) return;
+
+      let filtered = allPeople;
+      if (currentPeopleFilter === 'family') {
+        filtered = allPeople.filter(p => {
+          const r = (p.relationship || '').toLowerCase();
+          return r.includes('spouse') || r.includes('partner') || r.includes('parent') ||
+                 r.includes('grandparent') || r.includes('child') || r.includes('sibling') || r.includes('relative');
+        });
+      } else if (currentPeopleFilter === 'friends') {
+        filtered = allPeople.filter(p => (p.relationship || '').toLowerCase().includes('friend') || (p.relationship || '').toLowerCase().includes('colleague'));
+      } else if (currentPeopleFilter === 'pets') {
+        filtered = allPeople.filter(p => (p.relationship || '').toLowerCase().includes('pet') || (p.relationship || '').toLowerCase().includes('dog') || (p.relationship || '').toLowerCase().includes('cat'));
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.6rem;">👥</div>
+            <div style="font-weight: 600; font-size: 1rem; color: #fff;">No ${currentPeopleFilter === 'all' ? 'people or pets' : currentPeopleFilter} tagged yet</div>
+            <div style="font-size: 0.8rem; margin-top: 0.3rem;">Open any photo to tag faces, or click "+ Add Person / Pet" above.</div>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const icon = getRelationshipIcon(p.relationship);
+        const hasAvatar = !!p.avatar_face_id;
+        const avatarHtml = hasAvatar
+          ? `<img class="person-avatar-img" src="${API}/api/faces/thumb/${p.avatar_face_id}" alt="${p.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" /><span class="person-avatar-fallback" style="display:none;">${icon}</span>`
+          : `<span class="person-avatar-fallback">${icon}</span>`;
+
+        return `
+          <div class="person-card" data-person-id="${p.id}">
+            <div class="person-avatar-wrap">
+              ${avatarHtml}
+              <div class="person-rel-badge" title="${p.relationship || 'Friend'}">${icon}</div>
+            </div>
+            <div class="person-name">${escapeHtml(p.name)}</div>
+            <div class="person-rel-text">${escapeHtml(p.relationship || 'Friend')}</div>
+            <div class="person-count">${p.photo_count || 0} ${p.photo_count === 1 ? 'photo' : 'photos'}</div>
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.person-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const pid = Number(card.dataset.personId);
+          const person = allPeople.find(p => p.id === pid);
+          if (person) showPersonPhotos(person);
+        });
+      });
+    }
+
+    async function showPersonPhotos(person) {
+      viewingPerson = person;
+      try {
+        const res = await fetch(`${API}/api/people/${person.id}/photos`);
+        const data = await res.json();
+        const photos = data.photos || [];
+
+        $('#peopleView').style.display = 'none';
+        $('#grid').style.display = 'grid';
+        $('#activeFilterChipsBar').style.display = 'none';
+
+        const icon = getRelationshipIcon(person.relationship);
+        $('#resultMeta').innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span>${icon} Photos featuring <strong>${escapeHtml(person.name)}</strong> (${escapeHtml(person.relationship || 'Friend')}) — ${photos.length} photos</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="small-add-btn" id="personStoryBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-size: 0.76rem; padding: 0.3rem 0.75rem;">✨ Generate ${escapeHtml(person.name)}'s Story</button>
+              <button class="tiny-edit-btn" id="personEditBtn" style="font-size: 0.76rem; padding: 0.3rem 0.6rem;">✏️ Edit Profile</button>
+            </div>
+          </div>
+        `;
+
+        renderGrid(photos);
+
+        $('#personStoryBtn')?.addEventListener('click', () => {
+          if (photos.length > 0) {
+            openGroupStoryModal('person', `Story of ${person.name} (${person.relationship})`, photos, icon);
+          } else {
+            showToast('No photos to generate story for.');
+          }
+        });
+
+        $('#personEditBtn')?.addEventListener('click', () => {
+          openPersonModal(person);
+        });
+      } catch (e) {
+        console.error('Failed to load photos for person:', e);
+        showToast('Error loading photos for person');
+      }
+    }
+
+    function openPeopleExplorer() {
+      document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
+      $('#railPeople')?.classList.add('active');
+
+      $('#grid').style.display = 'none';
+      $('#peopleView').style.display = 'flex';
+      $('#activeFilterChipsBar').style.display = 'none';
+      $('#resultMeta').textContent = 'People & Pets Gallery';
+      $('#statsSummary').textContent = `${allPeople.length} tagged individuals`;
+
+      loadPeople();
+      checkForUnconfirmedMatches();
+    }
+
+    async function checkForUnconfirmedMatches() {
+      const banner = $('#unconfirmedMatchesBanner');
+      if (!banner) return;
+      try {
+        let totalSuggestions = 0;
+        let matchedPerson = null;
+        for (const p of allPeople) {
+          const res = await fetch(`${API}/api/people/${p.id}/suggest-matches`, { method: 'POST' });
+          const d = await res.json();
+          if (d.suggestions && d.suggestions.length > 0) {
+            totalSuggestions += d.suggestions.length;
+            if (!matchedPerson) matchedPerson = p;
+          }
+        }
+        if (totalSuggestions > 0 && matchedPerson) {
+          banner.style.display = 'flex';
+          $('#unconfirmedBannerText').textContent = `We found ${totalSuggestions} untagged photos that match ${matchedPerson.name}!`;
+          $('#reviewMatchesBtn').onclick = () => openReviewMatchesModal(matchedPerson.id);
+        } else {
+          banner.style.display = 'none';
+        }
+      } catch (e) {
+        banner.style.display = 'none';
+      }
+    }
+
+    async function openReviewMatchesModal(personId) {
+      const person = allPeople.find(p => p.id === personId);
+      if (!person) return;
+      $('#reviewMatchesTitle').textContent = `✨ Suggested Matches for ${person.name} (${person.relationship || 'Friend'})`;
+      $('#reviewMatchesIntro').textContent = `Review the detected faces below and confirm to tag them as ${person.name}.`;
+
+      const grid = $('#reviewMatchesGrid');
+      grid.innerHTML = '<div style="color:var(--text-dim); padding:1rem;">Finding matches...</div>';
+      $('#reviewMatchesModal').classList.add('active');
+
+      try {
+        const res = await fetch(`${API}/api/people/${personId}/suggest-matches`, { method: 'POST' });
+        const data = await res.json();
+        const suggestions = data.suggestions || [];
+
+        if (suggestions.length === 0) {
+          grid.innerHTML = '<div style="color:var(--text-dim); padding:1rem;">No suggested matches found right now.</div>';
+          return;
+        }
+
+        grid.innerHTML = suggestions.map((s, idx) => `
+          <label style="display:flex; flex-direction:column; background:#1e293b; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:pointer; position:relative;">
+            <input type="checkbox" class="match-check" value="${s.face_id}" checked style="position:absolute; top:6px; left:6px; z-index:5; width:18px; height:18px; accent-color:var(--accent);" />
+            <img src="${API}/api/faces/thumb/${s.face_id}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='${API}/api/thumb/${s.image_id}'" />
+            <div style="padding:0.4rem; font-size:0.7rem; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:#93c5fd; font-weight:600;">Match</span>
+              <span class="vlm-badge">${Math.round(s.similarity * 100)}%</span>
+            </div>
+          </label>
+        `).join('');
+
+        $('#reviewMatchesSelectAllBtn').onclick = () => {
+          const checks = grid.querySelectorAll('.match-check');
+          const allChecked = Array.from(checks).every(c => c.checked);
+          checks.forEach(c => c.checked = !allChecked);
+          $('#reviewMatchesSelectAllBtn').textContent = allChecked ? 'Select All' : 'Deselect All';
+        };
+
+        $('#reviewMatchesConfirmBtn').onclick = async () => {
+          const selectedFaceIds = Array.from(grid.querySelectorAll('.match-check:checked')).map(c => Number(c.value));
+          if (selectedFaceIds.length === 0) {
+            showToast('No photos selected.');
+            return;
+          }
+          try {
+            await fetch(`${API}/api/people/${personId}/batch-tag`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ face_ids: selectedFaceIds }),
+            });
+            showToast(`Successfully tagged ${selectedFaceIds.length} photos as ${person.name}!`);
+            $('#reviewMatchesModal').classList.remove('active');
+            await loadPeople();
+            checkForUnconfirmedMatches();
+          } catch (e) {
+            showToast('Failed to batch tag faces');
+          }
+        };
+      } catch (e) {
+        grid.innerHTML = '<div style="color:#ef4444; padding:1rem;">Failed to load match suggestions.</div>';
+      }
+    }
+
+    function openPersonModal(person = null) {
+      if (person) {
+        $('#personModalTitle').textContent = `✏️ Edit ${person.name}'s Profile`;
+        $('#personNameInput').value = person.name || '';
+        $('#personRelSelect').value = person.relationship || 'Friend';
+        $('#personNotesInput').value = person.notes || '';
+        $('#personDeleteBtn').style.display = 'block';
+        $('#personDeleteBtn').onclick = async () => {
+          if (!confirm(`Delete profile for "${person.name}"? Faces in photos will become untagged.`)) return;
+          try {
+            await fetch(`${API}/api/people/${person.id}`, { method: 'DELETE' });
+            showToast(`Deleted ${person.name}`);
+            $('#personModal').classList.remove('active');
+            await loadPeople();
+            if (viewingPerson?.id === person.id) {
+              openPeopleExplorer();
+            }
+          } catch (e) {
+            showToast('Failed to delete person');
+          }
+        };
+      } else {
+        $('#personModalTitle').textContent = '👤 Add Person or Pet';
+        $('#personNameInput').value = '';
+        $('#personRelSelect').value = 'Friend';
+        $('#personNotesInput').value = '';
+        $('#personDeleteBtn').style.display = 'none';
+      }
+
+      $('#personSaveBtn').onclick = async () => {
+        const name = $('#personNameInput').value.trim();
+        if (!name) {
+          showToast('Name is required.');
+          return;
+        }
+        const rel = $('#personRelSelect').value;
+        const notes = $('#personNotesInput').value.trim();
+
+        try {
+          if (person) {
+            await fetch(`${API}/api/people/${person.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, relationship: rel, notes }),
+            });
+            showToast(`Updated ${name}`);
+          } else {
+            await fetch(`${API}/api/people`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, relationship: rel, notes }),
+            });
+            showToast(`Added ${name}`);
+          }
+          $('#personModal').classList.remove('active');
+          await loadPeople();
+        } catch (e) {
+          showToast('Failed to save person');
+        }
+      };
+
+      $('#personModal').classList.add('active');
+    }
+
+    $('#personModalClose')?.addEventListener('click', () => $('#personModal').classList.remove('active'));
+    $('#personCancelBtn')?.addEventListener('click', () => $('#personModal').classList.remove('active'));
+    $('#reviewMatchesClose')?.addEventListener('click', () => $('#reviewMatchesModal').classList.remove('active'));
+    $('#reviewMatchesCancelBtn')?.addEventListener('click', () => $('#reviewMatchesModal').classList.remove('active'));
+
+    document.querySelectorAll('.people-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.people-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentPeopleFilter = tab.dataset.filter || 'all';
+        renderPeopleGrid();
+      });
+    });
+
+    $('#addPersonBtn')?.addEventListener('click', () => openPersonModal(null));
+
+    $('#scanLibraryFacesBtn')?.addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API}/api/faces/scan-library`, { method: 'POST' });
+        const d = await res.json();
+        showToast(d.message || 'Face scan initiated.');
+        pollFaceScanStatus();
+      } catch (e) {
+        showToast('Failed to start library face scan');
+      }
+    });
+
+    async function pollFaceScanStatus() {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${API}/api/faces/scan-status`);
+          const s = await res.json();
+          if (s.is_running) {
+            showToast(`Scanning library for faces: ${s.current}/${s.total} (${s.faces_found} faces found)`);
+          } else {
+            clearInterval(interval);
+            showToast(`Face scan complete! Found ${s.faces_found} faces.`);
+            await loadPeople();
+            checkForUnconfirmedMatches();
+          }
+        } catch (e) {
+          clearInterval(interval);
+        }
+      }, 3000);
+    }
+
+    // ── Photo Modal Interactive Face Tagging ────────────────
+    async function loadImageFaces(imageId, autoDetect = true) {
+      const overlay = $('#faceOverlay');
+      if (!overlay) return;
+      overlay.innerHTML = '';
+      hideFaceTagPopover();
+
+      try {
+        let res = await fetch(`${API}/api/images/${imageId}/faces`);
+        let data = await res.json();
+        let faces = data.faces || [];
+
+        if (faces.length === 0 && autoDetect) {
+          const detectRes = await fetch(`${API}/api/images/${imageId}/faces/detect`, { method: 'POST' });
+          const detectData = await detectRes.json();
+          faces = detectData.faces || [];
+        }
+
+        currentImageFaces = faces;
+        renderFaceOverlay();
+        renderModalPeopleChips();
+      } catch (e) {
+        console.error('Failed to load image faces:', e);
+      }
+    }
+
+    function renderFaceOverlay() {
+      const overlay = $('#faceOverlay');
+      if (!overlay) return;
+      overlay.innerHTML = '';
+
+      currentImageFaces.forEach((f, idx) => {
+        const box = document.createElement('div');
+        box.className = 'face-box';
+        if (f.person_id) {
+          box.classList.add(f.is_pet ? 'pet' : 'tagged');
+        } else {
+          box.classList.add('untagged');
+        }
+
+        box.style.left = `${(f.box_x * 100).toFixed(2)}%`;
+        box.style.top = `${(f.box_y * 100).toFixed(2)}%`;
+        box.style.width = `${(f.box_w * 100).toFixed(2)}%`;
+        box.style.height = `${(f.box_h * 100).toFixed(2)}%`;
+
+        const tag = document.createElement('div');
+        tag.className = 'face-box-tag';
+
+        if (f.person_name) {
+          const icon = getRelationshipIcon(f.person_relationship);
+          tag.innerHTML = `<span>${icon}</span> <span>${escapeHtml(f.person_name)}</span>`;
+        } else if (f.suggestion) {
+          tag.innerHTML = `<span>✨</span> <span>${escapeHtml(f.suggestion.name)}?</span>`;
+        } else {
+          tag.textContent = 'Who is this?';
+        }
+
+        box.appendChild(tag);
+
+        box.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openFaceTagPopover(f, box);
+        });
+
+        overlay.appendChild(box);
+      });
+    }
+
+    function renderModalPeopleChips() {
+      const list = $('#modalPeopleChipsList');
+      const badge = $('#modalFaceCountBadge');
+      if (!list) return;
+
+      if (badge) {
+        badge.style.display = currentImageFaces.length > 0 ? 'inline-block' : 'none';
+        badge.textContent = `${currentImageFaces.length} ${currentImageFaces.length === 1 ? 'face' : 'faces'}`;
+      }
+
+      if (currentImageFaces.length === 0) {
+        list.innerHTML = `<span style="font-size: 0.76rem; color: var(--text-muted); font-style: italic;">No faces detected. Click 'Tag Photo' to tag manually.</span>`;
+        return;
+      }
+
+      list.innerHTML = currentImageFaces.map(f => {
+        if (f.person_name) {
+          const icon = getRelationshipIcon(f.person_relationship);
+          return `
+            <div class="modal-person-chip" data-face-id="${f.id}" title="${escapeHtml(f.person_relationship || 'Friend')}">
+              <span>${icon}</span>
+              <span><strong>${escapeHtml(f.person_name)}</strong></span>
+              <span style="font-size:0.68rem; color:var(--text-dim);">(${escapeHtml(f.person_relationship || 'Friend')})</span>
+              <span class="remove-face-tag" data-face-id="${f.id}" title="Remove tag">&times;</span>
+            </div>
+          `;
+        } else if (f.suggestion) {
+          return `
+            <div class="modal-person-chip untagged-chip" data-face-id="${f.id}" title="Suggested match">
+              <span>✨</span>
+              <span>${escapeHtml(f.suggestion.name)}?</span>
+              <span style="font-size:0.65rem; color:#93c5fd;">(${Math.round(f.suggestion.similarity * 100)}%)</span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="modal-person-chip untagged-chip" data-face-id="${f.id}">
+              <span>❓</span>
+              <span>Untagged Face</span>
+            </div>
+          `;
+        }
+      }).join('');
+
+      list.querySelectorAll('.modal-person-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          if (e.target.classList.contains('remove-face-tag')) return;
+          const fid = Number(chip.dataset.faceId);
+          const face = currentImageFaces.find(f => f.id === fid);
+          if (face) {
+            const boxEl = $(`#faceOverlay .face-box:nth-child(${currentImageFaces.indexOf(face) + 1})`);
+            if (boxEl) openFaceTagPopover(face, boxEl);
+          }
+        });
+      });
+
+      list.querySelectorAll('.remove-face-tag').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const fid = Number(btn.dataset.faceId);
+          try {
+            await fetch(`${API}/api/faces/${fid}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ person_id: null, person_name: '' }),
+            });
+            showToast('Face tag removed');
+            if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+            await loadPeople();
+          } catch (err) {
+            showToast('Failed to remove tag');
+          }
+        });
+      });
+    }
+
+    function openFaceTagPopover(face, boxElement) {
+      activeFacePopoverFace = face;
+      const popover = $('#faceTagPopover');
+      const pane = $('#modalImgPane');
+
+      $('#popoverTitle').textContent = face.person_name ? `Tag: ${face.person_name}` : 'Tag this face';
+      $('#popoverNameInput').value = face.person_name || '';
+      $('#popoverRelSelect').value = face.person_relationship || 'Friend';
+
+      const suggWrap = $('#popoverSuggestionWrap');
+      if (face.suggestion && !face.person_name) {
+        suggWrap.style.display = 'flex';
+        $('#popoverSuggestionName').textContent = `${face.suggestion.name} (${face.suggestion.relationship || 'Friend'})`;
+        $('#popoverSuggestionScore').textContent = `${Math.round(face.suggestion.similarity * 100)}%`;
+        $('#btnAcceptSuggestion').onclick = async () => {
+          try {
+            await fetch(`${API}/api/faces/${face.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                person_id: face.suggestion.person_id,
+                person_name: face.suggestion.name,
+                relationship: face.suggestion.relationship,
+              }),
+            });
+            showToast(`Tagged as ${face.suggestion.name}!`);
+            hideFaceTagPopover();
+            if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+            await loadPeople();
+          } catch (err) {
+            showToast('Failed to accept suggestion');
+          }
+        };
+      } else {
+        suggWrap.style.display = 'none';
+      }
+
+      popover.style.display = 'flex';
+      const paneRect = pane.getBoundingClientRect();
+      const boxRect = boxElement.getBoundingClientRect();
+
+      let left = boxRect.right - paneRect.left + 10;
+      let top = boxRect.top - paneRect.top;
+
+      if (left + 280 > paneRect.width) {
+        left = boxRect.left - paneRect.left - 280;
+      }
+      left = Math.max(10, Math.min(paneRect.width - 285, left));
+      top = Math.max(10, Math.min(paneRect.height - 300, top));
+
+      popover.style.left = `${left}px`;
+      popover.style.top = `${top}px`;
+
+      setupPeopleAutocomplete();
+      $('#popoverNameInput').focus();
+    }
+
+    function hideFaceTagPopover() {
+      const p = $('#faceTagPopover');
+      if (p) p.style.display = 'none';
+      activeFacePopoverFace = null;
+      if ($('#popoverPeopleSuggestions')) $('#popoverPeopleSuggestions').style.display = 'none';
+    }
+
+    function setupPeopleAutocomplete() {
+      const input = $('#popoverNameInput');
+      const list = $('#popoverPeopleSuggestions');
+      if (!input || !list) return;
+
+      input.oninput = () => {
+        const val = input.value.trim().toLowerCase();
+        if (!val) {
+          list.style.display = 'none';
+          return;
+        }
+
+        const matches = allPeople.filter(p => p.name.toLowerCase().includes(val));
+        if (matches.length === 0) {
+          list.style.display = 'none';
+          return;
+        }
+
+        list.innerHTML = matches.map(p => `
+          <div class="autocomplete-item" data-name="${escapeHtml(p.name)}" data-rel="${escapeHtml(p.relationship || 'Friend')}">
+            <span><strong>${escapeHtml(p.name)}</strong></span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">${getRelationshipIcon(p.relationship)} ${escapeHtml(p.relationship || 'Friend')}</span>
+          </div>
+        `).join('');
+
+        list.querySelectorAll('.autocomplete-item').forEach(item => {
+          item.addEventListener('click', () => {
+            input.value = item.dataset.name;
+            $('#popoverRelSelect').value = item.dataset.rel || 'Friend';
+            list.style.display = 'none';
+          });
+        });
+
+        list.style.display = 'flex';
+      };
+    }
+
+    $('#popoverCloseBtn')?.addEventListener('click', hideFaceTagPopover);
+    $('#popoverCancelBtn')?.addEventListener('click', hideFaceTagPopover);
+
+    $('#popoverSaveBtn')?.addEventListener('click', async () => {
+      if (!activeFacePopoverFace) return;
+      const name = $('#popoverNameInput').value.trim();
+      const rel = $('#popoverRelSelect').value;
+      const isPet = rel.toLowerCase().includes('pet') || rel.toLowerCase().includes('dog') || rel.toLowerCase().includes('cat');
+
+      try {
+        await fetch(`${API}/api/faces/${activeFacePopoverFace.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            person_name: name,
+            relationship: rel,
+            is_pet: isPet,
+          }),
+        });
+        showToast(name ? `Tagged as ${name} (${rel})` : 'Tag saved');
+        hideFaceTagPopover();
+        if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+        await loadPeople();
+      } catch (e) {
+        showToast('Failed to save face tag');
+      }
+    });
+
+    $('#popoverDeleteFaceBtn')?.addEventListener('click', async () => {
+      if (!activeFacePopoverFace) return;
+      if (!confirm('Delete this face box?')) return;
+      try {
+        await fetch(`${API}/api/faces/${activeFacePopoverFace.id}`, { method: 'DELETE' });
+        showToast('Face box deleted');
+        hideFaceTagPopover();
+        if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+        await loadPeople();
+      } catch (e) {
+        showToast('Failed to delete face');
+      }
+    });
+
+    // Manual Tagging Drag / Draw Mode
+    $('#toggleTagModeBtn')?.addEventListener('click', () => {
+      isManualTagMode = !isManualTagMode;
+      $('#toggleTagModeBtn')?.classList.toggle('active', isManualTagMode);
+      if ($('#modalImgPane')) $('#modalImgPane').style.cursor = isManualTagMode ? 'crosshair' : 'default';
+      if ($('#tagModeLabel')) $('#tagModeLabel').textContent = isManualTagMode ? 'Click/Drag Photo' : 'Tag Photo';
+      if (isManualTagMode) {
+        showToast('Click or drag anywhere on the photo to tag a face or pet!');
+      }
+    });
+
+    $('#detectFacesBtn')?.addEventListener('click', async () => {
+      if (!currentDetailPhoto) return;
+      showToast('Detecting faces with YuNet...');
+      await loadImageFaces(currentDetailPhoto.id, true);
+    });
+
+    $('#modalAddTagInlineBtn')?.addEventListener('click', () => {
+      $('#toggleTagModeBtn')?.click();
+    });
+
+    const imgPaneEl = $('#modalImgPane');
+    const drawPreviewEl = $('#drawBoxPreview');
+
+    imgPaneEl?.addEventListener('mousedown', (e) => {
+      if (!isManualTagMode || !currentDetailPhoto) return;
+      if (e.target.closest('.face-box') || e.target.closest('#faceTagPopover') || e.target.closest('.face-overlay-toolbar')) return;
+
+      const rect = imgPaneEl.getBoundingClientRect();
+      manualDrawStart = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        width: rect.width,
+        height: rect.height,
+      };
+
+      if (drawPreviewEl) {
+        drawPreviewEl.style.left = `${manualDrawStart.x}px`;
+        drawPreviewEl.style.top = `${manualDrawStart.y}px`;
+        drawPreviewEl.style.width = '0px';
+        drawPreviewEl.style.height = '0px';
+        drawPreviewEl.style.display = 'block';
+      }
+    });
+
+    imgPaneEl?.addEventListener('mousemove', (e) => {
+      if (!manualDrawStart || !isManualTagMode || !drawPreviewEl) return;
+      const rect = imgPaneEl.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
+
+      const left = Math.min(manualDrawStart.x, currentX);
+      const top = Math.min(manualDrawStart.y, currentY);
+      const width = Math.abs(currentX - manualDrawStart.x);
+      const height = Math.abs(currentY - manualDrawStart.y);
+
+      drawPreviewEl.style.left = `${left}px`;
+      drawPreviewEl.style.top = `${top}px`;
+      drawPreviewEl.style.width = `${width}px`;
+      drawPreviewEl.style.height = `${height}px`;
+    });
+
+    imgPaneEl?.addEventListener('mouseup', async (e) => {
+      if (!manualDrawStart || !isManualTagMode || !currentDetailPhoto) return;
+      const rect = imgPaneEl.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const currentY = e.clientY - rect.top;
+
+      let left = Math.min(manualDrawStart.x, currentX);
+      let top = Math.min(manualDrawStart.y, currentY);
+      let width = Math.abs(currentX - manualDrawStart.x);
+      let height = Math.abs(currentY - manualDrawStart.y);
+
+      if (drawPreviewEl) drawPreviewEl.style.display = 'none';
+      manualDrawStart = null;
+
+      if (width < 15 || height < 15) {
+        width = 100;
+        height = 100;
+        left = Math.max(0, currentX - 50);
+        top = Math.max(0, currentY - 50);
+      }
+
+      const norm_x = left / rect.width;
+      const norm_y = top / rect.height;
+      const norm_w = width / rect.width;
+      const norm_h = height / rect.height;
+
+      try {
+        const res = await fetch(`${API}/api/images/${currentDetailPhoto.id}/faces`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            box_x: norm_x,
+            box_y: norm_y,
+            box_w: norm_w,
+            box_h: norm_h,
+            confidence: 1.0,
+            is_pet: false,
+          }),
+        });
+        const data = await res.json();
+        if (data.face) {
+          await loadImageFaces(currentDetailPhoto.id, false);
+          const newlyAdded = currentImageFaces.find(f => f.id === data.face.id);
+          if (newlyAdded) {
+            const idx = currentImageFaces.indexOf(newlyAdded);
+            const boxEl = $(`#faceOverlay .face-box:nth-child(${idx + 1})`);
+            if (boxEl) openFaceTagPopover(newlyAdded, boxEl);
+          }
+        }
+      } catch (err) {
+        showToast('Failed to add manual face box');
+      }
+    });
+
+    $('#railPeople')?.addEventListener('click', openPeopleExplorer);
+
     // ── Startup ─────────────────────────────────────────────
     (async () => {
       await loadPlatformStats();
       await loadAlbums();
       await updateNotesCountBadge();
+      await loadPeople();
       doSearch('');
     })();
   </script>

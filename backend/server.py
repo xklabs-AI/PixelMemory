@@ -13,7 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import THUMB_DIR, HOST, PORT, SEARCH_TOP_K
@@ -25,6 +25,14 @@ from backend.db import (
     bulk_add_photos_to_album, bulk_remove_photos_from_album, bulk_move_photos_to_album,
     delete_images, bulk_update_location,
     get_all_image_paths, update_description, mark_embedded,
+    get_faces_for_image, get_face_by_id, insert_face, update_face_person,
+    delete_face, get_all_people, get_person_by_id, get_person_by_name,
+    upsert_person, update_person, delete_person, get_photos_for_person,
+    get_known_face_embeddings, get_untagged_faces_with_embeddings,
+)
+from backend.faces import (
+    detect_and_embed_faces, match_face_embedding, crop_face_thumbnail,
+    FACES_THUMB_DIR, ensure_models,
 )
 from backend.search import SemanticSearch
 from backend.ingest import tracker, queue_manager, start_background_import
@@ -1281,6 +1289,463 @@ def delete_note_endpoint(note_id: int):
     if not deleted:
         raise HTTPException(404, f"Note {note_id} not found.")
     return {"status": "ok", "deleted": True}
+
+
+# ── People & Faces API ───────────────────────────────────
+
+class FaceCreateRequest(BaseModel):
+    box_x: float
+    box_y: float
+    box_w: float
+    box_h: float
+    confidence: float = 1.0
+    is_pet: bool = False
+    person_id: Optional[int] = None
+    person_name: Optional[str] = None
+    relationship: Optional[str] = "Friend"
+
+
+class FaceUpdateRequest(BaseModel):
+    person_id: Optional[int] = None
+    person_name: Optional[str] = None
+    relationship: Optional[str] = "Friend"
+    is_pet: Optional[bool] = None
+
+
+class PersonCreateRequest(BaseModel):
+    name: str
+    relationship: Optional[str] = "Friend"
+    notes: Optional[str] = ""
+    avatar_face_id: Optional[int] = None
+
+
+class PersonUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    relationship: Optional[str] = None
+    notes: Optional[str] = None
+    avatar_face_id: Optional[int] = None
+
+
+class BatchTagRequest(BaseModel):
+    face_ids: list[int]
+
+
+_face_scan_state = {
+    "is_running": False,
+    "current": 0,
+    "total": 0,
+    "faces_found": 0,
+    "error": None,
+}
+
+
+@app.get("/api/images/{image_id}/faces")
+def get_image_faces(image_id: int):
+    """Return all faces for an image, including matching suggestions for untagged faces."""
+    with get_conn() as conn:
+        faces = get_faces_for_image(conn, image_id)
+        known_embeddings = get_known_face_embeddings(conn)
+        all_people = {p["id"]: p for p in get_all_people(conn)}
+
+    results = []
+    for f in faces:
+        face_dict = dict(f)
+        face_id = f["id"]
+        if not f.get("person_id") and f.get("has_embedding"):
+            with get_conn() as conn:
+                rec = conn.execute("SELECT embedding FROM faces WHERE id = ?", (face_id,)).fetchone()
+                emb = rec["embedding"] if rec else None
+            if emb:
+                best_pid, score = match_face_embedding(emb, known_embeddings)
+                if best_pid and best_pid in all_people:
+                    matched_person = all_people[best_pid]
+                    face_dict["suggestion"] = {
+                        "person_id": best_pid,
+                        "name": matched_person["name"],
+                        "relationship": matched_person["relationship"],
+                        "similarity": score,
+                    }
+        results.append(face_dict)
+
+    return {"status": "ok", "faces": results}
+
+
+@app.post("/api/images/{image_id}/faces/detect")
+def detect_image_faces(image_id: int, auto_tag: bool = True):
+    """
+    Run YuNet detection + SFace embedding extraction on an image on-demand.
+    Saves new faces to the database. If auto_tag=True, automatically assigns
+    high-confidence matches.
+    """
+    with get_conn() as conn:
+        img_row = get_image_by_id(conn, image_id)
+    if not img_row:
+        raise HTTPException(404, "Image not found")
+
+    file_path = Path(img_row["file_path"])
+    if not file_path.exists():
+        raise HTTPException(404, "Original image file not found on disk")
+
+    detected = detect_and_embed_faces(file_path)
+
+    with get_conn() as conn:
+        existing_faces = get_faces_for_image(conn, image_id)
+        known_embeddings = get_known_face_embeddings(conn)
+
+        for d in detected:
+            is_dup = False
+            for ef in existing_faces:
+                if (abs(ef["box_x"] - d["box_x"]) < 0.05 and
+                    abs(ef["box_y"] - d["box_y"]) < 0.05 and
+                    abs(ef["box_w"] - d["box_w"]) < 0.08):
+                    is_dup = True
+                    break
+            if is_dup:
+                continue
+
+            person_id = None
+            if auto_tag and d.get("embedding"):
+                best_pid, score = match_face_embedding(d["embedding"], known_embeddings)
+                if best_pid:
+                    person_id = best_pid
+
+            insert_face(
+                conn,
+                image_id=image_id,
+                box_x=d["box_x"],
+                box_y=d["box_y"],
+                box_w=d["box_w"],
+                box_h=d["box_h"],
+                confidence=d["confidence"],
+                embedding=d["embedding"],
+                person_id=person_id,
+                is_pet=0,
+            )
+
+    return get_image_faces(image_id)
+
+
+@app.post("/api/images/{image_id}/faces")
+def create_face(image_id: int, req: FaceCreateRequest):
+    """Manually add a face or pet tag box."""
+    with get_conn() as conn:
+        img_row = get_image_by_id(conn, image_id)
+        if not img_row:
+            raise HTTPException(404, "Image not found")
+
+        person_id = req.person_id
+        if req.person_name and req.person_name.strip():
+            person_id = upsert_person(
+                conn,
+                name=req.person_name.strip(),
+                relationship=req.relationship or "Friend",
+            )
+
+        fid = insert_face(
+            conn,
+            image_id=image_id,
+            box_x=max(0.0, min(1.0, req.box_x)),
+            box_y=max(0.0, min(1.0, req.box_y)),
+            box_w=max(0.01, min(1.0, req.box_w)),
+            box_h=max(0.01, min(1.0, req.box_h)),
+            confidence=req.confidence,
+            embedding=None,
+            person_id=person_id,
+            is_pet=1 if req.is_pet else 0,
+        )
+
+        if person_id:
+            p = get_person_by_id(conn, person_id)
+            if p and not p.get("avatar_face_id"):
+                update_person(conn, person_id, avatar_face_id=fid)
+
+        face = get_face_by_id(conn, fid)
+
+    return {"status": "ok", "face": face}
+
+
+@app.put("/api/faces/{face_id}")
+def update_face_endpoint(face_id: int, req: FaceUpdateRequest):
+    """Assign or change a person on an existing face."""
+    with get_conn() as conn:
+        face = get_face_by_id(conn, face_id)
+        if not face:
+            raise HTTPException(404, "Face not found")
+
+        person_id = req.person_id
+        if req.person_name and req.person_name.strip():
+            person_id = upsert_person(
+                conn,
+                name=req.person_name.strip(),
+                relationship=req.relationship or "Friend",
+            )
+
+        update_face_person(conn, face_id, person_id)
+
+        if req.is_pet is not None:
+            conn.execute("UPDATE faces SET is_pet = ? WHERE id = ?", (1 if req.is_pet else 0, face_id))
+
+        if person_id:
+            p = get_person_by_id(conn, person_id)
+            if p and not p.get("avatar_face_id"):
+                update_person(conn, person_id, avatar_face_id=face_id)
+
+        updated = get_face_by_id(conn, face_id)
+
+    return {"status": "ok", "face": updated}
+
+
+@app.delete("/api/faces/{face_id}")
+def delete_face_endpoint(face_id: int):
+    """Delete a face bounding box and tag."""
+    with get_conn() as conn:
+        deleted = delete_face(conn, face_id)
+    if not deleted:
+        raise HTTPException(404, "Face not found")
+    return {"status": "ok", "deleted": True}
+
+
+@app.get("/api/faces/thumb/{face_id}")
+def get_face_thumbnail(face_id: int):
+    """Serve cropped avatar thumbnail for a face."""
+    with get_conn() as conn:
+        face = get_face_by_id(conn, face_id)
+    if not face:
+        raise HTTPException(404, "Face not found")
+
+    cached_thumb = FACES_THUMB_DIR / f"{face_id}.jpg"
+    if cached_thumb.exists():
+        return FileResponse(cached_thumb, media_type="image/jpeg")
+
+    box = {
+        "box_x": face["box_x"],
+        "box_y": face["box_y"],
+        "box_w": face["box_w"],
+        "box_h": face["box_h"],
+    }
+    jpeg_bytes = crop_face_thumbnail(face["file_path"], box, output_size=160)
+    if not jpeg_bytes:
+        raise HTTPException(500, "Failed to crop face thumbnail")
+
+    try:
+        with open(cached_thumb, "wb") as f:
+            f.write(jpeg_bytes)
+    except Exception:
+        pass
+
+    return Response(content=jpeg_bytes, media_type="image/jpeg")
+
+
+@app.get("/api/people")
+def list_people():
+    """Return all known people and pets with stats."""
+    with get_conn() as conn:
+        people = get_all_people(conn)
+    return {"status": "ok", "people": people}
+
+
+@app.post("/api/people")
+def create_person(req: PersonCreateRequest):
+    """Create or update a person/pet record."""
+    with get_conn() as conn:
+        pid = upsert_person(
+            conn,
+            name=req.name,
+            relationship=req.relationship or "Friend",
+            notes=req.notes or "",
+            avatar_face_id=req.avatar_face_id,
+        )
+        person = get_person_by_id(conn, pid)
+    return {"status": "ok", "person": person}
+
+
+@app.get("/api/people/{person_id}")
+def get_person_endpoint(person_id: int):
+    """Get person profile and stats."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+    if not person:
+        raise HTTPException(404, "Person not found")
+    return {"status": "ok", "person": person}
+
+
+@app.put("/api/people/{person_id}")
+def update_person_endpoint(person_id: int, req: PersonUpdateRequest):
+    """Update person details (name, relationship, notes, avatar)."""
+    with get_conn() as conn:
+        updated = update_person(
+            conn,
+            person_id=person_id,
+            name=req.name,
+            relationship=req.relationship,
+            notes=req.notes,
+            avatar_face_id=req.avatar_face_id,
+        )
+    if not updated:
+        raise HTTPException(404, "Person not found")
+    return {"status": "ok", "person": updated}
+
+
+@app.delete("/api/people/{person_id}")
+def delete_person_endpoint(person_id: int):
+    """Delete a person profile. Faces remain with person_id=NULL."""
+    with get_conn() as conn:
+        deleted = delete_person(conn, person_id)
+    if not deleted:
+        raise HTTPException(404, "Person not found")
+    return {"status": "ok", "deleted": True}
+
+
+@app.get("/api/people/{person_id}/photos")
+def get_person_photos(person_id: int):
+    """Return all photos featuring this person or pet."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        photos = get_photos_for_person(conn, person_id)
+    return {"status": "ok", "person": person, "photos": photos, "count": len(photos)}
+
+
+@app.post("/api/people/{person_id}/suggest-matches")
+def suggest_person_matches(person_id: int):
+    """Find all untagged faces across the library that match this person's face embeddings."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+
+        person_rows = conn.execute(
+            "SELECT embedding FROM faces WHERE person_id = ? AND embedding IS NOT NULL",
+            (person_id,),
+        ).fetchall()
+        if not person_rows:
+            return {"status": "ok", "suggestions": [], "message": "No face embeddings available for this person."}
+
+        person_embeddings = [r["embedding"] for r in person_rows]
+        untagged = get_untagged_faces_with_embeddings(conn, limit=200)
+
+    from backend.faces import get_recognizer
+    import numpy as np
+    import cv2
+
+    recognizer = get_recognizer()
+    p_feats = [np.frombuffer(e, dtype=np.float32).reshape(1, -1) for e in person_embeddings]
+
+    suggestions = []
+    for uf in untagged:
+        u_feat = np.frombuffer(uf["embedding"], dtype=np.float32).reshape(1, -1)
+        scores = [float(recognizer.match(pf, u_feat, cv2.FaceRecognizerSF_FR_COSINE)) for pf in p_feats]
+        max_s = max(scores) if scores else 0.0
+        if max_s >= 0.363:
+            suggestions.append({
+                "face_id": uf["id"],
+                "image_id": uf["image_id"],
+                "file_path": uf["file_path"],
+                "similarity": round(max_s, 3),
+                "box": {
+                    "box_x": uf["box_x"],
+                    "box_y": uf["box_y"],
+                    "box_w": uf["box_w"],
+                    "box_h": uf["box_h"],
+                },
+            })
+
+    suggestions.sort(key=lambda x: x["similarity"], reverse=True)
+    return {"status": "ok", "person": person, "suggestions": suggestions, "count": len(suggestions)}
+
+
+@app.post("/api/people/{person_id}/batch-tag")
+def batch_tag_person(person_id: int, req: BatchTagRequest):
+    """Assign multiple faces to this person in 1 click."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+
+        count = 0
+        for fid in req.face_ids:
+            if update_face_person(conn, fid, person_id):
+                count += 1
+
+    return {"status": "ok", "tagged_count": count}
+
+
+def _run_library_face_scan():
+    """Background worker to scan all library images for faces."""
+    global _face_scan_state
+    _face_scan_state["is_running"] = True
+    _face_scan_state["faces_found"] = 0
+    _face_scan_state["error"] = None
+
+    try:
+        with get_conn() as conn:
+            rows = conn.execute(
+                """SELECT i.id, i.file_path 
+                   FROM images i
+                   LEFT JOIN faces f ON f.image_id = i.id
+                   WHERE f.id IS NULL
+                   GROUP BY i.id"""
+            ).fetchall()
+
+        total = len(rows)
+        _face_scan_state["total"] = total
+        _face_scan_state["current"] = 0
+
+        for idx, r in enumerate(rows):
+            img_id = r["id"]
+            fpath = Path(r["file_path"])
+            if fpath.exists():
+                try:
+                    detected = detect_and_embed_faces(fpath)
+                    if detected:
+                        with get_conn() as conn:
+                            known_embeddings = get_known_face_embeddings(conn)
+                            for d in detected:
+                                person_id = None
+                                if d.get("embedding"):
+                                    best_pid, score = match_face_embedding(d["embedding"], known_embeddings)
+                                    if best_pid:
+                                        person_id = best_pid
+                                insert_face(
+                                    conn,
+                                    image_id=img_id,
+                                    box_x=d["box_x"],
+                                    box_y=d["box_y"],
+                                    box_w=d["box_w"],
+                                    box_h=d["box_h"],
+                                    confidence=d["confidence"],
+                                    embedding=d["embedding"],
+                                    person_id=person_id,
+                                    is_pet=0,
+                                )
+                                _face_scan_state["faces_found"] += 1
+                except Exception as e:
+                    print(f"[FaceScan] Error scanning image {img_id}: {e}")
+
+            _face_scan_state["current"] = idx + 1
+    except Exception as e:
+        _face_scan_state["error"] = str(e)
+    finally:
+        _face_scan_state["is_running"] = False
+
+
+@app.post("/api/faces/scan-library")
+def start_face_scan():
+    """Trigger background library face scan."""
+    global _face_scan_state
+    if _face_scan_state["is_running"]:
+        return {"status": "running", "message": "Scan is already in progress."}
+
+    t = threading.Thread(target=_run_library_face_scan, daemon=True)
+    t.start()
+    return {"status": "started", "message": "Library face scan initiated in background."}
+
+
+@app.get("/api/faces/scan-status")
+def get_face_scan_status():
+    """Return status and progress of the background library face scan."""
+    return {"status": "ok", **_face_scan_state}
 
 
 

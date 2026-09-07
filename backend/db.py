@@ -91,6 +91,36 @@ CREATE TABLE IF NOT EXISTS album_notes (
 
 CREATE INDEX IF NOT EXISTS idx_album_notes_album ON album_notes(album_id);
 CREATE INDEX IF NOT EXISTS idx_album_notes_date ON album_notes(day_date);
+
+-- Known People and Pets
+CREATE TABLE IF NOT EXISTS people (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    relationship    TEXT DEFAULT 'Friend',  -- 'Spouse', 'Child', 'Parent', 'Sibling', 'Grandparent', 'Friend', 'Pet (Dog)', 'Pet (Cat)', 'Other'
+    avatar_face_id  INTEGER,                -- face id for avatar crop
+    notes           TEXT DEFAULT '',
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- Detected / Tagged Faces in Images
+CREATE TABLE IF NOT EXISTS faces (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_id        INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    person_id       INTEGER REFERENCES people(id) ON DELETE SET NULL,
+    box_x           REAL NOT NULL,          -- normalized [0.0 - 1.0] coordinates
+    box_y           REAL NOT NULL,
+    box_w           REAL NOT NULL,
+    box_h           REAL NOT NULL,
+    confidence      REAL DEFAULT 1.0,       -- detection confidence (1.0 for manual)
+    embedding       BLOB,                   -- 128-float binary buffer or null
+    is_pet          INTEGER DEFAULT 0,      -- 1 for pet, 0 for human
+    created_at      TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_faces_image ON faces(image_id);
+CREATE INDEX IF NOT EXISTS idx_faces_person ON faces(person_id);
+CREATE INDEX IF NOT EXISTS idx_people_name ON people(name);
 """
 
 
@@ -599,6 +629,256 @@ def search_all_notes(conn: sqlite3.Connection, query: str, limit: int = 50) -> l
               n.updated_at DESC 
            LIMIT ?""",
         (like_pat, like_pat, like_pat, like_pat, like_pat, limit),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ── People & Faces ─────────────────────────────────────
+
+def get_faces_for_image(conn: sqlite3.Connection, image_id: int) -> list[dict]:
+    """Return all detected / tagged faces for an image."""
+    rows = conn.execute(
+        """SELECT f.id, f.image_id, f.person_id, f.box_x, f.box_y, f.box_w, f.box_h,
+                  f.confidence, f.is_pet, f.created_at,
+                  (f.embedding IS NOT NULL) AS has_embedding,
+                  p.name AS person_name, p.relationship AS person_relationship
+           FROM faces f
+           LEFT JOIN people p ON f.person_id = p.id
+           WHERE f.image_id = ?
+           ORDER BY f.id ASC""",
+        (image_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_face_by_id(conn: sqlite3.Connection, face_id: int) -> dict | None:
+    """Get single face record with person and image details."""
+    row = conn.execute(
+        """SELECT f.*, p.name AS person_name, p.relationship AS person_relationship, i.file_path
+           FROM faces f
+           JOIN images i ON f.image_id = i.id
+           LEFT JOIN people p ON f.person_id = p.id
+           WHERE f.id = ?""",
+        (face_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def insert_face(
+    conn: sqlite3.Connection,
+    image_id: int,
+    box_x: float,
+    box_y: float,
+    box_w: float,
+    box_h: float,
+    confidence: float = 1.0,
+    embedding: bytes | None = None,
+    person_id: int | None = None,
+    is_pet: int = 0,
+) -> int:
+    """Insert a new detected or manual face."""
+    cur = conn.execute(
+        """INSERT INTO faces (image_id, person_id, box_x, box_y, box_w, box_h, confidence, embedding, is_pet)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (image_id, person_id, box_x, box_y, box_w, box_h, confidence, embedding, is_pet),
+    )
+    return cur.lastrowid
+
+
+def update_face_person(conn: sqlite3.Connection, face_id: int, person_id: int | None) -> bool:
+    """Assign or unassign a person to a face."""
+    cur = conn.execute(
+        "UPDATE faces SET person_id = ? WHERE id = ?",
+        (person_id, face_id),
+    )
+    return cur.rowcount > 0
+
+
+def delete_face(conn: sqlite3.Connection, face_id: int) -> bool:
+    """Delete a face bounding box and tag."""
+    cur = conn.execute("DELETE FROM faces WHERE id = ?", (face_id,))
+    return cur.rowcount > 0
+
+
+def get_all_people(conn: sqlite3.Connection) -> list[dict]:
+    """Return all known people/pets with face & photo counts."""
+    rows = conn.execute(
+        """SELECT p.*,
+                  COUNT(DISTINCT f.id) AS face_count,
+                  COUNT(DISTINCT f.image_id) AS photo_count
+           FROM people p
+           LEFT JOIN faces f ON f.person_id = p.id
+           GROUP BY p.id
+           ORDER BY photo_count DESC, p.name ASC"""
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_person_by_id(conn: sqlite3.Connection, person_id: int) -> dict | None:
+    """Get person record by ID with stats."""
+    row = conn.execute(
+        """SELECT p.*,
+                  COUNT(DISTINCT f.id) AS face_count,
+                  COUNT(DISTINCT f.image_id) AS photo_count
+           FROM people p
+           LEFT JOIN faces f ON f.person_id = p.id
+           WHERE p.id = ?
+           GROUP BY p.id""",
+        (person_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def get_person_by_name(conn: sqlite3.Connection, name: str) -> dict | None:
+    """Find person by case-insensitive name."""
+    row = conn.execute(
+        "SELECT * FROM people WHERE name = ? COLLATE NOCASE",
+        (name.strip(),),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def upsert_person(
+    conn: sqlite3.Connection,
+    name: str,
+    relationship: str = "Friend",
+    notes: str = "",
+    avatar_face_id: int | None = None,
+) -> int:
+    """Insert or update a person record by name."""
+    existing = get_person_by_name(conn, name)
+    if existing:
+        conn.execute(
+            """UPDATE people 
+               SET relationship = COALESCE(NULLIF(?, ''), relationship),
+                   notes = COALESCE(NULLIF(?, ''), notes),
+                   avatar_face_id = COALESCE(?, avatar_face_id),
+                   updated_at = datetime('now')
+               WHERE id = ?""",
+            (relationship.strip(), notes.strip(), avatar_face_id, existing["id"]),
+        )
+        return existing["id"]
+    else:
+        cur = conn.execute(
+            """INSERT INTO people (name, relationship, notes, avatar_face_id)
+               VALUES (?, ?, ?, ?)""",
+            (name.strip(), relationship.strip() or "Friend", notes.strip(), avatar_face_id),
+        )
+        return cur.lastrowid
+
+
+def update_person(
+    conn: sqlite3.Connection,
+    person_id: int,
+    name: str | None = None,
+    relationship: str | None = None,
+    notes: str | None = None,
+    avatar_face_id: int | None = None,
+) -> dict | None:
+    """Update fields on an existing person."""
+    fields = []
+    vals = []
+    if name is not None:
+        fields.append("name = ?")
+        vals.append(name.strip())
+    if relationship is not None:
+        fields.append("relationship = ?")
+        vals.append(relationship.strip())
+    if notes is not None:
+        fields.append("notes = ?")
+        vals.append(notes.strip())
+    if avatar_face_id is not None:
+        fields.append("avatar_face_id = ?")
+        vals.append(avatar_face_id)
+
+    if not fields:
+        return get_person_by_id(conn, person_id)
+
+    fields.append("updated_at = datetime('now')")
+    vals.append(person_id)
+    conn.execute(f"UPDATE people SET {', '.join(fields)} WHERE id = ?", tuple(vals))
+    return get_person_by_id(conn, person_id)
+
+
+def delete_person(conn: sqlite3.Connection, person_id: int) -> bool:
+    """Delete person record; foreign key sets person_id = NULL on faces."""
+    cur = conn.execute("DELETE FROM people WHERE id = ?", (person_id,))
+    return cur.rowcount > 0
+
+
+def get_photos_for_person(conn: sqlite3.Connection, person_id: int) -> list[dict]:
+    """Return all photos containing this person."""
+    rows = conn.execute(
+        """SELECT DISTINCT i.*
+           FROM images i
+           JOIN faces f ON f.image_id = i.id
+           WHERE f.person_id = ?
+           ORDER BY i.date_taken DESC, i.id DESC""",
+        (person_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_people_for_photos(conn: sqlite3.Connection, image_ids: list[int]) -> dict[int, list[dict]]:
+    """
+    Given a list of image IDs, return a mapping {image_id: [person_dicts]}.
+    Used by storyteller to enrich prompts with who is in each photo.
+    """
+    if not image_ids:
+        return {}
+
+    placeholders = ",".join("?" for _ in image_ids)
+    rows = conn.execute(
+        f"""SELECT f.image_id, f.is_pet, p.id AS person_id, p.name, p.relationship
+            FROM faces f
+            JOIN people p ON f.person_id = p.id
+            WHERE f.image_id IN ({placeholders})
+            ORDER BY f.image_id ASC, p.name ASC""",
+        image_ids,
+    ).fetchall()
+
+    result: dict[int, list[dict]] = {}
+    for r in rows:
+        img_id = r["image_id"]
+        result.setdefault(img_id, []).append({
+            "person_id": r["person_id"],
+            "name": r["name"],
+            "relationship": r["relationship"] or "Friend",
+            "is_pet": bool(r["is_pet"]),
+        })
+    return result
+
+
+def get_known_face_embeddings(conn: sqlite3.Connection, exclude_face_id: int | None = None) -> list[tuple[int, int, bytes]]:
+    """
+    Return all tagged faces with embeddings: list of (face_id, person_id, embedding_bytes).
+    Used for matching new faces against known people.
+    """
+    if exclude_face_id:
+        rows = conn.execute(
+            """SELECT id, person_id, embedding 
+               FROM faces 
+               WHERE person_id IS NOT NULL AND embedding IS NOT NULL AND id != ?""",
+            (exclude_face_id,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """SELECT id, person_id, embedding 
+               FROM faces 
+               WHERE person_id IS NOT NULL AND embedding IS NOT NULL"""
+        ).fetchall()
+    return [(r["id"], r["person_id"], r["embedding"]) for r in rows]
+
+
+def get_untagged_faces_with_embeddings(conn: sqlite3.Connection, limit: int = 200) -> list[dict]:
+    """Return untagged faces that have embeddings for batch suggestion/clustering."""
+    rows = conn.execute(
+        """SELECT f.id, f.image_id, f.box_x, f.box_y, f.box_w, f.box_h, f.embedding, i.file_path
+           FROM faces f
+           JOIN images i ON f.image_id = i.id
+           WHERE f.person_id IS NULL AND f.embedding IS NOT NULL
+           LIMIT ?""",
+        (limit,),
     ).fetchall()
     return [dict(r) for r in rows]
 

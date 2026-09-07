@@ -25,3 +25,4 @@ uvicorn>=0.30.0
 # Utilities
 tqdm>=4.66.0
 xxhash>=3.4.0             # fast file hashing
+opencv-python>=4.8.0      # YuNet & SFace local face detection and recognition
