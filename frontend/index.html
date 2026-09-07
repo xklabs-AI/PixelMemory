@@ -4673,7 +4673,12 @@
     // ── Detail Modal ────────────────────────────────────────
     function showDetail(r) {
       currentDetailPhoto = r;
-      $('#modalImg').src = `${API}/api/original/${r.id}`;
+      const modalImg = $('#modalImg');
+      modalImg.onerror = () => {
+        modalImg.onerror = null;
+        modalImg.src = `${API}/api/thumb/${r.id}`;
+      };
+      modalImg.src = `${API}/api/preview/${r.id}`;
       $('#modalTitle').textContent = r.place_name ? `Memory · ${r.place_name.split(',')[0]}` : 'Photo Memory';
 
       // Set description and reset edit mode
@@ -4699,7 +4704,7 @@
       $('#toggleTagModeBtn')?.classList.remove('active');
       if ($('#modalImgPane')) $('#modalImgPane').style.cursor = 'default';
       if ($('#tagModeLabel')) $('#tagModeLabel').textContent = 'Tag Photo';
-      loadImageFaces(r.id, true);
+      loadImageFaces(r.id, false);
 
       $('#modal').classList.add('active');
     }
@@ -7725,7 +7730,7 @@
         let data = await res.json();
         let faces = data.faces || [];
 
-        if (faces.length === 0 && autoDetect) {
+        if (faces.length === 0 && autoDetect && !data.faces_scanned) {
           const detectRes = await fetch(`${API}/api/images/${imageId}/faces/detect`, { method: 'POST' });
           const detectData = await detectRes.json();
           faces = detectData.faces || [];

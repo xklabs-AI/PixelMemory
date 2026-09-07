@@ -10,6 +10,8 @@ ZVEC_DIR = DATA_DIR / "zvec"
 ZVEC_DIMENSION = 384              # all-MiniLM-L6-v2 output dimensionality
 THUMB_DIR = DATA_DIR / "thumbnails"
 THUMB_SIZE = (320, 320)
+PREVIEW_DIR = DATA_DIR / "previews"
+PREVIEW_SIZE = (2048, 2048)
 
 # ── Models ───────────────────────────────────────────
 USE_OLLAMA = True

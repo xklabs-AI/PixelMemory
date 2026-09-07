@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS images (
     metadata_done   INTEGER DEFAULT 0,
     description_done INTEGER DEFAULT 0,
     embedded        INTEGER DEFAULT 0,
+    faces_scanned   INTEGER DEFAULT 0,
 
     created_at      TEXT DEFAULT (datetime('now')),
     updated_at      TEXT DEFAULT (datetime('now'))
@@ -129,6 +130,9 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(images)").fetchall()]
+        if "faces_scanned" not in cols:
+            conn.execute("ALTER TABLE images ADD COLUMN faces_scanned INTEGER DEFAULT 0")
 
 
 @contextmanager
@@ -654,7 +658,10 @@ def get_faces_for_image(conn: sqlite3.Connection, image_id: int) -> list[dict]:
 def get_face_by_id(conn: sqlite3.Connection, face_id: int) -> dict | None:
     """Get single face record with person and image details."""
     row = conn.execute(
-        """SELECT f.*, p.name AS person_name, p.relationship AS person_relationship, i.file_path
+        """SELECT f.id, f.image_id, f.person_id, f.box_x, f.box_y, f.box_w, f.box_h,
+                  f.confidence, f.is_pet, f.created_at,
+                  (f.embedding IS NOT NULL) AS has_embedding,
+                  p.name AS person_name, p.relationship AS person_relationship, i.file_path
            FROM faces f
            JOIN images i ON f.image_id = i.id
            LEFT JOIN people p ON f.person_id = p.id

@@ -16,7 +16,14 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import THUMB_DIR, HOST, PORT, SEARCH_TOP_K
+from PIL import Image, ImageOps
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+except ImportError:
+    pass
+
+from backend.config import THUMB_DIR, PREVIEW_DIR, PREVIEW_SIZE, HOST, PORT, SEARCH_TOP_K
 from backend.db import (
     init_db, get_conn, get_image_by_id, get_stats,
     create_album, get_all_albums, get_album_by_id, rename_album,
@@ -920,9 +927,45 @@ def get_thumbnail(image_id: int):
     return FileResponse(thumb_path, media_type="image/jpeg")
 
 
+@app.get("/api/preview/{image_id}")
+def get_preview(image_id: int):
+    """
+    Serve a high-quality web-compatible 2048px JPEG preview.
+    Converts HEIC/HEIF/TIFF files into crisp JPEG and caches them on disk.
+    Loads instantly (~5ms) after first generation.
+    """
+    preview_path = PREVIEW_DIR / f"{image_id}.jpg"
+    if preview_path.exists() and preview_path.stat().st_size > 0:
+        return FileResponse(preview_path, media_type="image/jpeg")
+
+    with get_conn() as conn:
+        row = get_image_by_id(conn, image_id)
+    if not row:
+        raise HTTPException(404, "Image not found")
+
+    fpath = Path(row["file_path"])
+    if not fpath.exists():
+        raise HTTPException(404, "Original file not found on disk")
+
+    try:
+        PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+        with Image.open(fpath) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail(PREVIEW_SIZE, Image.Resampling.LANCZOS)
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+            img.save(preview_path, "JPEG", quality=88)
+        return FileResponse(preview_path, media_type="image/jpeg")
+    except Exception as e:
+        thumb_path = THUMB_DIR / f"{image_id}.jpg"
+        if thumb_path.exists():
+            return FileResponse(thumb_path, media_type="image/jpeg")
+        raise HTTPException(500, f"Failed to generate preview: {e}")
+
+
 @app.get("/api/original/{image_id}")
-def get_original(image_id: int):
-    """Serve the original image file."""
+def get_original(image_id: int, download: bool = False, raw: bool = False):
+    """Serve the original image file or a web-compatible preview for HEIC/TIFF."""
     with get_conn() as conn:
         row = get_image_by_id(conn, image_id)
     if row is None:
@@ -933,6 +976,12 @@ def get_original(image_id: int):
         raise HTTPException(404, "Original file not found on disk")
 
     suffix = fpath.suffix.lower()
+
+    # If browser requests a HEIC/HEIF/TIFF without explicit download/raw flag,
+    # serve the web-compatible JPEG preview so the browser doesn't show a blank image!
+    if suffix in (".heic", ".heif", ".tif", ".tiff") and not (download or raw):
+        return get_preview(image_id)
+
     media_types = {
         ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
         ".png": "image/png", ".webp": "image/webp",
@@ -940,7 +989,10 @@ def get_original(image_id: int):
         ".gif": "image/gif", ".bmp": "image/bmp",
         ".tif": "image/tiff", ".tiff": "image/tiff",
     }
-    return FileResponse(fpath, media_type=media_types.get(suffix, "application/octet-stream"))
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{fpath.name}"'
+    return FileResponse(fpath, media_type=media_types.get(suffix, "application/octet-stream"), headers=headers)
 
 
 class StoryGenerateRequest(BaseModel):
@@ -1343,6 +1395,7 @@ _face_scan_state = {
 def get_image_faces(image_id: int):
     """Return all faces for an image, including matching suggestions for untagged faces."""
     with get_conn() as conn:
+        img_row = get_image_by_id(conn, image_id)
         faces = get_faces_for_image(conn, image_id)
         known_embeddings = get_known_face_embeddings(conn)
         all_people = {p["id"]: p for p in get_all_people(conn)}
@@ -1367,7 +1420,8 @@ def get_image_faces(image_id: int):
                     }
         results.append(face_dict)
 
-    return {"status": "ok", "faces": results}
+    faces_scanned = bool(img_row["faces_scanned"]) if (img_row and "faces_scanned" in img_row.keys()) else False
+    return {"status": "ok", "faces": results, "faces_scanned": faces_scanned}
 
 
 @app.post("/api/images/{image_id}/faces/detect")
@@ -1389,6 +1443,7 @@ def detect_image_faces(image_id: int, auto_tag: bool = True):
     detected = detect_and_embed_faces(file_path)
 
     with get_conn() as conn:
+        conn.execute("UPDATE images SET faces_scanned = 1 WHERE id = ?", (image_id,))
         existing_faces = get_faces_for_image(conn, image_id)
         known_embeddings = get_known_face_embeddings(conn)
 
@@ -1683,9 +1738,7 @@ def _run_library_face_scan():
             rows = conn.execute(
                 """SELECT i.id, i.file_path 
                    FROM images i
-                   LEFT JOIN faces f ON f.image_id = i.id
-                   WHERE f.id IS NULL
-                   GROUP BY i.id"""
+                   WHERE i.faces_scanned = 0 OR i.faces_scanned IS NULL"""
             ).fetchall()
 
         total = len(rows)
@@ -1698,8 +1751,9 @@ def _run_library_face_scan():
             if fpath.exists():
                 try:
                     detected = detect_and_embed_faces(fpath)
-                    if detected:
-                        with get_conn() as conn:
+                    with get_conn() as conn:
+                        conn.execute("UPDATE images SET faces_scanned = 1 WHERE id = ?", (img_id,))
+                        if detected:
                             known_embeddings = get_known_face_embeddings(conn)
                             for d in detected:
                                 person_id = None
