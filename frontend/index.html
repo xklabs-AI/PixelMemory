@@ -2590,6 +2590,24 @@
       user-select: none;
     }
 
+    .modal-img-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      max-height: 60vh;
+      line-height: 0;
+    }
+
+    .modal-img-wrap img {
+      display: block;
+      max-width: 100%;
+      max-height: 60vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+    }
+
     .face-overlay {
       position: absolute;
       top: 0;
@@ -2714,14 +2732,14 @@
 
     /* Face Tag Popover */
     .face-tag-popover {
-      position: absolute;
-      width: 270px;
+      position: fixed;
+      width: 280px;
       background: #0f172a;
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      border: 1px solid rgba(99, 102, 241, 0.45);
       border-radius: var(--radius-sm);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
       padding: 0.85rem;
-      z-index: 30;
+      z-index: 1050;
       display: flex;
       flex-direction: column;
       gap: 0.65rem;
@@ -3356,11 +3374,13 @@
       </div>
       <div class="modal-content-split">
         <div class="modal-img-pane" id="modalImgPane">
-          <img id="modalImg" src="" alt="" />
-          <!-- Face detection & tagging interactive overlay -->
-          <div id="faceOverlay" class="face-overlay"></div>
-          <!-- Manual drawing box preview -->
-          <div id="drawBoxPreview" class="draw-box-preview" style="display: none;"></div>
+          <div class="modal-img-wrap" id="modalImgWrap">
+            <img id="modalImg" src="" alt="" />
+            <!-- Face detection & tagging interactive overlay -->
+            <div id="faceOverlay" class="face-overlay"></div>
+            <!-- Manual drawing box preview -->
+            <div id="drawBoxPreview" class="draw-box-preview" style="display: none;"></div>
+          </div>
           <!-- Toolbar over image -->
           <div class="face-overlay-toolbar">
             <button type="button" class="face-tool-toggle" id="toggleTagModeBtn" title="Click or drag to tag a person or pet">
@@ -7875,17 +7895,16 @@
       }
 
       popover.style.display = 'flex';
-      const paneRect = pane.getBoundingClientRect();
       const boxRect = boxElement.getBoundingClientRect();
 
-      let left = boxRect.right - paneRect.left + 10;
-      let top = boxRect.top - paneRect.top;
+      let left = boxRect.right + 12;
+      let top = boxRect.top;
 
-      if (left + 280 > paneRect.width) {
-        left = boxRect.left - paneRect.left - 280;
+      if (left + 290 > window.innerWidth) {
+        left = boxRect.left - 290 - 12;
       }
-      left = Math.max(10, Math.min(paneRect.width - 285, left));
-      top = Math.max(10, Math.min(paneRect.height - 300, top));
+      left = Math.max(10, Math.min(window.innerWidth - 300, left));
+      top = Math.max(10, Math.min(window.innerHeight - 350, top));
 
       popover.style.left = `${left}px`;
       popover.style.top = `${top}px`;
@@ -7993,22 +8012,49 @@
 
     $('#detectFacesBtn')?.addEventListener('click', async () => {
       if (!currentDetailPhoto) return;
-      showToast('Detecting faces with YuNet...');
-      await loadImageFaces(currentDetailPhoto.id, true);
+      const btn = $('#detectFacesBtn');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> <span>Detecting...</span>';
+      showToast('🔍 Detecting faces with YuNet AI...');
+
+      try {
+        const detectRes = await fetch(`${API}/api/images/${currentDetailPhoto.id}/faces/detect`, { method: 'POST' });
+        const detectData = await detectRes.json();
+        currentImageFaces = detectData.faces || [];
+        renderFaceOverlay();
+        renderModalPeopleChips();
+        if (currentImageFaces.length > 0) {
+          showToast(`✨ Found ${currentImageFaces.length} face${currentImageFaces.length === 1 ? '' : 's'}! Click any face box to tag.`);
+        } else {
+          showToast('No faces found by detector. You can use "Tag Photo" to tag manually!');
+        }
+      } catch (err) {
+        console.error('Face detection failed:', err);
+        showToast('Failed to run face detection');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
     });
 
     $('#modalAddTagInlineBtn')?.addEventListener('click', () => {
       $('#toggleTagModeBtn')?.click();
     });
 
-    const imgPaneEl = $('#modalImgPane');
+    // Re-render face overlay when the image finishes loading
+    $('#modalImg')?.addEventListener('load', () => {
+      renderFaceOverlay();
+    });
+
+    const imgWrapEl = $('#modalImgWrap');
     const drawPreviewEl = $('#drawBoxPreview');
 
-    imgPaneEl?.addEventListener('mousedown', (e) => {
+    imgWrapEl?.addEventListener('mousedown', (e) => {
       if (!isManualTagMode || !currentDetailPhoto) return;
       if (e.target.closest('.face-box') || e.target.closest('#faceTagPopover') || e.target.closest('.face-overlay-toolbar')) return;
 
-      const rect = imgPaneEl.getBoundingClientRect();
+      const rect = imgWrapEl.getBoundingClientRect();
       manualDrawStart = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
@@ -8025,9 +8071,9 @@
       }
     });
 
-    imgPaneEl?.addEventListener('mousemove', (e) => {
+    imgWrapEl?.addEventListener('mousemove', (e) => {
       if (!manualDrawStart || !isManualTagMode || !drawPreviewEl) return;
-      const rect = imgPaneEl.getBoundingClientRect();
+      const rect = imgWrapEl.getBoundingClientRect();
       const currentX = e.clientX - rect.left;
       const currentY = e.clientY - rect.top;
 
@@ -8042,9 +8088,9 @@
       drawPreviewEl.style.height = `${height}px`;
     });
 
-    imgPaneEl?.addEventListener('mouseup', async (e) => {
+    imgWrapEl?.addEventListener('mouseup', async (e) => {
       if (!manualDrawStart || !isManualTagMode || !currentDetailPhoto) return;
-      const rect = imgPaneEl.getBoundingClientRect();
+      const rect = imgWrapEl.getBoundingClientRect();
       const currentX = e.clientX - rect.left;
       const currentY = e.clientY - rect.top;
 
@@ -8057,16 +8103,16 @@
       manualDrawStart = null;
 
       if (width < 15 || height < 15) {
-        width = 100;
-        height = 100;
-        left = Math.max(0, currentX - 50);
-        top = Math.max(0, currentY - 50);
+        width = 80;
+        height = 80;
+        left = Math.max(0, currentX - 40);
+        top = Math.max(0, currentY - 40);
       }
 
-      const norm_x = left / rect.width;
-      const norm_y = top / rect.height;
-      const norm_w = width / rect.width;
-      const norm_h = height / rect.height;
+      const norm_x = Math.max(0, Math.min(0.95, left / rect.width));
+      const norm_y = Math.max(0, Math.min(0.95, top / rect.height));
+      const norm_w = Math.max(0.02, Math.min(1 - norm_x, width / rect.width));
+      const norm_h = Math.max(0.02, Math.min(1 - norm_y, height / rect.height));
 
       try {
         const res = await fetch(`${API}/api/images/${currentDetailPhoto.id}/faces`, {
