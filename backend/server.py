@@ -35,6 +35,7 @@ from backend.db import (
     get_faces_for_image, get_face_by_id, insert_face, update_face_person,
     delete_face, get_all_people, get_person_by_id, get_person_by_name,
     upsert_person, update_person, delete_person, get_photos_for_person,
+    get_faces_for_person, unlink_face_from_person,
     get_known_face_embeddings, get_untagged_faces_with_embeddings,
 )
 from backend.faces import (
@@ -1724,6 +1725,46 @@ def batch_tag_person(person_id: int, req: BatchTagRequest):
                 count += 1
 
     return {"status": "ok", "tagged_count": count}
+
+
+@app.get("/api/people/{person_id}/faces")
+def get_person_faces(person_id: int):
+    """Return all detected face variations / occurrences for this person across the library."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        faces = get_faces_for_person(conn, person_id)
+    return {"status": "ok", "person": person, "faces": faces, "count": len(faces)}
+
+
+@app.post("/api/people/{person_id}/unlink-face/{face_id}")
+def unlink_person_face(person_id: int, face_id: int):
+    """Remove a false detection / tag from a person, releasing the face back to untagged."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        ok = unlink_face_from_person(conn, person_id, face_id)
+        if not ok:
+            raise HTTPException(404, "Face not found or not assigned to this person")
+        updated_person = get_person_by_id(conn, person_id)
+    return {"status": "ok", "message": "Face unlinked from person successfully", "person": updated_person}
+
+
+@app.post("/api/people/{person_id}/set-avatar/{face_id}")
+def set_person_avatar(person_id: int, face_id: int):
+    """Set a specific face variation as the profile avatar for this person."""
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        face = get_face_by_id(conn, face_id)
+        if not face:
+            raise HTTPException(404, "Face not found")
+        update_person(conn, person_id, avatar_face_id=face_id)
+        updated = get_person_by_id(conn, person_id)
+    return {"status": "ok", "person": updated}
 
 
 def _run_library_face_scan():

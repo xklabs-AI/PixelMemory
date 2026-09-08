@@ -3040,6 +3040,185 @@
       font-size: 0.75rem;
       color: var(--text-dim);
     }
+
+    .person-card-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 5;
+    }
+    .person-card:hover .person-card-actions {
+      opacity: 1;
+    }
+    .person-card-btn {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: var(--text-main);
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .person-card-btn:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.08);
+    }
+    .person-card-btn.delete-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #f87171;
+    }
+
+    /* Person Detail & Variations Modal */
+    .person-detail-header-card {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+    }
+    .person-detail-info-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .variations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.85rem;
+      margin-top: 0.75rem;
+    }
+    .variation-card {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+      position: relative;
+    }
+    .variation-card:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+    }
+    .variation-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: #1e293b;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .variation-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+    .variation-card:hover .variation-img {
+      transform: scale(1.04);
+    }
+    .variation-avatar-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(234, 179, 8, 0.92);
+      color: #000;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    .variation-card-body {
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 1;
+    }
+    .variation-meta-date {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .variation-meta-place {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .variation-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding-top: 0.4rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .btn-unlink-face {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 4px;
+      color: #f87171;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.28rem 0.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-unlink-face:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    .btn-set-avatar {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 4px;
+      color: #93c5fd;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.28rem 0.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-set-avatar:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #fff;
+    }
   </style>
 </head>
 
@@ -4034,6 +4213,61 @@
         <div style="display: flex; gap: 0.4rem;">
           <button type="button" class="tool-btn" id="popoverCancelBtn" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">Cancel</button>
           <button type="button" class="cta-btn" id="popoverSaveBtn" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">Save Tag</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Person Detail & Variations Modal -->
+  <div class="modal-backdrop" id="personDetailModal">
+    <div class="modal-window" style="max-width: 840px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-top">
+        <div class="modal-title" id="personDetailTitle">👤 Person Profile & Variations</div>
+        <button class="modal-close-btn" id="personDetailClose">&times;</button>
+      </div>
+      <div class="person-detail-body" style="overflow-y: auto; flex: 1; padding: 1.25rem;">
+        <!-- Header section with Avatar & Quick Actions -->
+        <div class="person-detail-header-card">
+          <div class="person-detail-avatar-col">
+            <div class="person-avatar-wrap" style="width: 88px; height: 88px;" id="personDetailAvatarWrap"></div>
+          </div>
+          <div class="person-detail-info-col">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h2 id="personDetailName" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin: 0;"></h2>
+                <span id="personDetailRelBadge" class="person-rel-text"></span>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button type="button" class="tool-btn" id="btnDetailRename" style="font-size: 0.76rem; padding: 0.35rem 0.7rem;">✏️ Rename / Edit</button>
+                <button type="button" class="tool-btn" id="btnDetailDelete" style="font-size: 0.76rem; padding: 0.35rem 0.7rem; color: #ef4444; border-color: rgba(239,68,68,0.3);">🗑️ Delete Profile</button>
+              </div>
+            </div>
+            <p id="personDetailNotes" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.35rem; margin-bottom: 0.6rem;"></p>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
+              <button type="button" class="cta-btn" id="btnDetailViewPhotos" style="font-size: 0.78rem; padding: 0.4rem 0.85rem;">
+                <span>🖼️ View All Photos (<span id="personDetailPhotoCount">0</span>)</span>
+              </button>
+              <button type="button" class="tool-btn" id="btnDetailStory" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-size: 0.78rem; padding: 0.4rem 0.85rem;">
+                <span>✨ Generate Story</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Face Variations in Library Section -->
+        <div style="margin-top: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+              <span>🔍 Face Variations & Detections in Library</span>
+              <span class="vlm-badge" id="personVariationCountBadge" style="font-size: 0.72rem;">0</span>
+            </h3>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            All face instances detected and tagged for this person. If any detection is incorrect, click <strong>"❌ Not this person"</strong> to release it back to untagged.
+          </div>
+
+          <!-- Grid of face variations -->
+          <div id="personVariationsGrid" class="variations-grid"></div>
         </div>
       </div>
     </div>
@@ -7407,6 +7641,28 @@
       if ($('#countPets')) $('#countPets').textContent = petsCount;
     }
 
+    async function deletePersonById(personId, personName) {
+      if (!confirm(`Delete profile for "${personName}"?\n\nThis will remove the person from your People & Pets list. All tagged photos will be kept, and their faces will be released back to untagged.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/api/people/${personId}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast(`Deleted "${personName}". Tagged faces released.`);
+          $('#personModal')?.classList.remove('active');
+          $('#personDetailModal')?.classList.remove('active');
+          await loadPeople();
+          if (viewingPerson?.id === personId) {
+            openPeopleExplorer();
+          }
+        } else {
+          showToast('Failed to delete person');
+        }
+      } catch (e) {
+        showToast('Failed to delete person');
+      }
+    }
+
     function renderPeopleGrid() {
       const grid = $('#peopleGrid');
       if (!grid) return;
@@ -7443,7 +7699,11 @@
           : `<span class="person-avatar-fallback">${icon}</span>`;
 
         return `
-          <div class="person-card" data-person-id="${p.id}">
+          <div class="person-card" data-person-id="${p.id}" title="Click to view variations and profile">
+            <div class="person-card-actions">
+              <button type="button" class="person-card-btn btn-edit-person" data-person-id="${p.id}" title="Rename / Edit ${escapeHtml(p.name)}">✏️</button>
+              <button type="button" class="person-card-btn delete-btn btn-delete-person" data-person-id="${p.id}" title="Delete ${escapeHtml(p.name)}">🗑️</button>
+            </div>
             <div class="person-avatar-wrap">
               ${avatarHtml}
               <div class="person-rel-badge" title="${p.relationship || 'Friend'}">${icon}</div>
@@ -7456,10 +7716,29 @@
       }).join('');
 
       grid.querySelectorAll('.person-card').forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.person-card-btn')) return;
           const pid = Number(card.dataset.personId);
           const person = allPeople.find(p => p.id === pid);
-          if (person) showPersonPhotos(person);
+          if (person) openPersonDetailModal(person);
+        });
+      });
+
+      grid.querySelectorAll('.btn-edit-person').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pid = Number(btn.dataset.personId);
+          const person = allPeople.find(p => p.id === pid);
+          if (person) openPersonModal(person);
+        });
+      });
+
+      grid.querySelectorAll('.btn-delete-person').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pid = Number(btn.dataset.personId);
+          const person = allPeople.find(p => p.id === pid);
+          if (person) deletePersonById(person.id, person.name);
         });
       });
     }
@@ -7477,16 +7756,22 @@
 
         const icon = getRelationshipIcon(person.relationship);
         $('#resultMeta').innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
             <span>${icon} Photos featuring <strong>${escapeHtml(person.name)}</strong> (${escapeHtml(person.relationship || 'Friend')}) — ${photos.length} photos</span>
-            <div style="display: flex; gap: 0.5rem;">
-              <button class="small-add-btn" id="personStoryBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-size: 0.76rem; padding: 0.3rem 0.75rem;">✨ Generate ${escapeHtml(person.name)}'s Story</button>
-              <button class="tiny-edit-btn" id="personEditBtn" style="font-size: 0.76rem; padding: 0.3rem 0.6rem;">✏️ Edit Profile</button>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button class="small-add-btn" id="personVariationsHeaderBtn" style="background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #e0e7ff; font-size: 0.76rem; padding: 0.3rem 0.65rem;">🔍 Variations & Face Detections</button>
+              <button class="small-add-btn" id="personStoryBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-size: 0.76rem; padding: 0.3rem 0.75rem;">✨ Generate Story</button>
+              <button class="tiny-edit-btn" id="personEditBtn" style="font-size: 0.76rem; padding: 0.3rem 0.6rem;">✏️ Rename / Edit</button>
+              <button class="tiny-edit-btn" id="personDeleteHeaderBtn" style="font-size: 0.76rem; padding: 0.3rem 0.6rem; color: #ef4444; border-color: rgba(239,68,68,0.3);">🗑️ Delete</button>
             </div>
           </div>
         `;
 
         renderGrid(photos);
+
+        $('#personVariationsHeaderBtn')?.addEventListener('click', () => {
+          openPersonDetailModal(person);
+        });
 
         $('#personStoryBtn')?.addEventListener('click', () => {
           if (photos.length > 0) {
@@ -7498,6 +7783,10 @@
 
         $('#personEditBtn')?.addEventListener('click', () => {
           openPersonModal(person);
+        });
+
+        $('#personDeleteHeaderBtn')?.addEventListener('click', () => {
+          deletePersonById(person.id, person.name);
         });
       } catch (e) {
         console.error('Failed to load photos for person:', e);
@@ -7608,6 +7897,195 @@
       }
     }
 
+    async function openPersonDetailModal(person) {
+      if (!person) return;
+      viewingPerson = person;
+
+      const modal = $('#personDetailModal');
+      if (!modal) return;
+
+      const icon = getRelationshipIcon(person.relationship);
+      $('#personDetailTitle').textContent = `👤 ${escapeHtml(person.name)} — Profile & Variations`;
+      $('#personDetailName').textContent = person.name;
+      $('#personDetailRelBadge').textContent = `${icon} ${person.relationship || 'Friend'}`;
+      $('#personDetailNotes').textContent = person.notes ? `Note: ${person.notes}` : '';
+      $('#personDetailPhotoCount').textContent = person.photo_count || 0;
+
+      // Render header avatar
+      const avatarWrap = $('#personDetailAvatarWrap');
+      if (person.avatar_face_id) {
+        avatarWrap.innerHTML = `
+          <img class="person-avatar-img" src="${API}/api/faces/thumb/${person.avatar_face_id}" alt="${escapeHtml(person.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+          <span class="person-avatar-fallback" style="display:none; font-size: 2.2rem;">${icon}</span>
+        `;
+      } else {
+        avatarWrap.innerHTML = `<span class="person-avatar-fallback" style="font-size: 2.2rem;">${icon}</span>`;
+      }
+
+      // Action buttons in header
+      $('#btnDetailRename').onclick = () => {
+        openPersonModal(person);
+      };
+
+      $('#btnDetailDelete').onclick = () => {
+        deletePersonById(person.id, person.name);
+      };
+
+      $('#btnDetailViewPhotos').onclick = () => {
+        modal.classList.remove('active');
+        showPersonPhotos(person);
+      };
+
+      $('#btnDetailStory').onclick = async () => {
+        try {
+          const res = await fetch(`${API}/api/people/${person.id}/photos`);
+          const data = await res.json();
+          const photos = data.photos || [];
+          if (photos.length > 0) {
+            modal.classList.remove('active');
+            openGroupStoryModal('person', `Story of ${person.name} (${person.relationship})`, photos, icon);
+          } else {
+            showToast('No photos to generate story for.');
+          }
+        } catch (e) {
+          showToast('Failed to load photos for story');
+        }
+      };
+
+      // Load and render face variations
+      const grid = $('#personVariationsGrid');
+      const countBadge = $('#personVariationCountBadge');
+      grid.innerHTML = '<div style="color:var(--text-dim); padding:1.5rem; grid-column: 1 / -1; text-align:center;">Loading face variations...</div>';
+
+      modal.classList.add('active');
+
+      try {
+        const res = await fetch(`${API}/api/people/${person.id}/faces`);
+        const data = await res.json();
+        const faces = data.faces || [];
+        countBadge.textContent = faces.length;
+        $('#personDetailPhotoCount').textContent = person.photo_count || faces.length;
+
+        if (faces.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+              <div style="font-weight: 600; color: #fff;">No face detections assigned to ${escapeHtml(person.name)}</div>
+              <div style="font-size: 0.78rem; margin-top: 0.3rem;">Open any photo to tag faces, or run "Scan Library for Faces" to find matches.</div>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = faces.map(f => {
+          const isAvatar = person.avatar_face_id === f.id;
+          const dateText = f.date_taken ? new Date(f.date_taken).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown Date';
+          const placeText = f.place_name ? f.place_name.split(',')[0] : 'Photo #' + f.image_id;
+
+          return `
+            <div class="variation-card" id="variationCard-${f.id}">
+              <div class="variation-img-wrap" title="Click to view full photo" data-img-id="${f.image_id}">
+                <img class="variation-img" src="${API}/api/faces/thumb/${f.id}" alt="Face ${f.id}" loading="lazy" />
+                ${isAvatar ? '<div class="variation-avatar-badge">⭐ Primary Avatar</div>' : ''}
+              </div>
+              <div class="variation-card-body">
+                <div class="variation-meta-date" title="${escapeHtml(dateText)}">📅 ${escapeHtml(dateText)}</div>
+                <div class="variation-meta-place" title="${escapeHtml(placeText)}">📍 ${escapeHtml(placeText)}</div>
+                <div class="variation-actions">
+                  ${!isAvatar ? `<button type="button" class="btn-set-avatar" data-face-id="${f.id}">⭐ Set as Avatar</button>` : ''}
+                  <button type="button" class="btn-unlink-face" data-face-id="${f.id}" title="Remove this face detection from ${escapeHtml(person.name)}">
+                    <span>❌</span> <span>Not ${escapeHtml(person.name)}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Wire up clicking variation image to open full photo
+        grid.querySelectorAll('.variation-img-wrap').forEach(wrap => {
+          wrap.addEventListener('click', async () => {
+            const iid = Number(wrap.dataset.imgId);
+            modal.classList.remove('active');
+            try {
+              const r = allResults.find(img => img.id === iid);
+              if (r) {
+                showDetail(r);
+              } else {
+                const resp = await fetch(`${API}/api/photos?limit=500`);
+                const pdata = await resp.json();
+                const found = (pdata.photos || []).find(img => img.id === iid);
+                if (found) showDetail(found);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          });
+        });
+
+        // Wire up "Set as Avatar" buttons
+        grid.querySelectorAll('.btn-set-avatar').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const fid = Number(btn.dataset.faceId);
+            try {
+              const aRes = await fetch(`${API}/api/people/${person.id}/set-avatar/${fid}`, { method: 'POST' });
+              const aData = await aRes.json();
+              if (aData.person) {
+                person.avatar_face_id = fid;
+                showToast(`Updated avatar for ${person.name}!`);
+                await loadPeople();
+                openPersonDetailModal(aData.person);
+              }
+            } catch (err) {
+              showToast('Failed to set avatar');
+            }
+          });
+        });
+
+        // Wire up "Not this person" unlink buttons
+        grid.querySelectorAll('.btn-unlink-face').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const fid = Number(btn.dataset.faceId);
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> <span>Removing...</span>';
+
+            try {
+              const uRes = await fetch(`${API}/api/people/${person.id}/unlink-face/${fid}`, { method: 'POST' });
+              const uData = await uRes.json();
+              if (uData.status === 'ok') {
+                showToast(`Removed detection from ${person.name}`);
+                const cardEl = $(`#variationCard-${fid}`);
+                if (cardEl) {
+                  cardEl.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                  cardEl.style.opacity = '0';
+                  cardEl.style.transform = 'scale(0.85)';
+                  setTimeout(() => cardEl.remove(), 250);
+                }
+                if (uData.person) {
+                  person = uData.person;
+                }
+                const currentTotal = Math.max(0, parseInt(countBadge.textContent || '1', 10) - 1);
+                countBadge.textContent = currentTotal;
+                $('#personDetailPhotoCount').textContent = currentTotal;
+                await loadPeople();
+              } else {
+                showToast('Failed to unlink face');
+                btn.disabled = false;
+              }
+            } catch (err) {
+              showToast('Failed to unlink face');
+              btn.disabled = false;
+            }
+          });
+        });
+
+      } catch (e) {
+        grid.innerHTML = '<div style="color:#ef4444; padding:1rem; grid-column:1/-1;">Failed to load face variations.</div>';
+      }
+    }
+
     function openPersonModal(person = null) {
       if (person) {
         $('#personModalTitle').textContent = `✏️ Edit ${person.name}'s Profile`;
@@ -7615,19 +8093,8 @@
         $('#personRelSelect').value = person.relationship || 'Friend';
         $('#personNotesInput').value = person.notes || '';
         $('#personDeleteBtn').style.display = 'block';
-        $('#personDeleteBtn').onclick = async () => {
-          if (!confirm(`Delete profile for "${person.name}"? Faces in photos will become untagged.`)) return;
-          try {
-            await fetch(`${API}/api/people/${person.id}`, { method: 'DELETE' });
-            showToast(`Deleted ${person.name}`);
-            $('#personModal').classList.remove('active');
-            await loadPeople();
-            if (viewingPerson?.id === person.id) {
-              openPeopleExplorer();
-            }
-          } catch (e) {
-            showToast('Failed to delete person');
-          }
+        $('#personDeleteBtn').onclick = () => {
+          deletePersonById(person.id, person.name);
         };
       } else {
         $('#personModalTitle').textContent = '👤 Add Person or Pet';
@@ -7648,12 +8115,18 @@
 
         try {
           if (person) {
-            await fetch(`${API}/api/people/${person.id}`, {
+            const upRes = await fetch(`${API}/api/people/${person.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, relationship: rel, notes }),
             });
+            const upData = await upRes.json();
             showToast(`Updated ${name}`);
+            $('#personModal').classList.remove('active');
+            await loadPeople();
+            if ($('#personDetailModal')?.classList.contains('active') && upData.person) {
+              openPersonDetailModal(upData.person);
+            }
           } else {
             await fetch(`${API}/api/people`, {
               method: 'POST',
@@ -7661,9 +8134,9 @@
               body: JSON.stringify({ name, relationship: rel, notes }),
             });
             showToast(`Added ${name}`);
+            $('#personModal').classList.remove('active');
+            await loadPeople();
           }
-          $('#personModal').classList.remove('active');
-          await loadPeople();
         } catch (e) {
           showToast('Failed to save person');
         }
@@ -7674,6 +8147,8 @@
 
     $('#personModalClose')?.addEventListener('click', () => $('#personModal').classList.remove('active'));
     $('#personCancelBtn')?.addEventListener('click', () => $('#personModal').classList.remove('active'));
+    $('#personDetailClose')?.addEventListener('click', () => $('#personDetailModal').classList.remove('active'));
+    $('#personDetailModal')?.addEventListener('click', (e) => { if (e.target === $('#personDetailModal')) $('#personDetailModal').classList.remove('active'); });
     $('#reviewMatchesClose')?.addEventListener('click', () => $('#reviewMatchesModal').classList.remove('active'));
     $('#reviewMatchesCancelBtn')?.addEventListener('click', () => $('#reviewMatchesModal').classList.remove('active'));
 

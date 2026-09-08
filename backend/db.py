@@ -808,9 +808,49 @@ def update_person(
 
 
 def delete_person(conn: sqlite3.Connection, person_id: int) -> bool:
-    """Delete person record; foreign key sets person_id = NULL on faces."""
+    """Delete person record and release all tagged faces back to untagged (person_id = NULL)."""
+    conn.execute("UPDATE faces SET person_id = NULL WHERE person_id = ?", (person_id,))
     cur = conn.execute("DELETE FROM people WHERE id = ?", (person_id,))
     return cur.rowcount > 0
+
+
+def get_faces_for_person(conn: sqlite3.Connection, person_id: int) -> list[dict]:
+    """Return all tagged face variations / instances for a person across the library."""
+    rows = conn.execute(
+        """SELECT f.id, f.image_id, f.person_id, f.box_x, f.box_y, f.box_w, f.box_h,
+                  f.confidence, f.is_pet, f.created_at,
+                  (f.embedding IS NOT NULL) AS has_embedding,
+                  i.file_path, i.date_taken, i.place_name,
+                  (p.avatar_face_id = f.id) AS is_avatar
+           FROM faces f
+           JOIN images i ON f.image_id = i.id
+           JOIN people p ON f.person_id = p.id
+           WHERE f.person_id = ?
+           ORDER BY i.date_taken DESC, f.id DESC""",
+        (person_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def unlink_face_from_person(conn: sqlite3.Connection, person_id: int, face_id: int) -> bool:
+    """Unlink a specific face detection from a person, releasing it back to untagged."""
+    cur = conn.execute(
+        "UPDATE faces SET person_id = NULL WHERE id = ? AND person_id = ?",
+        (face_id, person_id)
+    )
+    if cur.rowcount == 0:
+        return False
+
+    # If this unlinked face was the person's avatar, pick another face or set NULL
+    person = get_person_by_id(conn, person_id)
+    if person and person.get("avatar_face_id") == face_id:
+        next_face = conn.execute(
+            "SELECT id FROM faces WHERE person_id = ? LIMIT 1", (person_id,)
+        ).fetchone()
+        new_avatar = next_face["id"] if next_face else None
+        update_person(conn, person_id, avatar_face_id=new_avatar)
+
+    return True
 
 
 def get_photos_for_person(conn: sqlite3.Connection, person_id: int) -> list[dict]:
