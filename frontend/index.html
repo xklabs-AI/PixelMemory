@@ -2654,6 +2654,15 @@
       box-shadow: 0 0 14px rgba(168, 85, 247, 0.7);
       background: rgba(168, 85, 247, 0.18);
     }
+    .face-box.pet-untagged {
+      border: 2px dashed #c084fc;
+      background: rgba(168, 85, 247, 0.1);
+    }
+    .face-box.pet-untagged:hover {
+      border-color: #e9d5ff;
+      box-shadow: 0 0 14px rgba(192, 132, 252, 0.7);
+      background: rgba(168, 85, 247, 0.22);
+    }
 
     .face-box.untagged {
       border: 2px dashed #f59e0b;
@@ -8318,7 +8327,7 @@
         if (f.person_id) {
           box.classList.add(f.is_pet ? 'pet' : 'tagged');
         } else {
-          box.classList.add('untagged');
+          box.classList.add(f.is_pet ? 'pet-untagged' : 'untagged');
         }
 
         box.style.left = `${(f.box_x * 100).toFixed(2)}%`;
@@ -8334,6 +8343,8 @@
           tag.innerHTML = `<span>${icon}</span> <span>${escapeHtml(f.person_name)}</span>`;
         } else if (f.suggestion) {
           tag.innerHTML = `<span>✨</span> <span>${escapeHtml(f.suggestion.name)}?</span>`;
+        } else if (f.is_pet) {
+          tag.innerHTML = `<span>🐾</span> <span>Tag Pet</span>`;
         } else {
           tag.textContent = 'Who is this?';
         }
@@ -8430,9 +8441,9 @@
       const popover = $('#faceTagPopover');
       const pane = $('#modalImgPane');
 
-      $('#popoverTitle').textContent = face.person_name ? `Tag: ${face.person_name}` : 'Tag this face';
+      $('#popoverTitle').textContent = face.person_name ? `Tag: ${face.person_name}` : (face.is_pet ? '🐾 Tag this pet' : 'Tag this face');
       $('#popoverNameInput').value = face.person_name || '';
-      $('#popoverRelSelect').value = face.person_relationship || 'Friend';
+      $('#popoverRelSelect').value = face.person_relationship || (face.is_pet ? 'Pet (Cat)' : 'Friend');
 
       const suggWrap = $('#popoverSuggestionWrap');
       if (face.suggestion && !face.person_name) {
@@ -8584,7 +8595,7 @@
       const origHtml = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span>⏳</span> <span>Detecting...</span>';
-      showToast('🔍 Detecting faces with YuNet AI...');
+      showToast('🔍 Detecting faces & pets with AI...');
 
       try {
         const detectRes = await fetch(`${API}/api/images/${currentDetailPhoto.id}/faces/detect`, { method: 'POST' });
@@ -8593,9 +8604,9 @@
         renderFaceOverlay();
         renderModalPeopleChips();
         if (currentImageFaces.length > 0) {
-          showToast(`✨ Found ${currentImageFaces.length} face${currentImageFaces.length === 1 ? '' : 's'}! Click any face box to tag.`);
+          showToast(`✨ Found ${currentImageFaces.length} subject${currentImageFaces.length === 1 ? '' : 's'} (faces & pets)! Click any box to tag.`);
         } else {
-          showToast('No faces found by detector. You can use "Tag Photo" to tag manually!');
+          showToast('No faces or pets found by detector. You can use "Tag Photo" to tag manually!');
         }
       } catch (err) {
         console.error('Face detection failed:', err);

@@ -1475,7 +1475,7 @@ def detect_image_faces(image_id: int, auto_tag: bool = True):
                 confidence=d["confidence"],
                 embedding=d["embedding"],
                 person_id=person_id,
-                is_pet=0,
+                is_pet=1 if d.get("is_pet") else 0,
             )
 
     return get_image_faces(image_id)
@@ -1812,7 +1812,7 @@ def _run_library_face_scan():
                                     confidence=d["confidence"],
                                     embedding=d["embedding"],
                                     person_id=person_id,
-                                    is_pet=0,
+                                    is_pet=1 if d.get("is_pet") else 0,
                                 )
                                 _face_scan_state["faces_found"] += 1
                 except Exception as e:
