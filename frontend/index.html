@@ -1306,6 +1306,8 @@
       gap: 1rem;
       border-left: 1px solid var(--border);
       overflow-y: auto;
+      overflow-x: hidden;
+      min-width: 0;
     }
 
     .info-block h4 {
@@ -1324,9 +1326,10 @@
 
     .info-grid {
       display: grid;
-      grid-template-columns: 80px 1fr;
+      grid-template-columns: 80px minmax(0, 1fr);
       gap: 0.45rem 0.75rem;
       font-size: 0.8rem;
+      min-width: 0;
     }
 
     .info-k {
@@ -1336,6 +1339,8 @@
     .info-v {
       color: var(--text);
       font-family: var(--font-mono);
+      min-width: 0;
+      word-break: break-word;
     }
 
     .info-path {
@@ -2243,17 +2248,22 @@
     /* ── Group By Layout & Section Headers (Windows folder group style) ──── */
     .gallery-grid.is-grouped,
     .grid.is-grouped {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 2.25rem !important;
-      width: 100% !important;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+      width: 100%;
     }
 
     .group-section {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0.95rem !important;
-      width: 100% !important;
+      display: flex;
+      flex-direction: column;
+      gap: 0.95rem;
+      width: 100%;
+    }
+
+    #grid[style*="display: none"],
+    #grid.hidden {
+      display: none !important;
     }
 
     .group-header {
@@ -2271,6 +2281,13 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
       width: 100% !important;
       box-sizing: border-box;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .group-header:hover {
+      background: rgba(24, 32, 50, 0.92);
+      border-color: rgba(255, 255, 255, 0.15);
     }
 
     .group-header-left {
@@ -2298,6 +2315,10 @@
     .group-collapse-btn:hover {
       color: var(--text);
       background: rgba(255, 255, 255, 0.08);
+    }
+
+    .group-section.collapsed .group-grid {
+      display: none !important;
     }
 
     .group-icon {
@@ -2447,10 +2468,10 @@
     }
 
     .group-grid {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
-      gap: 1.15rem !important;
-      width: 100% !important;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.15rem;
+      width: 100%;
       box-sizing: border-box;
     }
 
@@ -2673,6 +2694,12 @@
       transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
       background: rgba(59, 130, 246, 0.08);
       z-index: 11;
+      animation: faceBoxFadeIn 0.18s ease-out;
+    }
+
+    @keyframes faceBoxFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .face-box:hover {
@@ -2793,18 +2820,18 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(15, 23, 42, 0.78);
+      background: rgba(15, 23, 42, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
       color: #e2e8f0;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 30;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
       user-select: none;
       outline: none;
     }
@@ -2818,15 +2845,20 @@
     }
 
     .modal-nav-btn:hover {
-      background: rgba(99, 102, 241, 0.9);
-      border-color: rgba(199, 210, 254, 0.6);
+      background: rgba(30, 41, 59, 0.95);
+      border-color: rgba(99, 102, 241, 0.8);
       color: #ffffff;
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
     }
 
     .modal-nav-btn:active {
       transform: translateY(-50%) scale(0.95);
+      background: rgba(49, 46, 129, 0.9);
+    }
+
+    .modal-nav-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .modal-nav-btn:disabled,
@@ -2849,32 +2881,32 @@
 
     @keyframes photoSlideInRight {
       from {
-        opacity: 0.35;
-        transform: translateX(40px) scale(0.98);
+        transform: translateX(18px);
+        opacity: 0.9;
       }
       to {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateX(0) scale(1);
       }
     }
 
     @keyframes photoSlideInLeft {
       from {
-        opacity: 0.35;
-        transform: translateX(-40px) scale(0.98);
+        transform: translateX(-18px);
+        opacity: 0.9;
       }
       to {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateX(0) scale(1);
       }
     }
 
     .slide-next {
-      animation: photoSlideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: photoSlideInRight 0.16s ease-out;
     }
 
     .slide-prev {
-      animation: photoSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: photoSlideInLeft 0.16s ease-out;
     }
 
     /* Face Tag Popover */
@@ -3828,10 +3860,10 @@
 
               <span class="info-k">Location</span>
               <span class="info-v"
-                style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                <span id="modalPlace" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;"
+                style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; min-width: 0;">
+                <span id="modalPlace" style="word-break: break-word; overflow-wrap: anywhere; line-height: 1.35; flex: 1; min-width: 0;"
                   title="">-</span>
-                <button type="button" class="tiny-edit-btn" id="modalEditLocationBtn" title="Edit location">✏️
+                <button type="button" class="tiny-edit-btn" id="modalEditLocationBtn" style="flex-shrink: 0; margin-top: 1px;" title="Edit location">✏️
                   Edit</button>
               </span>
 
@@ -4544,9 +4576,13 @@
           <!-- Populated dynamically -->
         </div>
       </div>
-      <div class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-        <button type="button" class="tool-btn" id="reviewMatchesSelectAllBtn">Select All</button>
-        <div style="display: flex; gap: 0.5rem;">
+      <div class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="tool-btn" id="reviewMatchesSelectAllBtn">Select All</button>
+          <button type="button" class="tool-btn" id="reviewMatchesRejectSelectedBtn" style="color: #f87171; border-color: rgba(239, 68, 68, 0.35); font-size: 0.78rem;" title="Mark selected as false matches for this person">✕ Reject Selected</button>
+          <button type="button" class="tool-btn" id="reviewMatchesDeleteSelectedBtn" style="color: #fb7185; border-color: rgba(244, 63, 94, 0.4); font-size: 0.78rem;" title="Permanently delete selected false detections (e.g. rocks, walls, background objects)">🗑️ Delete Detection(s)</button>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
           <button type="button" class="tool-btn" id="reviewMatchesCancelBtn">Cancel</button>
           <button type="button" class="cta-btn" id="reviewMatchesConfirmBtn">Confirm & Tag Selected</button>
         </div>
@@ -4606,6 +4642,7 @@
       if (pv) pv.style.display = 'none';
       const grid = $('#grid');
       if (grid) {
+        grid.classList.remove('hidden');
         const isGrouped = activeFilters.groupBy && activeFilters.groupBy !== 'none';
         grid.style.display = isGrouped ? 'flex' : 'grid';
         grid.style.flexDirection = isGrouped ? 'column' : '';
@@ -5123,11 +5160,18 @@
           // Collapse/expand toggle
           const collapseBtn = header.querySelector('.group-collapse-btn');
           const collapseIcon = header.querySelector('.collapse-icon');
+          const toggleGroupCollapse = () => {
+            const isCollapsed = section.classList.toggle('collapsed');
+            collapseIcon.textContent = isCollapsed ? '▸' : '▾';
+            collapseBtn.title = isCollapsed ? 'Expand this group' : 'Collapse this group';
+          };
           collapseBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isHidden = groupGrid.style.display === 'none';
-            groupGrid.style.display = isHidden ? 'grid' : 'none';
-            collapseIcon.textContent = isHidden ? '▾' : '▸';
+            toggleGroupCollapse();
+          });
+          header.addEventListener('click', (e) => {
+            if (e.target.closest('.group-story-btn') || e.target.closest('.group-select-btn') || e.target.closest('.group-collapse-btn')) return;
+            toggleGroupCollapse();
           });
 
           const groupStoryBtn = header.querySelector('.group-story-btn');
@@ -5190,6 +5234,24 @@
           counter.style.display = 'none';
         }
       }
+      preloadNavNeighbors();
+    }
+
+    function preloadNavNeighbors() {
+      const list = getNavPhotos();
+      if (!list || list.length <= 1 || !currentDetailPhoto) return;
+      const idx = list.findIndex(p => Number(p.id) === Number(currentDetailPhoto.id));
+      if (idx === -1) return;
+      const nextPhoto = list[(idx + 1) % list.length];
+      const prevPhoto = list[(idx - 1 + list.length) % list.length];
+      if (nextPhoto) {
+        const imgNext = new Image();
+        imgNext.src = `${API}/api/preview/${nextPhoto.id}`;
+      }
+      if (prevPhoto && prevPhoto !== nextPhoto) {
+        const imgPrev = new Image();
+        imgPrev.src = `${API}/api/preview/${prevPhoto.id}`;
+      }
     }
 
     function navigateModalPhoto(dir) {
@@ -5213,6 +5275,9 @@
         wrap.classList.remove('slide-next', 'slide-prev');
         void wrap.offsetWidth; // Reflow to re-trigger CSS keyframe
         wrap.classList.add(dir > 0 ? 'slide-next' : 'slide-prev');
+        wrap.addEventListener('animationend', () => {
+          wrap.classList.remove('slide-next', 'slide-prev');
+        }, { once: true });
       }
 
       // Sync gallery card selection
@@ -5278,11 +5343,13 @@
     // Side navigation button handlers
     $('#modalPrevBtn')?.addEventListener('click', (e) => {
       e.stopPropagation();
+      e.currentTarget.blur();
       navigateModalPhoto(-1);
     });
 
     $('#modalNextBtn')?.addEventListener('click', (e) => {
       e.stopPropagation();
+      e.currentTarget.blur();
       navigateModalPhoto(1);
     });
 
@@ -8204,11 +8271,18 @@
       }
 
       document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       $('#railPeople')?.classList.add('active');
 
-      $('#grid').style.display = 'none';
+      const grid = $('#grid');
+      if (grid) {
+        grid.style.display = 'none';
+        grid.classList.add('hidden');
+      }
       $('#peopleView').style.display = 'flex';
       $('#activeFilterChipsBar').style.display = 'none';
+      const vp = $('#viewport');
+      if (vp) vp.scrollTop = 0;
       $('#resultMeta').innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
           <span>👥 People & Pets Directory</span>
@@ -8248,11 +8322,12 @@
       }
     }
 
-    async function openReviewMatchesModal(personId) {
-      const person = allPeople.find(p => p.id === personId);
+    async function openReviewMatchesModal(personArg) {
+      const person = typeof personArg === 'object' ? personArg : allPeople.find(p => p.id === Number(personArg));
       if (!person) return;
-      $('#reviewMatchesTitle').textContent = `✨ Suggested Matches for ${person.name} (${person.relationship || 'Friend'})`;
-      $('#reviewMatchesIntro').textContent = `Review the detected faces below and confirm to tag them as ${person.name}.`;
+      const personId = person.id;
+      $('#reviewMatchesTitle').textContent = `✨ Suggested Matches for ${person.name} (${person.relationship || 'Person'})`;
+      $('#reviewMatchesIntro').textContent = `Review the detected faces below. Confirm matches, or reject/delete false detections.`;
 
       const grid = $('#reviewMatchesGrid');
       grid.innerHTML = '<div style="color:var(--text-dim); padding:1rem;">Finding matches...</div>';
@@ -8264,20 +8339,112 @@
         const suggestions = data.suggestions || [];
 
         if (suggestions.length === 0) {
-          grid.innerHTML = '<div style="color:var(--text-dim); padding:1rem;">No suggested matches found right now.</div>';
+          grid.innerHTML = '<div style="color:var(--text-dim); padding:1.5rem; text-align:center;">No suggested matches found right now.</div>';
           return;
         }
 
         grid.innerHTML = suggestions.map((s, idx) => `
-          <label style="display:flex; flex-direction:column; background:#1e293b; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:pointer; position:relative;">
-            <input type="checkbox" class="match-check" value="${s.face_id}" checked style="position:absolute; top:6px; left:6px; z-index:5; width:18px; height:18px; accent-color:var(--accent);" />
-            <img src="${API}/api/faces/thumb/${s.face_id}" style="width:100%; aspect-ratio:1; object-fit:cover;" onerror="this.src='${API}/api/thumb/${s.image_id}'" />
-            <div style="padding:0.4rem; font-size:0.7rem; display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:#93c5fd; font-weight:600;">Match</span>
-              <span class="vlm-badge">${Math.round(s.similarity * 100)}%</span>
+          <div class="match-suggestion-card" data-face-id="${s.face_id}" style="display:flex; flex-direction:column; background:#1e293b; border:1px solid var(--border); border-radius:8px; overflow:hidden; position:relative; transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+            <!-- Top Controls Overlay -->
+            <div style="position:absolute; top:6px; left:6px; right:6px; z-index:10; display:flex; justify-content:space-between; align-items:center; pointer-events:none;">
+              <label style="pointer-events:auto; display:inline-flex; align-items:center; cursor:pointer; background:rgba(15,23,42,0.75); border-radius:4px; padding:3px; backdrop-filter:blur(4px); margin:0;" title="Select for batch action">
+                <input type="checkbox" class="match-check" value="${s.face_id}" checked style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer; margin:0;" />
+              </label>
+              <div style="pointer-events:auto; display:inline-flex; gap:4px;">
+                <button type="button" class="match-reject-single-btn" data-face-id="${s.face_id}" title="Not ${escapeHtml(person.name)} (reject suggestion)" style="background:rgba(15,23,42,0.8); border:1px solid rgba(239,68,68,0.45); color:#f87171; border-radius:4px; width:26px; height:26px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px); transition:all 0.15s ease;">✕</button>
+                <button type="button" class="match-delete-single-btn" data-face-id="${s.face_id}" title="False detection / Not a face (delete detection completely)" style="background:rgba(15,23,42,0.8); border:1px solid rgba(244,63,94,0.45); color:#fb7185; border-radius:4px; width:26px; height:26px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px); transition:all 0.15s ease;">🗑️</button>
+              </div>
             </div>
-          </label>
+
+            <!-- Thumbnail -->
+            <div class="match-card-thumb-wrap" style="width:100%; aspect-ratio:1; background:#0f172a; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;">
+              <img src="${API}/api/faces/thumb/${s.face_id}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='${API}/api/thumb/${s.image_id}'" />
+            </div>
+
+            <!-- Bottom info -->
+            <div style="padding:0.4rem 0.55rem; font-size:0.75rem; display:flex; justify-content:space-between; align-items:center; background:#0f172a; border-top:1px solid rgba(255,255,255,0.06);">
+              <span style="color:#93c5fd; font-weight:600;">Match</span>
+              <span class="vlm-badge" style="background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); padding:1px 6px; border-radius:999px; font-size:0.7rem; font-weight:600;">${Math.round(s.similarity * 100)}%</span>
+            </div>
+          </div>
         `).join('');
+
+        const removeCardAnimation = (faceId) => {
+          const card = grid.querySelector(`.match-suggestion-card[data-face-id="${faceId}"]`);
+          if (!card) return;
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.85)';
+          setTimeout(() => {
+            card.remove();
+            const remaining = grid.querySelectorAll('.match-suggestion-card');
+            if (remaining.length === 0) {
+              grid.innerHTML = '<div style="color:var(--text-dim); padding:1.5rem; text-align:center;">✨ All match suggestions have been resolved!</div>';
+              setTimeout(() => {
+                $('#reviewMatchesModal').classList.remove('active');
+                loadPeople();
+                checkForUnconfirmedMatches();
+              }, 900);
+            }
+          }, 200);
+        };
+
+        // Click handlers on grid
+        grid.onclick = async (e) => {
+          const rejectBtn = e.target.closest('.match-reject-single-btn');
+          if (rejectBtn) {
+            e.stopPropagation();
+            const fid = Number(rejectBtn.dataset.faceId);
+            rejectBtn.disabled = true;
+            rejectBtn.textContent = '...';
+            try {
+              const res = await fetch(`${API}/api/people/${personId}/reject-match/${fid}`, { method: 'POST' });
+              if (res.ok) {
+                showToast(`Marked as not ${person.name}`);
+                removeCardAnimation(fid);
+              } else {
+                showToast('Failed to reject match');
+                rejectBtn.disabled = false;
+                rejectBtn.textContent = '✕';
+              }
+            } catch (err) {
+              showToast('Error rejecting match');
+              rejectBtn.disabled = false;
+              rejectBtn.textContent = '✕';
+            }
+            return;
+          }
+
+          const deleteBtn = e.target.closest('.match-delete-single-btn');
+          if (deleteBtn) {
+            e.stopPropagation();
+            const fid = Number(deleteBtn.dataset.faceId);
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = '...';
+            try {
+              const res = await fetch(`${API}/api/faces/${fid}`, { method: 'DELETE' });
+              if (res.ok) {
+                showToast('False detection deleted');
+                removeCardAnimation(fid);
+              } else {
+                showToast('Failed to delete detection');
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️';
+              }
+            } catch (err) {
+              showToast('Error deleting detection');
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = '🗑️';
+            }
+            return;
+          }
+
+          const thumbWrap = e.target.closest('.match-card-thumb-wrap');
+          if (thumbWrap) {
+            const card = thumbWrap.closest('.match-suggestion-card');
+            const chk = card?.querySelector('.match-check');
+            if (chk) chk.checked = !chk.checked;
+          }
+        };
 
         $('#reviewMatchesSelectAllBtn').onclick = () => {
           const checks = grid.querySelectorAll('.match-check');
@@ -8286,12 +8453,73 @@
           $('#reviewMatchesSelectAllBtn').textContent = allChecked ? 'Select All' : 'Deselect All';
         };
 
+        $('#reviewMatchesRejectSelectedBtn').onclick = async () => {
+          const selectedFaceIds = Array.from(grid.querySelectorAll('.match-check:checked')).map(c => Number(c.value));
+          if (selectedFaceIds.length === 0) {
+            showToast('No photos selected to reject.');
+            return;
+          }
+          const btn = $('#reviewMatchesRejectSelectedBtn');
+          btn.disabled = true;
+          const origText = btn.textContent;
+          btn.textContent = 'Rejecting...';
+          try {
+            const res = await fetch(`${API}/api/people/${personId}/batch-reject`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ face_ids: selectedFaceIds }),
+            });
+            const d = await res.json();
+            showToast(`Marked ${d.rejected_count ?? selectedFaceIds.length} photo(s) as not ${person.name}`);
+            selectedFaceIds.forEach(fid => removeCardAnimation(fid));
+          } catch (err) {
+            showToast('Failed to reject selected matches');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
+        };
+
+        $('#reviewMatchesDeleteSelectedBtn').onclick = async () => {
+          const selectedFaceIds = Array.from(grid.querySelectorAll('.match-check:checked')).map(c => Number(c.value));
+          if (selectedFaceIds.length === 0) {
+            showToast('No photos selected to delete.');
+            return;
+          }
+          if (!confirm(`Permanently delete ${selectedFaceIds.length} false detection(s)? This removes the detection boxes completely.`)) {
+            return;
+          }
+          const btn = $('#reviewMatchesDeleteSelectedBtn');
+          btn.disabled = true;
+          const origText = btn.textContent;
+          btn.textContent = 'Deleting...';
+          try {
+            const res = await fetch(`${API}/api/faces/batch-delete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ face_ids: selectedFaceIds }),
+            });
+            const d = await res.json();
+            showToast(`Deleted ${d.deleted_count ?? selectedFaceIds.length} false detection(s)`);
+            selectedFaceIds.forEach(fid => removeCardAnimation(fid));
+          } catch (err) {
+            showToast('Failed to delete selected detections');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+          }
+        };
+
         $('#reviewMatchesConfirmBtn').onclick = async () => {
           const selectedFaceIds = Array.from(grid.querySelectorAll('.match-check:checked')).map(c => Number(c.value));
           if (selectedFaceIds.length === 0) {
-            showToast('No photos selected.');
+            showToast('No photos selected to confirm.');
             return;
           }
+          const btn = $('#reviewMatchesConfirmBtn');
+          btn.disabled = true;
+          const origText = btn.textContent;
+          btn.textContent = 'Tagging...';
           try {
             await fetch(`${API}/api/people/${personId}/batch-tag`, {
               method: 'POST',
@@ -8304,6 +8532,9 @@
             checkForUnconfirmedMatches();
           } catch (e) {
             showToast('Failed to batch tag faces');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
           }
         };
       } catch (e) {

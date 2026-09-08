@@ -122,6 +122,16 @@ CREATE TABLE IF NOT EXISTS faces (
 CREATE INDEX IF NOT EXISTS idx_faces_image ON faces(image_id);
 CREATE INDEX IF NOT EXISTS idx_faces_person ON faces(person_id);
 CREATE INDEX IF NOT EXISTS idx_people_name ON people(name);
+
+-- Rejected / False Matches for People and Pets
+CREATE TABLE IF NOT EXISTS face_rejections (
+    face_id     INTEGER NOT NULL REFERENCES faces(id) ON DELETE CASCADE,
+    person_id   INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+    created_at  TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (face_id, person_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_face_rejections_person ON face_rejections(person_id);
 """
 
 
@@ -917,16 +927,60 @@ def get_known_face_embeddings(conn: sqlite3.Connection, exclude_face_id: int | N
     return [(r["id"], r["person_id"], r["embedding"]) for r in rows]
 
 
-def get_untagged_faces_with_embeddings(conn: sqlite3.Connection, limit: int = 200) -> list[dict]:
-    """Return untagged faces that have embeddings for batch suggestion/clustering."""
-    rows = conn.execute(
-        """SELECT f.id, f.image_id, f.box_x, f.box_y, f.box_w, f.box_h, f.embedding, i.file_path
-           FROM faces f
-           JOIN images i ON f.image_id = i.id
-           WHERE f.person_id IS NULL AND f.embedding IS NOT NULL
-           LIMIT ?""",
-        (limit,),
-    ).fetchall()
+def get_untagged_faces_with_embeddings(conn: sqlite3.Connection, limit: int = 200, exclude_person_id: int | None = None) -> list[dict]:
+    """Return untagged faces that have embeddings for batch suggestion/clustering, excluding any rejected for this person."""
+    if exclude_person_id:
+        rows = conn.execute(
+            """SELECT f.id, f.image_id, f.box_x, f.box_y, f.box_w, f.box_h, f.embedding, i.file_path
+               FROM faces f
+               JOIN images i ON f.image_id = i.id
+               WHERE f.person_id IS NULL 
+                 AND f.embedding IS NOT NULL
+                 AND f.id NOT IN (SELECT face_id FROM face_rejections WHERE person_id = ?)
+               LIMIT ?""",
+            (exclude_person_id, limit),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """SELECT f.id, f.image_id, f.box_x, f.box_y, f.box_w, f.box_h, f.embedding, i.file_path
+               FROM faces f
+               JOIN images i ON f.image_id = i.id
+               WHERE f.person_id IS NULL AND f.embedding IS NOT NULL
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
     return [dict(r) for r in rows]
+
+
+def reject_face_match(conn: sqlite3.Connection, face_id: int, person_id: int) -> bool:
+    """Record that a face is not a match for a person, so it won't be suggested again."""
+    conn.execute(
+        "INSERT OR IGNORE INTO face_rejections (face_id, person_id) VALUES (?, ?)",
+        (face_id, person_id),
+    )
+    return True
+
+
+def batch_reject_face_matches(conn: sqlite3.Connection, face_ids: list[int], person_id: int) -> int:
+    """Record multiple faces as not matching a person."""
+    count = 0
+    for fid in face_ids:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO face_rejections (face_id, person_id) VALUES (?, ?)",
+            (fid, person_id),
+        )
+        if cur.rowcount > 0:
+            count += 1
+    return count
+
+
+def batch_delete_faces(conn: sqlite3.Connection, face_ids: list[int]) -> int:
+    """Delete multiple face boxes completely from database."""
+    count = 0
+    for fid in face_ids:
+        if delete_face(conn, fid):
+            count += 1
+    return count
+
 
 

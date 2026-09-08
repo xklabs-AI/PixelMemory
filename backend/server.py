@@ -1679,7 +1679,7 @@ def suggest_person_matches(person_id: int):
             return {"status": "ok", "suggestions": [], "message": "No face embeddings available for this person."}
 
         person_embeddings = [r["embedding"] for r in person_rows]
-        untagged = get_untagged_faces_with_embeddings(conn, limit=200)
+        untagged = get_untagged_faces_with_embeddings(conn, limit=200, exclude_person_id=person_id)
 
     from backend.faces import get_recognizer
     import numpy as np
@@ -1725,6 +1725,39 @@ def batch_tag_person(person_id: int, req: BatchTagRequest):
                 count += 1
 
     return {"status": "ok", "tagged_count": count}
+
+
+@app.post("/api/people/{person_id}/reject-match/{face_id}")
+def reject_match_person(person_id: int, face_id: int):
+    """Mark a face as not matching this person so it won't be suggested again."""
+    from backend.db import reject_face_match
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        reject_face_match(conn, face_id, person_id)
+    return {"status": "ok", "message": f"Rejected face match for {person['name']}"}
+
+
+@app.post("/api/people/{person_id}/batch-reject")
+def batch_reject_person_matches(person_id: int, req: BatchTagRequest):
+    """Reject multiple face matches for this person."""
+    from backend.db import batch_reject_face_matches
+    with get_conn() as conn:
+        person = get_person_by_id(conn, person_id)
+        if not person:
+            raise HTTPException(404, "Person not found")
+        count = batch_reject_face_matches(conn, req.face_ids, person_id)
+    return {"status": "ok", "rejected_count": count}
+
+
+@app.post("/api/faces/batch-delete")
+def batch_delete_faces_endpoint(req: BatchTagRequest):
+    """Delete multiple face boxes completely (e.g. false detections / not a face)."""
+    from backend.db import batch_delete_faces
+    with get_conn() as conn:
+        count = batch_delete_faces(conn, req.face_ids)
+    return {"status": "ok", "deleted_count": count}
 
 
 @app.get("/api/people/{person_id}/faces")
