@@ -54,6 +54,8 @@ class ImportProgressTracker:
             "found": 0,
             "new": 0,
             "duplicate": 0,
+            "deleted_pruned": 0,
+            "reprocessed": 0,
             "errors": 0,
             "metadata_done": 0,
             "described": 0,
@@ -296,24 +298,36 @@ def run_embedding(callback: Optional[Callable] = None) -> int:
     return len(items)
 
 
-def execute_import(directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None):
-    """Executes the full import pipeline in sequence, updating tracker."""
+def execute_import(
+    directory: str,
+    skip_describe: bool = False,
+    vlm_model: Optional[str] = None,
+    rescan_mode: str = "incremental",
+    remove_deleted: bool = True,
+):
+    """Executes the full import/rescan pipeline in sequence, updating tracker."""
     try:
         tracker.start(directory)
         tracker.vlm_model = vlm_model or "moondream:1.8b"
 
         # 1. Scan directory
-        scan_stats = scan_directory(directory, callback=tracker.update_scan)
+        scan_stats = scan_directory(
+            directory,
+            rescan_mode=rescan_mode,
+            remove_deleted=remove_deleted,
+            callback=tracker.update_scan,
+        )
         tracker.stats.update(scan_stats)
 
-        # 2. Metadata extraction & AI description only for newly discovered files
-        if scan_stats.get("new", 0) > 0:
+        # 2. Metadata extraction & AI description for newly discovered or re-processed files
+        needed_work = scan_stats.get("new", 0) + scan_stats.get("reprocessed", 0)
+        if needed_work > 0:
             tracker.phase_started_at = time.time()
             tracker.phase = "metadata"
             meta_count = run_metadata_extraction(callback=tracker.update_metadata)
             tracker.stats["metadata_done"] = meta_count
 
-            # 3. AI Vision Descriptions (applied only to new photos)
+            # 3. AI Vision Descriptions
             if not skip_describe:
                 tracker.phase_started_at = time.time()
                 tracker.phase = "describing"
@@ -326,12 +340,14 @@ def execute_import(directory: str, skip_describe: bool = False, vlm_model: Optio
                 embed_count = run_embedding(callback=tracker.update_embedding)
                 tracker.stats["embedded"] = embed_count
         else:
-            tracker.phase_label = f"Rescan complete: all {scan_stats.get('duplicate', 0)} photos are already up-to-date."
+            msg = f"Rescan complete: {scan_stats.get('duplicate', 0)} existing photos preserved."
+            if scan_stats.get("deleted_pruned", 0) > 0:
+                msg += f" Removed {scan_stats['deleted_pruned']} deleted photo(s)."
+            tracker.phase_label = msg
 
         with get_conn() as conn:
             final_stats = get_stats(conn)
         tracker.complete(final_stats)
-
 
     except Exception as e:
         print(f"Import failed with error: {e}")
@@ -349,10 +365,17 @@ class ImportQueueManager:
         self.worker_thread = None
         self.is_running = False
 
-    def enqueue(self, directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None) -> dict:
+    def enqueue(
+        self,
+        directory: str,
+        skip_describe: bool = False,
+        vlm_model: Optional[str] = None,
+        rescan_mode: str = "incremental",
+        remove_deleted: bool = True,
+    ) -> dict:
         with self.lock:
             # Avoid duplicate queuing of exact same folder
-            for d, _, _ in self.queue:
+            for d, _, _, _, _ in self.queue:
                 if Path(d).resolve() == Path(directory).resolve():
                     pos = [x[0] for x in self.queue].index(d) + 1
                     return {
@@ -361,7 +384,7 @@ class ImportQueueManager:
                         "queue_length": len(self.queue),
                     }
 
-            self.queue.append((directory, skip_describe, vlm_model))
+            self.queue.append((directory, skip_describe, vlm_model, rescan_mode, remove_deleted))
             queue_len = len(self.queue)
 
             if not self.is_running:
@@ -387,11 +410,17 @@ class ImportQueueManager:
                 if not self.queue:
                     self.is_running = False
                     return
-                directory, skip_describe, vlm_model = self.queue.popleft()
+                directory, skip_describe, vlm_model, rescan_mode, remove_deleted = self.queue.popleft()
                 remaining = len(self.queue)
 
             self.tracker.set_queue_info(remaining, Path(directory).name)
-            execute_import(directory, skip_describe, vlm_model=vlm_model)
+            execute_import(
+                directory,
+                skip_describe=skip_describe,
+                vlm_model=vlm_model,
+                rescan_mode=rescan_mode,
+                remove_deleted=remove_deleted,
+            )
 
             if self.tracker.cancel_requested:
                 with self.lock:
@@ -404,7 +433,7 @@ class ImportQueueManager:
             return {
                 "is_running": self.is_running,
                 "queue_length": len(self.queue),
-                "queued_folders": [Path(d).name for d, _, _ in self.queue]
+                "queued_folders": [Path(d).name for d, _, _, _, _ in self.queue]
             }
 
     def cancel(self):
@@ -417,9 +446,21 @@ class ImportQueueManager:
 queue_manager = ImportQueueManager(tracker)
 
 
-def start_background_import(directory: str, skip_describe: bool = False, vlm_model: Optional[str] = None) -> dict:
+def start_background_import(
+    directory: str,
+    skip_describe: bool = False,
+    vlm_model: Optional[str] = None,
+    rescan_mode: str = "incremental",
+    remove_deleted: bool = True,
+) -> dict:
     """Enqueue directory to import pipeline."""
-    return queue_manager.enqueue(directory, skip_describe, vlm_model=vlm_model)
+    return queue_manager.enqueue(
+        directory,
+        skip_describe=skip_describe,
+        vlm_model=vlm_model,
+        rescan_mode=rescan_mode,
+        remove_deleted=remove_deleted,
+    )
 
 
 def main():

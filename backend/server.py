@@ -7,7 +7,11 @@ Run:
 """
 
 from typing import Optional
+import os
 import re
+import string
+import asyncio
+import subprocess
 import threading
 from pathlib import Path
 from pydantic import BaseModel
@@ -23,7 +27,7 @@ try:
 except ImportError:
     pass
 
-from backend.config import THUMB_DIR, PREVIEW_DIR, PREVIEW_SIZE, HOST, PORT, SEARCH_TOP_K
+from backend.config import THUMB_DIR, PREVIEW_DIR, PREVIEW_SIZE, HOST, PORT, SEARCH_TOP_K, SUPPORTED_EXTENSIONS, DATA_DIR
 from backend.db import (
     init_db, get_conn, get_image_by_id, get_stats,
     create_album, get_all_albums, get_album_by_id, rename_album,
@@ -52,6 +56,8 @@ class ImportRequest(BaseModel):
     folder_path: str
     skip_describe: bool = False
     vlm_model: Optional[str] = None
+    rescan_mode: str = "incremental"  # "incremental" | "full"
+    remove_deleted: bool = True
 
 
 class SetModelRequest(BaseModel):
@@ -475,7 +481,13 @@ def start_import_endpoint(req: ImportRequest):
     if not fpath.exists() or not fpath.is_dir():
         raise HTTPException(400, f"Invalid folder directory: '{req.folder_path}' does not exist on disk.")
 
-    res = queue_manager.enqueue(str(fpath), skip_describe=req.skip_describe, vlm_model=req.vlm_model)
+    res = queue_manager.enqueue(
+        str(fpath),
+        skip_describe=req.skip_describe,
+        vlm_model=req.vlm_model,
+        rescan_mode=req.rescan_mode,
+        remove_deleted=req.remove_deleted,
+    )
     if res["status"] == "started":
         return {
             "status": "started",
@@ -505,22 +517,181 @@ def start_import_endpoint(req: ImportRequest):
 @app.post("/api/import/rescan")
 def rescan_folder_endpoint(req: ImportRequest):
     """
-    Rescan an existing folder for newly added photos.
-    Only newly added photos will have EXIF extracted, AI vision descriptions generated, and vectors embedded.
-    All existing photos are preserved.
+    Rescan an existing folder.
+    In 'incremental' mode: skips existing photos, adds new, prunes deleted.
+    In 'full' mode: re-analyzes all photos in the folder from scratch, prunes deleted.
     """
     fpath = Path(req.folder_path).resolve()
     if not fpath.exists() or not fpath.is_dir():
         raise HTTPException(400, f"Invalid folder directory: '{req.folder_path}' does not exist on disk.")
 
-    res = queue_manager.enqueue(str(fpath), skip_describe=req.skip_describe, vlm_model=req.vlm_model)
+    res = queue_manager.enqueue(
+        str(fpath),
+        skip_describe=req.skip_describe,
+        vlm_model=req.vlm_model,
+        rescan_mode=req.rescan_mode,
+        remove_deleted=req.remove_deleted,
+    )
     res["is_rescan"] = True
-    res["folder_path"] = str(fpath)
+    res["folder_path"] = str(fpath).replace("\\", "/")
+    mode_name = "Incremental Sync" if req.rescan_mode == "incremental" else "Full Rescan"
     if res["status"] == "started":
-        res["message"] = f"Rescanning '{fpath.name}' for additional photos..."
+        res["message"] = f"Started {mode_name} for '{fpath.name}'..."
     elif res["status"] == "queued":
-        res["message"] = f"Added '{fpath.name}' rescan to queue (position #{res['queue_position']})"
+        res["message"] = f"Added '{fpath.name}' ({mode_name}) to queue (position #{res['queue_position']})"
     return res
+
+
+def _open_folder_dialog_sync() -> Optional[str]:
+    # 1. Try Tkinter topmost
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.wm_attributes("-topmost", 1)
+        path = filedialog.askdirectory(title="Select Photo Folder to Import or Rescan")
+        root.destroy()
+        if path:
+            return str(Path(path).resolve()).replace("\\", "/")
+    except Exception as e:
+        print(f"Tkinter dialog error: {e}")
+
+    # 2. Fallback: PowerShell FolderBrowserDialog
+    try:
+        ps_cmd = (
+            "Add-Type -AssemblyName System.Windows.Forms; "
+            "$dlg = New-Object System.Windows.Forms.FolderBrowserDialog; "
+            "$dlg.Description = 'Select Photo Folder to Import or Rescan'; "
+            "$dlg.ShowNewFolderButton = $false; "
+            "if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dlg.SelectedPath }"
+        )
+        res = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True, timeout=120)
+        p = res.stdout.strip()
+        if p and Path(p).exists():
+            return str(Path(p).resolve()).replace("\\", "/")
+    except Exception as e:
+        print(f"PowerShell dialog error: {e}")
+
+    return None
+
+
+@app.get("/api/system/browse-folder")
+async def browse_folder_endpoint():
+    """Open native OS Folder Browser dialog and return selected path."""
+    selected = await asyncio.to_thread(_open_folder_dialog_sync)
+    if not selected:
+        return {"status": "cancelled", "path": None}
+    return {"status": "ok", "path": selected}
+
+
+@app.get("/api/system/folders")
+def list_system_folders_endpoint(query: Optional[str] = None, parent: Optional[str] = None):
+    """
+    Search or browse folders on the local computer.
+    Returns quick locations (Drives, User folders, Project galleries) and matching or child directories.
+    """
+    quick_locations = []
+
+    # 1. Available Drives
+    for d in string.ascii_uppercase:
+        drive_path = f"{d}:/"
+        if os.path.exists(f"{d}:"):
+            quick_locations.append({"name": f"Drive ({d}:)", "path": drive_path, "type": "drive"})
+
+    # 2. Common User folders & Project Gallery
+    home = Path.home()
+    candidates = [
+        ("Pictures", home / "OneDrive" / "Pictures" if (home / "OneDrive" / "Pictures").exists() else home / "Pictures"),
+        ("Desktop", home / "Desktop"),
+        ("Downloads", home / "Downloads"),
+        ("Project Gallery", Path(DATA_DIR).resolve()),
+    ]
+    for name, p in candidates:
+        if p.exists() and p.is_dir():
+            clean_p = str(p.resolve()).replace("\\", "/")
+            if not any(q["path"].lower() == clean_p.lower() for q in quick_locations):
+                quick_locations.append({"name": name, "path": clean_p, "type": "folder"})
+
+    # 3. Explore parent or search
+    results = []
+    target_dir = None
+    if parent:
+        p_obj = Path(parent).resolve()
+        if p_obj.exists() and p_obj.is_dir():
+            target_dir = p_obj
+
+    if target_dir:
+        try:
+            with os.scandir(target_dir) as it:
+                for entry in it:
+                    if entry.is_dir(follow_symlinks=False) and not entry.name.startswith("."):
+                        clean_sub = str(Path(entry.path).resolve()).replace("\\", "/")
+                        results.append({
+                            "name": entry.name,
+                            "path": clean_sub,
+                            "parent": str(target_dir.resolve()).replace("\\", "/"),
+                        })
+        except Exception:
+            pass
+        results.sort(key=lambda x: x["name"].lower())
+
+    elif query and len(query.strip()) >= 2:
+        q_lower = query.strip().lower()
+        # Only search sensible user folders, never entire drives from root C:/
+        search_roots = [Path(q["path"]) for q in quick_locations if q.get("type") == "folder" and Path(q["path"]).exists()]
+        project_gallery = (Path.cwd() / "gallery").resolve()
+        if project_gallery.exists() and project_gallery not in search_roots:
+            search_roots.append(project_gallery)
+
+        # If user typed a path directly (e.g. C:/... or E:/...), search within that folder
+        if ("/" in query or "\\" in query or ":" in query):
+            try:
+                cand_path = Path(query).resolve()
+                parent_cand = cand_path if (cand_path.exists() and cand_path.is_dir()) else cand_path.parent
+                if parent_cand.exists() and parent_cand.is_dir() and parent_cand not in search_roots:
+                    search_roots.insert(0, parent_cand)
+            except Exception:
+                pass
+
+        seen_paths = set()
+        for s_root in search_roots:
+            if not s_root.exists():
+                continue
+            try:
+                for root_dir, dirnames, _ in os.walk(s_root):
+                    # Limit depth to 3 levels from s_root for fast response
+                    rel_depth = len(Path(root_dir).resolve().parts) - len(s_root.resolve().parts)
+                    if rel_depth >= 3:
+                        dirnames.clear()
+                        continue
+                    dirnames[:] = [
+                        d for d in dirnames
+                        if not d.startswith(".")
+                        and d.lower() not in ("node_modules", "venv", ".venv", "__pycache__", "windows", "program files", "appdata", "system volume information")
+                    ]
+                    for d in dirnames:
+                        if q_lower in d.lower():
+                            full_p = str(Path(os.path.join(root_dir, d)).resolve()).replace("\\", "/")
+                            if full_p.lower() not in seen_paths:
+                                seen_paths.add(full_p.lower())
+                                results.append({
+                                    "name": d,
+                                    "path": full_p,
+                                    "parent": str(Path(root_dir).resolve()).replace("\\", "/"),
+                                })
+                                if len(results) >= 25:
+                                    break
+                    if len(results) >= 25:
+                        break
+            except Exception:
+                continue
+
+    return {
+        "status": "ok",
+        "quick_locations": quick_locations,
+        "results": results,
+    }
 
 
 @app.get("/api/import/status")

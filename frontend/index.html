@@ -3904,35 +3904,84 @@
       </div>
       <div class="settings-body">
         <div class="setting-row">
-          <label>Photo Directory Path</label>
-          <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. gallery/test or ./photos"
-            value="gallery/test" />
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label style="font-weight: 600; color: #fff; font-size: 0.84rem; margin: 0;">Photo Directory Path</label>
+            <button type="button" class="tool-btn" id="importBrowseFolderBtn" style="font-size: 0.75rem; padding: 3px 8px; border-color: rgba(59,130,246,0.5); color: #93c5fd; background: rgba(59,130,246,0.12); display: inline-flex; align-items: center; gap: 4px;" title="Browse and select any folder on your computer">
+              📁 Browse Computer...
+            </button>
+          </div>
+          <div style="position: relative;">
+            <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. C:/Users/name/Pictures or gallery/test"
+              value="gallery/test" style="width: 100%; box-sizing: border-box;" autocomplete="off" />
+            <!-- Live Search Autocomplete Dropdown -->
+            <div id="importFolderSearchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; max-height: 190px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-top: 3px;">
+            </div>
+          </div>
+
+          <!-- Quick System Locations Pills -->
           <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.45rem;">
-            <span style="font-size: 0.72rem; color: var(--text-dim);">Indexed Folders (Click to select & rescan):</span>
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+              <span style="font-size: 0.72rem; color: var(--text-dim);">Quick Locations:</span>
+              <div id="importQuickLocations" style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                <!-- Filled dynamically by /api/system/folders -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Indexed Folders in DB (Click to select) -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.45rem;">
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Indexed Folders in Library (Click to select):</span>
             <div id="indexedFoldersList"
               style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 90px; overflow-y: auto;">
-              <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">📁
-                gallery/test</button>
-              <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">📁
-                gallery</button>
+              <!-- Populated dynamically without string escaping bugs -->
             </div>
           </div>
         </div>
 
-        <div
-          style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.75rem; color: #93c5fd; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.4;">
-          <span style="font-size: 0.95rem; line-height: 1;">💡</span>
-          <span><strong>Incremental Rescan:</strong> When rescanning an existing folder, previously indexed photos are
-            automatically detected and preserved. Only newly added photos will have EXIF extracted, AI descriptions
-            generated, and vectors indexed into search.</span>
+        <!-- Rescan & Processing Mode Toggle (Incremental Sync vs Full Rescan) -->
+        <div style="display: flex; flex-direction: column; gap: 0.45rem; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">Rescan & Processing Mode</span>
+            <span id="rescanModeBadge" style="font-size: 0.68rem; color: #34d399; background: rgba(16,185,129,0.14); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25);">⚡ Incremental Sync</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <label class="vlm-card active" id="cardModeIncremental" style="cursor: pointer; padding: 0.6rem; border-radius: 6px; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.08); display: flex; flex-direction: column; gap: 0.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">⚡ Incremental Sync</span>
+                <input type="radio" name="rescanMode" value="incremental" checked style="accent-color: var(--accent); cursor: pointer;" />
+              </div>
+              <span style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.3;">
+                Skip existing photos. Only process new photos & remove deleted ones.
+              </span>
+            </label>
+
+            <label class="vlm-card" id="cardModeFull" style="cursor: pointer; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 0.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">🔄 Full Rescan</span>
+                <input type="radio" name="rescanMode" value="full" style="accent-color: var(--accent); cursor: pointer;" />
+              </div>
+              <span style="font-size: 0.68rem; color: var(--text-muted); line-height: 1.3;">
+                Re-scan everything from scratch: re-extract EXIF, re-describe & re-index.
+              </span>
+            </label>
+          </div>
+
+          <!-- Prune Deleted Photos Checkbox -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.25rem; padding-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.06);">
+            <div>
+              <div style="font-size: 0.74rem; font-weight: 600; color: #e2e8f0;">Prune Missing Photos</div>
+              <div style="font-size: 0.67rem; color: var(--text-muted);">Remove database records, thumbnails, and vectors for files deleted from disk</div>
+            </div>
+            <input type="checkbox" id="rescanRemoveDeletedCheck" checked style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;" />
+          </div>
         </div>
 
         <div class="setting-row"
           style="flex-direction: row; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0;">
           <div>
             <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">AI Vision Analysis</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions & index into
-              Zvec (new photos only)</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Generate rich scene descriptions & index into Zvec (new/re-scanned photos)</div>
           </div>
           <input type="checkbox" id="importVisionCheck" checked
             style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" />
@@ -3942,8 +3991,7 @@
         <div id="importModelSelectionWrap"
           style="display: flex; flex-direction: column; gap: 0.45rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid var(--border);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-main);">AI Vision Model (Ollama
-              GPU)</span>
+            <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-main);">AI Vision Model (Ollama GPU)</span>
             <span id="importModelVramBadge"
               style="font-size: 0.68rem; color: #93c5fd; background: rgba(59,130,246,0.14); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(59,130,246,0.25);">⚡
               Fast (1.8 GB VRAM)</span>
@@ -3971,9 +4019,7 @@
         <div class="btn-row" style="justify-content: space-between; margin-top: 0.5rem;">
           <button class="tool-btn" id="importCancelBtn">Cancel</button>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="tool-btn" id="importRescanBtn" style="border-color: rgba(99,102,241,0.4); color: #a78bfa;">🔄
-              Rescan Folder</button>
-            <button class="cta-btn" id="importStartBtn">🚀 Start Scan / Import</button>
+            <button class="cta-btn" id="importStartBtn">⚡ Start Incremental Sync</button>
           </div>
         </div>
       </div>
@@ -5844,18 +5890,71 @@
     $('#addToAlbumClose').addEventListener('click', () => $('#addToAlbumModal').classList.remove('active'));
 
     // ── Google Drive Style Floating Import Widget & Queue ───
+    function updateRescanModeUI(mode) {
+      const cardInc = $('#cardModeIncremental');
+      const cardFull = $('#cardModeFull');
+      if (cardInc) cardInc.classList.toggle('active', mode === 'incremental');
+      if (cardFull) cardFull.classList.toggle('active', mode === 'full');
+      const badge = $('#rescanModeBadge');
+      const startBtn = $('#importStartBtn');
+      if (mode === 'full') {
+        if (badge) {
+          badge.textContent = '🔄 Full Rescan';
+          badge.style.color = '#c084fc';
+          badge.style.background = 'rgba(168,85,247,0.14)';
+          badge.style.borderColor = 'rgba(168,85,247,0.25)';
+        }
+        if (startBtn) startBtn.textContent = '🔄 Start Full Rescan';
+      } else {
+        if (badge) {
+          badge.textContent = '⚡ Incremental Sync';
+          badge.style.color = '#34d399';
+          badge.style.background = 'rgba(16,185,129,0.14)';
+          badge.style.borderColor = 'rgba(16,185,129,0.25)';
+        }
+        if (startBtn) startBtn.textContent = '⚡ Start Incremental Sync';
+      }
+    }
+
     async function openImportModal(folderToPreselect = null, isRescanMode = false) {
       if (folderToPreselect) {
-        $('#importFolderInput').value = folderToPreselect;
+        $('#importFolderInput').value = folderToPreselect.replace(/\\/g, '/');
       }
-      if (isRescanMode) {
-        $('#importModalTitle').textContent = '🔄 Rescan Photo Folder (Incremental)';
-      } else {
-        $('#importModalTitle').textContent = '📥 Import or 🔄 Rescan Photo Folder';
-      }
+      $('#importModalTitle').textContent = isRescanMode ? '🔄 Rescan Photo Folder' : '📥 Import or 🔄 Rescan Photo Folder';
+      const incRadio = document.querySelector('input[name="rescanMode"][value="incremental"]');
+      if (incRadio) incRadio.checked = true;
+      updateRescanModeUI('incremental');
+
       $('#importModal').classList.add('active');
       setTimeout(() => $('#importFolderInput').focus(), 100);
+      await loadQuickSystemLocations();
       await loadIndexedFolders();
+    }
+
+    async function loadQuickSystemLocations() {
+      const wrap = $('#importQuickLocations');
+      if (!wrap) return;
+      try {
+        const res = await fetch(`${API}/api/system/folders`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const quick = data.quick_locations || [];
+        wrap.innerHTML = quick.map(q => {
+          const cleanPath = (q.path || '').replace(/\\/g, '/');
+          const icon = q.type === 'drive' ? '💾' : (q.name.includes('Picture') ? '🖼️' : '📁');
+          return `<button type="button" class="tag-pill quick-loc-btn" data-path="${escapeHtml(cleanPath)}" style="font-size:0.7rem; padding:2px 7px; cursor:pointer;" title="${escapeHtml(cleanPath)}">${icon} ${escapeHtml(q.name)}</button>`;
+        }).join('');
+
+        wrap.querySelectorAll('.quick-loc-btn').forEach(b => {
+          b.onclick = () => {
+            $('#importFolderInput').value = b.dataset.path;
+            const sr = $('#importFolderSearchResults');
+            if (sr) sr.style.display = 'none';
+          };
+        });
+      } catch (e) {
+        console.error('Failed to load quick locations:', e);
+      }
     }
 
     async function loadIndexedFolders() {
@@ -5868,27 +5967,52 @@
         const folders = data.folders || [];
         if (folders.length === 0) {
           listEl.innerHTML = `
-        <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery/test'">📁 gallery/test</button>
-        <button type="button" class="tag-pill" onclick="$('#importFolderInput').value='gallery'">📁 gallery</button>
-      `;
-          return;
+            <button type="button" class="tag-pill indexed-folder-pill" data-path="gallery/test">📁 gallery/test</button>
+            <button type="button" class="tag-pill indexed-folder-pill" data-path="gallery">📁 gallery</button>
+          `;
+        } else {
+          listEl.innerHTML = folders.map(f => {
+            const cleanPath = (f.folder_path || '').replace(/\\/g, '/');
+            return `
+              <div style="display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 0.2rem 0.5rem; font-size: 0.72rem;">
+                <span class="indexed-folder-pill" style="color: #fff; cursor: pointer;" data-path="${escapeHtml(cleanPath)}" title="${escapeHtml(cleanPath)}">📁 ${escapeHtml(f.folder_name)} <span style="color: var(--text-dim);">(${f.count})</span></span>
+                <button type="button" class="tiny-edit-btn indexed-folder-rescan-btn" style="padding: 1px 4px; font-size: 0.68rem;" data-path="${escapeHtml(cleanPath)}" title="Rescan this folder now">🔄</button>
+              </div>
+            `;
+          }).join('');
         }
-        listEl.innerHTML = folders.map(f => `
-      <div style="display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 0.2rem 0.5rem; font-size: 0.72rem;">
-        <span style="color: #fff; cursor: pointer;" onclick="$('#importFolderInput').value='${escapeHtml(f.folder_path)}'" title="${escapeHtml(f.folder_path)}">📁 ${escapeHtml(f.folder_name)} <span style="color: var(--text-dim);">(${f.count})</span></span>
-        <button type="button" class="tiny-edit-btn" style="padding: 1px 4px; font-size: 0.68rem;" onclick="event.stopPropagation(); startImportOrRescan(true, '${escapeHtml(f.folder_path)}')" title="Rescan this folder for new photos now">🔄</button>
-      </div>
-    `).join('');
+
+        listEl.onclick = (e) => {
+          const pill = e.target.closest('.indexed-folder-pill');
+          if (pill && pill.dataset.path) {
+            $('#importFolderInput').value = pill.dataset.path;
+            return;
+          }
+          const rescanBtn = e.target.closest('.indexed-folder-rescan-btn');
+          if (rescanBtn && rescanBtn.dataset.path) {
+            e.stopPropagation();
+            startImportOrRescan(true, rescanBtn.dataset.path);
+          }
+        };
       } catch (e) {
         console.error('Failed to load indexed folders:', e);
       }
     }
 
-    async function startImportOrRescan(isRescan = false, explicitFolder = null) {
-      const folderPath = explicitFolder || ($('#importFolderInput').value || '').trim() || 'gallery/test';
+    async function startImportOrRescan(isExplicitRescan = false, explicitFolder = null) {
+      let folderPath = (explicitFolder || ($('#importFolderInput').value || '').trim() || 'gallery/test').replace(/\\/g, '/');
       const skipDescribe = !$('#importVisionCheck').checked;
       const selectedModel = document.querySelector('input[name="importVlmModel"]:checked')?.value || 'moondream:1.8b';
-      const endpoint = isRescan ? `${API}/api/import/rescan` : `${API}/api/import/start`;
+      const rescanMode = document.querySelector('input[name="rescanMode"]:checked')?.value || 'incremental';
+      const removeDeleted = $('#rescanRemoveDeletedCheck') ? $('#rescanRemoveDeletedCheck').checked : true;
+
+      const endpoint = `${API}/api/import/rescan`;
+
+      const startBtn = $('#importStartBtn');
+      if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.textContent = 'Starting...';
+      }
 
       try {
         const res = await fetch(endpoint, {
@@ -5897,7 +6021,9 @@
           body: JSON.stringify({
             folder_path: folderPath,
             skip_describe: skipDescribe,
-            vlm_model: selectedModel
+            vlm_model: selectedModel,
+            rescan_mode: rescanMode,
+            remove_deleted: removeDeleted,
           }),
         });
         const data = await res.json();
@@ -5907,16 +6033,22 @@
 
         $('#importModal').classList.remove('active');
 
+        const modeDesc = rescanMode === 'incremental' ? 'Incremental Sync (add new, prune deleted)' : 'Full Rescan (re-processing all photos)';
         if (data.status === 'queued') {
           showToast(data.message || `Queued folder (#${data.queue_position} in line)`);
         } else {
-          showToast(isRescan ? `Rescanning "${folderPath}" for newly added photos...` : `Started import of "${folderPath}"`);
+          showToast(`Started ${modeDesc} for "${folderPath}"`);
         }
 
         showFloatingWidget();
         startProgressPolling();
       } catch (err) {
         alert(err.message);
+      } finally {
+        if (startBtn) {
+          startBtn.disabled = false;
+          updateRescanModeUI(rescanMode);
+        }
       }
     }
 
@@ -5937,6 +6069,81 @@
     $('#importModalClose').addEventListener('click', () => $('#importModal').classList.remove('active'));
     $('#importCancelBtn').addEventListener('click', () => $('#importModal').classList.remove('active'));
 
+    $('#importBrowseFolderBtn')?.addEventListener('click', async () => {
+      const btn = $('#importBrowseFolderBtn');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Opening...';
+      try {
+        const res = await fetch(`${API}/api/system/browse-folder`);
+        const data = await res.json();
+        if (data.status === 'ok' && data.path) {
+          const cleanPath = data.path.replace(/\\/g, '/');
+          $('#importFolderInput').value = cleanPath;
+          showToast(`Selected: ${cleanPath}`);
+        }
+      } catch (err) {
+        console.error('Folder browse error:', err);
+        showToast('Could not open folder picker.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    });
+
+    let searchFolderTimeout = null;
+    $('#importFolderInput')?.addEventListener('input', (e) => {
+      clearTimeout(searchFolderTimeout);
+      const query = e.target.value.trim();
+      const resultsEl = $('#importFolderSearchResults');
+      if (!resultsEl) return;
+      if (!query || query.length < 2) {
+        resultsEl.style.display = 'none';
+        return;
+      }
+      searchFolderTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API}/api/system/folders?query=${encodeURIComponent(query)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const results = data.results || [];
+          if (results.length === 0) {
+            resultsEl.style.display = 'none';
+            return;
+          }
+          resultsEl.innerHTML = results.map(r => `
+            <div class="folder-search-item" data-path="${escapeHtml(r.path.replace(/\\/g, '/'))}" style="padding: 0.4rem 0.65rem; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; display: flex; flex-direction: column; gap: 2px;" onmouseenter="this.style.background='rgba(59,130,246,0.15)'" onmouseleave="this.style.background='transparent'">
+              <div style="font-size: 0.78rem; font-weight: 600; color: #fff;">📁 ${escapeHtml(r.name)}</div>
+              <div style="font-size: 0.68rem; color: var(--text-dim); font-family: monospace;">${escapeHtml(r.path.replace(/\\/g, '/'))}</div>
+            </div>
+          `).join('');
+          resultsEl.style.display = 'block';
+
+          resultsEl.querySelectorAll('.folder-search-item').forEach(item => {
+            item.onclick = () => {
+              $('#importFolderInput').value = item.dataset.path;
+              resultsEl.style.display = 'none';
+            };
+          });
+        } catch (err) {
+          resultsEl.style.display = 'none';
+        }
+      }, 250);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#importFolderInput') && !e.target.closest('#importFolderSearchResults')) {
+        const resEl = $('#importFolderSearchResults');
+        if (resEl) resEl.style.display = 'none';
+      }
+    });
+
+    document.querySelectorAll('input[name="rescanMode"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        updateRescanModeUI(e.target.value);
+      });
+    });
+
     $('#importVisionCheck').addEventListener('change', (e) => {
       $('#importModelSelectionWrap').style.display = e.target.checked ? 'flex' : 'none';
     });
@@ -5952,7 +6159,6 @@
     });
 
     $('#importStartBtn').addEventListener('click', () => startImportOrRescan(false));
-    $('#importRescanBtn').addEventListener('click', () => startImportOrRescan(true));
 
 
     function showFloatingWidget() {

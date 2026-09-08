@@ -399,6 +399,11 @@ def delete_images(conn: sqlite3.Connection, image_ids: list[int]) -> list[str]:
     ).fetchall()
     paths = [r["file_path"] for r in rows]
 
+    conn.execute(
+        f"DELETE FROM face_rejections WHERE face_id IN (SELECT id FROM faces WHERE image_id IN ({placeholders}))",
+        image_ids,
+    )
+    conn.execute(f"DELETE FROM faces WHERE image_id IN ({placeholders})", image_ids)
     conn.execute(f"DELETE FROM album_images WHERE image_id IN ({placeholders})", image_ids)
     conn.execute(f"DELETE FROM images WHERE id IN ({placeholders})", image_ids)
     return paths
