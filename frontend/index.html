@@ -2785,6 +2785,98 @@
       z-index: 12;
     }
 
+    /* ── Lightbox Photo Side-Navigation & Animations ──── */
+    .modal-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+      color: #e2e8f0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      outline: none;
+    }
+
+    .modal-nav-btn.prev {
+      left: 14px;
+    }
+
+    .modal-nav-btn.next {
+      right: 14px;
+    }
+
+    .modal-nav-btn:hover {
+      background: rgba(99, 102, 241, 0.9);
+      border-color: rgba(199, 210, 254, 0.6);
+      color: #ffffff;
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-nav-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .modal-nav-btn:disabled,
+    .modal-nav-btn.disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .modal-photo-counter {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes photoSlideInRight {
+      from {
+        opacity: 0.35;
+        transform: translateX(40px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    @keyframes photoSlideInLeft {
+      from {
+        opacity: 0.35;
+        transform: translateX(-40px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    .slide-next {
+      animation: photoSlideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .slide-prev {
+      animation: photoSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     /* Face Tag Popover */
     .face-tag-popover {
       position: fixed;
@@ -3653,11 +3745,26 @@
   <div class="modal-backdrop" id="modal">
     <div class="modal-window">
       <div class="modal-top">
-        <div class="modal-title" id="modalTitle">Photo Details</div>
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div class="modal-title" id="modalTitle">Photo Details</div>
+          <span id="modalPhotoCounter" class="modal-photo-counter" style="display: none;"></span>
+        </div>
         <button class="modal-close-btn" id="modalClose">&times;</button>
       </div>
       <div class="modal-content-split">
         <div class="modal-img-pane" id="modalImgPane">
+          <!-- Side Navigation Arrows -->
+          <button type="button" class="modal-nav-btn prev" id="modalPrevBtn" title="Previous photo (← Left Arrow)" aria-label="Previous photo">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button type="button" class="modal-nav-btn next" id="modalNextBtn" title="Next photo (→ Right Arrow)" aria-label="Next photo">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
           <div class="modal-img-wrap" id="modalImgWrap">
             <img id="modalImg" src="" alt="" />
             <!-- Face detection & tagging interactive overlay -->
@@ -4466,6 +4573,7 @@
     // ── Multi-select & Bulk Action State ────────────────────
     let selectedPhotoIds = new Set();
     let currentFilteredPhotos = [];
+    let currentNavPhotos = [];
     let locationSearchTimeout = null;
     let currentChosenLocation = null;
     let currentLocationTargetPhotoId = null;
@@ -4960,6 +5068,7 @@
       grid.innerHTML = '';
 
       if (!activeFilters.groupBy || activeFilters.groupBy === 'none') {
+        currentNavPhotos = [...filtered];
         grid.style.display = 'grid';
         grid.style.flexDirection = '';
         grid.style.width = '100%';
@@ -4968,6 +5077,7 @@
           grid.appendChild(createPhotoCard(r));
         });
       } else {
+        currentNavPhotos = [];
         grid.style.display = 'flex';
         grid.style.flexDirection = 'column';
         grid.style.width = '100%';
@@ -5006,6 +5116,7 @@
           const groupGrid = document.createElement('div');
           groupGrid.className = 'group-grid';
           g.photos.forEach(r => {
+            currentNavPhotos.push(r);
             groupGrid.appendChild(createPhotoCard(r));
           });
 
@@ -5047,6 +5158,74 @@
       updateSelectionDock();
     }
 
+    // ── Photo Modal Navigation (Side Scrollable & Keyboard) ──
+    function getNavPhotos() {
+      if (currentNavPhotos && currentNavPhotos.length > 0) return currentNavPhotos;
+      if (currentFilteredPhotos && currentFilteredPhotos.length > 0) return currentFilteredPhotos;
+      return allResults || [];
+    }
+
+    function updateModalNavUI() {
+      const list = getNavPhotos();
+      const prevBtn = $('#modalPrevBtn');
+      const nextBtn = $('#modalNextBtn');
+      const counter = $('#modalPhotoCounter');
+
+      if (!currentDetailPhoto || list.length <= 1) {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (counter) counter.style.display = 'none';
+        return;
+      }
+
+      const idx = list.findIndex(p => Number(p.id) === Number(currentDetailPhoto.id));
+      if (prevBtn) prevBtn.style.display = 'flex';
+      if (nextBtn) nextBtn.style.display = 'flex';
+
+      if (counter) {
+        if (idx !== -1) {
+          counter.textContent = `${idx + 1} of ${list.length}`;
+          counter.style.display = 'inline-block';
+        } else {
+          counter.style.display = 'none';
+        }
+      }
+    }
+
+    function navigateModalPhoto(dir) {
+      const list = getNavPhotos();
+      if (!list || list.length <= 1 || !currentDetailPhoto) return;
+
+      const idx = list.findIndex(p => Number(p.id) === Number(currentDetailPhoto.id));
+      let nextIdx = 0;
+      if (idx !== -1) {
+        nextIdx = (idx + dir + list.length) % list.length;
+      } else {
+        nextIdx = dir > 0 ? 0 : list.length - 1;
+      }
+
+      const nextPhoto = list[nextIdx];
+      if (!nextPhoto) return;
+
+      // Animate sliding effect on image wrap
+      const wrap = $('#modalImgWrap');
+      if (wrap) {
+        wrap.classList.remove('slide-next', 'slide-prev');
+        void wrap.offsetWidth; // Reflow to re-trigger CSS keyframe
+        wrap.classList.add(dir > 0 ? 'slide-next' : 'slide-prev');
+      }
+
+      // Sync gallery card selection
+      document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('selected'));
+      const activeCard = document.querySelector(`.photo-card[data-photoid="${nextPhoto.id}"]`);
+      if (activeCard) {
+        activeCard.classList.add('selected');
+        activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+
+      showDetail(nextPhoto);
+    }
+
     // ── Detail Modal ────────────────────────────────────────
     function showDetail(r) {
       currentDetailPhoto = r;
@@ -5083,6 +5262,7 @@
       if ($('#tagModeLabel')) $('#tagModeLabel').textContent = 'Tag Photo';
       loadImageFaces(r.id, false);
 
+      updateModalNavUI();
       $('#modal').classList.add('active');
     }
 
@@ -5094,6 +5274,54 @@
 
     $('#modalClose').addEventListener('click', closeModal);
     $('#modal').addEventListener('click', (e) => { if (e.target === $('#modal')) closeModal(); });
+
+    // Side navigation button handlers
+    $('#modalPrevBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateModalPhoto(-1);
+    });
+
+    $('#modalNextBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateModalPhoto(1);
+    });
+
+    // Side-scroll gesture support (touch swipe & mouse wheel)
+    let lastWheelNavTime = 0;
+    const modalImgPaneEl = $('#modalImgPane');
+    if (modalImgPaneEl) {
+      modalImgPaneEl.addEventListener('wheel', (e) => {
+        const modal = $('#modal');
+        if (!modal || !modal.classList.contains('active')) return;
+        const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+        if (Math.abs(deltaX) > 35) {
+          const now = Date.now();
+          if (now - lastWheelNavTime > 280) {
+            lastWheelNavTime = now;
+            navigateModalPhoto(deltaX > 0 ? 1 : -1);
+          }
+        }
+      }, { passive: true });
+
+      let touchStartX = 0;
+      let touchStartY = 0;
+      modalImgPaneEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      modalImgPaneEl.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1) {
+          const deltaX = e.changedTouches[0].clientX - touchStartX;
+          const deltaY = e.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+            navigateModalPhoto(deltaX < 0 ? 1 : -1);
+          }
+        }
+      }, { passive: true });
+    }
 
     $('#modalAddToAlbumBtn').addEventListener('click', (e) => {
       if (currentDetailPhoto) {
@@ -6639,6 +6867,22 @@
           clearSelection();
         }
       }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        const modal = $('#modal');
+        if (modal && modal.classList.contains('active')) {
+          const activeEl = document.activeElement;
+          const isTyping = activeEl && (
+            activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            activeEl.tagName === 'SELECT' ||
+            activeEl.isContentEditable
+          );
+          if (!isTyping) {
+            e.preventDefault();
+            navigateModalPhoto(e.key === 'ArrowRight' ? 1 : -1);
+          }
+        }
+      }
       if (e.key === '/' && document.activeElement !== queryInput && document.activeElement !== aiInput) {
         e.preventDefault();
         queryInput.focus();
@@ -7922,7 +8166,8 @@
           </div>
         `;
 
-        renderGrid(photos);
+        allResults = photos;
+        applyFiltersAndRender();
 
         $('#personBackToPeopleBtn')?.addEventListener('click', () => openPeopleExplorer());
         $('#personBackToGalleryBtn')?.addEventListener('click', () => showAllPhotos());
