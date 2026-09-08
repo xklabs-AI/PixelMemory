@@ -2897,6 +2897,51 @@
       align-items: flex-start;
       gap: 1rem;
     }
+    .people-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .people-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+      border-radius: var(--radius-sm);
+      padding: 0.42rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .people-back-btn:hover {
+      background: rgba(99, 102, 241, 0.24);
+      border-color: rgba(99, 102, 241, 0.6);
+      color: #fff;
+      transform: translateX(-3px);
+    }
+    .people-meta-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      padding: 0.3rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .people-meta-back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      border-color: var(--border-highlight);
+    }
     .people-title {
       font-size: 1.4rem;
       font-weight: 800;
@@ -3495,7 +3540,12 @@
           <div class="people-explorer-view" id="peopleView" style="display: none;">
             <div class="people-header">
               <div class="people-title-group">
-                <div class="people-title">👥 People & Pets</div>
+                <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                  <button class="people-back-btn" id="peopleBackToGalleryBtn" title="Back to All Photos Gallery">
+                    <span>←</span> <span>Back to Gallery</span>
+                  </button>
+                  <div class="people-title">👥 People & Pets</div>
+                </div>
                 <div class="people-subtitle">Tag family, friends, and pets to make photo searches and story summaries deeply personal.</div>
               </div>
               <div class="people-actions">
@@ -4387,8 +4437,20 @@
       toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
+    // ── Special View Management ─────────────────────────────
+    function exitPeopleExplorer() {
+      const pv = $('#peopleView');
+      if (pv) pv.style.display = 'none';
+      const grid = $('#grid');
+      if (grid) grid.style.display = 'grid';
+      document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
+      $('#railFolders')?.classList.add('active');
+      viewingPerson = null;
+    }
+
     // ── Search & Retrieval ──────────────────────────────────
     async function doSearch(query) {
+      exitPeopleExplorer();
       currentAlbumId = null;
       query = (query || '').trim();
       currentQuery = query;
@@ -5095,6 +5157,9 @@
     }
 
     async function showAlbumPhotos(albumId, albumName) {
+      exitPeopleExplorer();
+      document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
+      $('#railAlbums')?.classList.add('active');
       currentAlbumId = albumId;
       currentAlbumName = albumName;
 
@@ -5140,6 +5205,7 @@
     }
 
     function showAllPhotos() {
+      exitPeopleExplorer();
       currentAlbumId = null;
       currentAlbumName = '';
       $('#queryInput').value = '';
@@ -5972,22 +6038,26 @@
 
     // Sidebar navigation items
     $('#navAllPhotos').addEventListener('click', () => {
+      exitPeopleExplorer();
       resetAllFilters();
       queryInput.value = '';
       doSearch('');
     });
 
     $('#navDateUnknown').addEventListener('click', () => {
+      exitPeopleExplorer();
       setDateFilter('unknown');
     });
 
     $('#navGpsPhotos').addEventListener('click', () => {
+      exitPeopleExplorer();
       setGeoFilter(activeFilters.geo === 'gps' ? 'all' : 'gps');
     });
 
     // Sub-nav click queries
     document.querySelectorAll('.nav-sub').forEach(item => {
       item.addEventListener('click', () => {
+        exitPeopleExplorer();
         const q = item.getAttribute('data-query');
         queryInput.value = q;
         doSearch(q);
@@ -7757,7 +7827,11 @@
         const icon = getRelationshipIcon(person.relationship);
         $('#resultMeta').innerHTML = `
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
-            <span>${icon} Photos featuring <strong>${escapeHtml(person.name)}</strong> (${escapeHtml(person.relationship || 'Friend')}) — ${photos.length} photos</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="small-add-btn" id="personBackToPeopleBtn" style="background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35); color: #c7d2fe; font-size: 0.76rem; padding: 0.3rem 0.65rem; cursor: pointer;">← People & Pets</button>
+              <button class="small-add-btn" id="personBackToGalleryBtn" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.76rem; padding: 0.3rem 0.65rem; cursor: pointer;">✕ All Photos</button>
+              <span>${icon} Photos featuring <strong>${escapeHtml(person.name)}</strong> (${escapeHtml(person.relationship || 'Friend')}) — ${photos.length} photos</span>
+            </div>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
               <button class="small-add-btn" id="personVariationsHeaderBtn" style="background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #e0e7ff; font-size: 0.76rem; padding: 0.3rem 0.65rem;">🔍 Variations & Face Detections</button>
               <button class="small-add-btn" id="personStoryBtn" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-size: 0.76rem; padding: 0.3rem 0.75rem;">✨ Generate Story</button>
@@ -7768,6 +7842,9 @@
         `;
 
         renderGrid(photos);
+
+        $('#personBackToPeopleBtn')?.addEventListener('click', () => openPeopleExplorer());
+        $('#personBackToGalleryBtn')?.addEventListener('click', () => showAllPhotos());
 
         $('#personVariationsHeaderBtn')?.addEventListener('click', () => {
           openPersonDetailModal(person);
@@ -7794,14 +7871,25 @@
       }
     }
 
-    function openPeopleExplorer() {
+    function openPeopleExplorer(toggle = false) {
+      if (toggle && $('#peopleView') && $('#peopleView').style.display !== 'none') {
+        showAllPhotos();
+        return;
+      }
+
       document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
       $('#railPeople')?.classList.add('active');
 
       $('#grid').style.display = 'none';
       $('#peopleView').style.display = 'flex';
       $('#activeFilterChipsBar').style.display = 'none';
-      $('#resultMeta').textContent = 'People & Pets Gallery';
+      $('#resultMeta').innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <span>👥 People & Pets Directory</span>
+          <button class="people-meta-back-btn" id="resultMetaBackGalleryBtn">← Back to All Photos</button>
+        </div>
+      `;
+      $('#resultMetaBackGalleryBtn')?.addEventListener('click', () => showAllPhotos());
       $('#statsSummary').textContent = `${allPeople.length} tagged individuals`;
 
       loadPeople();
@@ -8622,7 +8710,8 @@
       }
     });
 
-    $('#railPeople')?.addEventListener('click', openPeopleExplorer);
+    $('#railPeople')?.addEventListener('click', () => openPeopleExplorer(true));
+    $('#peopleBackToGalleryBtn')?.addEventListener('click', () => showAllPhotos());
 
     // ── Startup ─────────────────────────────────────────────
     (async () => {
