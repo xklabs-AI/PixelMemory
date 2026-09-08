@@ -2240,27 +2240,28 @@
       line-height: 1.6;
     }
 
-    /* ── Group By Layout & Section Headers ───────────────── */
+    /* ── Group By Layout & Section Headers (Windows folder group style) ──── */
     .gallery-grid.is-grouped,
     .grid.is-grouped {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 2.25rem !important;
+      width: 100% !important;
     }
 
-
     .group-section {
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.95rem !important;
+      width: 100% !important;
     }
 
     .group-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.65rem 1rem;
-      background: rgba(18, 24, 38, 0.75);
+      padding: 0.55rem 0.95rem;
+      background: rgba(18, 24, 38, 0.85);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       backdrop-filter: blur(12px);
@@ -2268,16 +2269,41 @@
       top: 0;
       z-index: 10;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      width: 100% !important;
+      box-sizing: border-box;
     }
 
     .group-header-left {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.65rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .group-collapse-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+    .group-collapse-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .group-icon {
       font-size: 1.1rem;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
     .group-title {
@@ -2285,6 +2311,7 @@
       font-weight: 600;
       color: var(--text);
       margin: 0;
+      white-space: nowrap;
     }
 
     .group-badge {
@@ -2295,6 +2322,23 @@
       color: var(--text-dim);
       border-radius: 999px;
       border: 1px solid rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Windows folder horizontal divider line */
+    .group-header-divider {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02));
+      margin: 0 0.85rem;
+      min-width: 15px;
+    }
+
+    .group-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .group-select-btn {
@@ -2403,9 +2447,11 @@
     }
 
     .group-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 1rem;
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+      gap: 1.15rem !important;
+      width: 100% !important;
+      box-sizing: border-box;
     }
 
     /* ── Description Editor & Location Trigger in Modal ──── */
@@ -4451,7 +4497,12 @@
       const pv = $('#peopleView');
       if (pv) pv.style.display = 'none';
       const grid = $('#grid');
-      if (grid) grid.style.display = 'grid';
+      if (grid) {
+        const isGrouped = activeFilters.groupBy && activeFilters.groupBy !== 'none';
+        grid.style.display = isGrouped ? 'flex' : 'grid';
+        grid.style.flexDirection = isGrouped ? 'column' : '';
+        grid.style.width = '100%';
+      }
       document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
       $('#railFolders')?.classList.add('active');
       viewingPerson = null;
@@ -4909,14 +4960,19 @@
       grid.innerHTML = '';
 
       if (!activeFilters.groupBy || activeFilters.groupBy === 'none') {
+        grid.style.display = 'grid';
+        grid.style.flexDirection = '';
+        grid.style.width = '100%';
         grid.className = 'gallery-grid';
         filtered.forEach(r => {
           grid.appendChild(createPhotoCard(r));
         });
       } else {
+        grid.style.display = 'flex';
+        grid.style.flexDirection = 'column';
+        grid.style.width = '100%';
         grid.className = 'gallery-grid is-grouped';
         const groups = groupPhotos(filtered, activeFilters.groupBy);
-
 
         groups.forEach(g => {
           const section = document.createElement('div');
@@ -4928,28 +4984,50 @@
           const header = document.createElement('div');
           header.className = 'group-header';
           header.innerHTML = `
-        <div class="group-header-left">
-          <span class="group-icon">${g.icon}</span>
-          <h3 class="group-title">${escapeHtml(g.title)}</h3>
-          <span class="group-badge">${g.photos.length} ${g.photos.length === 1 ? 'photo' : 'photos'}</span>
-        </div>
-        <div class="group-header-right">
-          <button class="group-story-btn" type="button" title="Generate or view AI story for this section">
-            📖 Story
-          </button>
-          <button class="group-select-btn ${allSelected ? 'active' : ''}" type="button">
-            ${allSelected ? '✓ Deselect Group' : '◻ Select Group'}
-          </button>
-        </div>
-      `;
+            <div class="group-header-left">
+              <button class="group-collapse-btn" type="button" title="Collapse/expand this group">
+                <span class="collapse-icon">▾</span>
+              </button>
+              <span class="group-icon">${g.icon}</span>
+              <h3 class="group-title">${escapeHtml(g.title)}</h3>
+              <span class="group-badge">${g.photos.length} ${g.photos.length === 1 ? 'photo' : 'photos'}</span>
+              <div class="group-header-divider"></div>
+            </div>
+            <div class="group-header-right">
+              <button class="group-story-btn" type="button" title="Generate or view AI story for this section">
+                📖 Story
+              </button>
+              <button class="group-select-btn ${allSelected ? 'active' : ''}" type="button">
+                ${allSelected ? '✓ Deselect Group' : '◻ Select Group'}
+              </button>
+            </div>
+          `;
+
+          const groupGrid = document.createElement('div');
+          groupGrid.className = 'group-grid';
+          g.photos.forEach(r => {
+            groupGrid.appendChild(createPhotoCard(r));
+          });
+
+          // Collapse/expand toggle
+          const collapseBtn = header.querySelector('.group-collapse-btn');
+          const collapseIcon = header.querySelector('.collapse-icon');
+          collapseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = groupGrid.style.display === 'none';
+            groupGrid.style.display = isHidden ? 'grid' : 'none';
+            collapseIcon.textContent = isHidden ? '▾' : '▸';
+          });
 
           const groupStoryBtn = header.querySelector('.group-story-btn');
-          groupStoryBtn.addEventListener('click', () => {
+          groupStoryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             openGroupStoryModal(g.key, g.title, g.photos, g.icon);
           });
 
           const groupSelectBtn = header.querySelector('.group-select-btn');
-          groupSelectBtn.addEventListener('click', () => {
+          groupSelectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const currentlyAll = groupPhotoIds.every(id => selectedPhotoIds.has(id));
             if (currentlyAll) {
               groupPhotoIds.forEach(id => selectedPhotoIds.delete(id));
@@ -4957,12 +5035,6 @@
               groupPhotoIds.forEach(id => selectedPhotoIds.add(id));
             }
             applyFiltersAndRender();
-          });
-
-          const groupGrid = document.createElement('div');
-          groupGrid.className = 'group-grid';
-          g.photos.forEach(r => {
-            groupGrid.appendChild(createPhotoCard(r));
           });
 
           section.appendChild(header);
