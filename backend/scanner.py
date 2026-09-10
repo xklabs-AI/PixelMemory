@@ -59,6 +59,8 @@ def scan_directory(
         "deleted_pruned": 0,
         "reprocessed": 0,
         "errors": 0,
+        "new_image_ids": [],
+        "all_folder_image_ids": [],
     }
 
     with get_conn() as conn:
@@ -140,16 +142,22 @@ def scan_directory(
                             (fsize, matched_row["id"])
                         )
                         stats["reprocessed"] += 1
+                        stats["all_folder_image_ids"].append(matched_row["id"])
                         continue
 
                 # In incremental mode or new images:
                 if fhash in existing_hashes:
                     stats["duplicate"] += 1
+                    matched_row = folder_paths_map.get(fpath_norm)
+                    if matched_row:
+                        stats["all_folder_image_ids"].append(matched_row["id"])
                     continue
 
                 existing_hashes.add(fhash)
-                upsert_image(conn, file_path=fpath, file_hash=fhash, file_size=fsize)
+                new_id = upsert_image(conn, file_path=fpath, file_hash=fhash, file_size=fsize)
                 stats["new"] += 1
+                stats["new_image_ids"].append(new_id)
+                stats["all_folder_image_ids"].append(new_id)
 
             except Exception as e:
                 stats["errors"] += 1

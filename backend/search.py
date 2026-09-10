@@ -1,5 +1,6 @@
 """Pure semantic search over image descriptions using Zvec and SentenceTransformers."""
 
+import threading
 import zvec
 from sentence_transformers import SentenceTransformer
 import torch
@@ -81,22 +82,40 @@ _ZVEC_SCHEMA = zvec.CollectionSchema(
 
 
 class SemanticSearch:
-    """Manages Zvec vector collection and natural language semantic query embedding."""
+    """Manages Zvec vector collection and natural language semantic query embedding (Process Singleton)."""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
 
     def __init__(self):
-        ZVEC_DIR.mkdir(parents=True, exist_ok=True)
-        collection_path = str(ZVEC_DIR / "image_descriptions")
+        if getattr(self, "_initialized", False):
+            return
+        with self._lock:
+            if getattr(self, "_initialized", False):
+                return
+            ZVEC_DIR.mkdir(parents=True, exist_ok=True)
+            collection_dir = ZVEC_DIR / "image_descriptions"
+            collection_path = str(collection_dir)
 
-        try:
-            # Try opening an existing collection first
-            self._collection = zvec.open(path=collection_path)
-        except Exception:
-            # Collection doesn't exist yet — create it
-            self._collection = zvec.create_and_open(
-                path=collection_path,
-                schema=_ZVEC_SCHEMA,
-            )
-        self._embedder = None
+            if collection_dir.exists():
+                lock_file = collection_dir / "LOCK"
+                lock_file.touch(exist_ok=True)
+                self._collection = zvec.open(path=collection_path)
+            else:
+                self._collection = zvec.create_and_open(
+                    path=collection_path,
+                    schema=_ZVEC_SCHEMA,
+                )
+            self._embedder = None
+            self._initialized = True
 
     @property
     def embedder(self) -> SentenceTransformer:
@@ -109,13 +128,14 @@ class SemanticSearch:
         """Add or update a single image's embedding."""
         doc_id = str(image_id)
         embedding = self.embedder.encode(enriched_text).tolist()
-        self._collection.upsert(
-            zvec.Doc(
-                id=doc_id,
-                vectors={"embedding": embedding},
-                fields={"image_id": image_id, "document": enriched_text},
+        with self._lock:
+            self._collection.upsert(
+                zvec.Doc(
+                    id=doc_id,
+                    vectors={"embedding": embedding},
+                    fields={"image_id": image_id, "document": enriched_text},
+                )
             )
-        )
 
     def add_batch(self, items: list[tuple[int, str]]) -> None:
         """Add multiple (image_id, enriched_text) pairs."""
@@ -133,8 +153,9 @@ class SemanticSearch:
                     fields={"image_id": iid, "document": text},
                 )
             )
-        self._collection.upsert(docs)
-        self._collection.optimize()
+        with self._lock:
+            self._collection.upsert(docs)
+            self._collection.optimize()
 
     def delete(self, image_ids: list[int]) -> None:
         """Delete documents by image IDs."""
@@ -142,7 +163,8 @@ class SemanticSearch:
             return
         str_ids = [str(i) for i in image_ids]
         try:
-            self._collection.delete(ids=str_ids)
+            with self._lock:
+                self._collection.delete(ids=str_ids)
         except Exception as e:
             print(f"Zvec delete error: {e}")
 

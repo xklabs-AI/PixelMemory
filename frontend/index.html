@@ -21,40 +21,66 @@
     }
 
     :root {
-      --bg-main: #0c0f17;
-      --bg-sidebar: #090c13;
-      --bg-rail: #07090e;
-      --bg-surface: #131824;
-      --bg-surface-hover: #1b2132;
-      --bg-card: #111520;
-      --border: #1f2738;
-      --border-highlight: #2e3a54;
-      --text: #f1f5f9;
+      --bg-main: #090c15;
+      --bg-sidebar: rgba(10, 14, 24, 0.72);
+      --bg-rail: rgba(7, 10, 18, 0.78);
+      --bg-surface: rgba(18, 25, 41, 0.65);
+      --bg-surface-hover: rgba(28, 38, 62, 0.8);
+      --bg-card: rgba(15, 21, 35, 0.58);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(255, 255, 255, 0.16);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(59, 130, 246, 0.45);
+      --text: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
       --accent: #3b82f6;
       --accent-glow: rgba(59, 130, 246, 0.35);
       --accent-indigo: #6366f1;
       --match-green: #10b981;
-      --match-green-bg: rgba(16, 185, 129, 0.12);
+      --match-green-bg: rgba(16, 185, 129, 0.14);
       --match-amber: #f59e0b;
-      --match-amber-bg: rgba(245, 158, 11, 0.12);
+      --match-amber-bg: rgba(245, 158, 11, 0.14);
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
       --radius-full: 9999px;
+      --glass-blur: blur(16px) saturate(180%);
+      --glass-blur-lg: blur(24px) saturate(200%);
+      --glass-inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     html,
     body {
       height: 100%;
-      background-color: var(--bg-main);
+      background-color: #070a12;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 55%);
       color: var(--text);
       font-family: var(--font-sans);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Sleek Glass Scrollbars ────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
 
     /* ── App Shell Layout ──────────────────────────────── */
@@ -63,14 +89,17 @@
       flex-direction: column;
       height: 100vh;
       width: 100vw;
-      background: var(--bg-main);
+      background: transparent;
     }
 
-    /* ── Top Window Bar ────────────────────────────────── */
+    /* ── Top Window Bar (Frosted Glass) ────────────────── */
     .top-header {
-      height: 52px;
+      height: 54px;
       background: var(--bg-sidebar);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), var(--glass-inner-bevel);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -94,24 +123,33 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
+    }
+
+    .mac-dot:hover {
+      transform: scale(1.15);
     }
 
     .mac-dot.close {
       background: #ff5f56;
+      box-shadow: 0 0 6px rgba(255, 95, 86, 0.4);
     }
 
     .mac-dot.min {
       background: #ffbd2e;
+      box-shadow: 0 0 6px rgba(255, 189, 46, 0.4);
     }
 
     .mac-dot.max {
       background: #27c93f;
+      box-shadow: 0 0 6px rgba(39, 201, 63, 0.4);
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.55rem;
       font-weight: 700;
       font-size: 0.95rem;
       letter-spacing: 0.04em;
@@ -120,8 +158,10 @@
 
     .brand-icon {
       color: var(--accent);
-      font-size: 1.15rem;
-      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.7));
     }
 
     .brand-sub {
@@ -140,7 +180,7 @@
     .header-right {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.75rem;
     }
 
     .model-pill {
@@ -149,11 +189,13 @@
       color: #6ee7b7;
       font-size: 0.75rem;
       font-family: var(--font-mono);
-      padding: 0.3rem 0.75rem;
+      padding: 0.35rem 0.8rem;
       border-radius: var(--radius-full);
       display: flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.5rem;
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     .live-dot {
@@ -161,18 +203,15 @@
       height: 7px;
       background: var(--match-green);
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--match-green);
+      box-shadow: 0 0 10px var(--match-green);
       animation: pulse 2s infinite ease-in-out;
     }
 
     @keyframes pulse {
-
-      0%,
-      100% {
+      0%, 100% {
         opacity: 1;
         transform: scale(1);
       }
-
       50% {
         opacity: 0.4;
         transform: scale(0.85);
@@ -183,28 +222,36 @@
       background: var(--bg-surface);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s var(--ease-spring);
       font-size: 0.9rem;
+      backdrop-filter: blur(8px);
+      box-shadow: var(--glass-inner-bevel);
     }
 
     .icon-btn:hover {
       color: var(--text);
       border-color: var(--accent);
       background: var(--bg-surface-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 10px rgba(59, 130, 246, 0.2);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
     }
 
     /* ── Body Container: Rail + Sidebar + Main Area ───── */
     .app-body {
       display: flex;
       flex: 1;
-      height: calc(100vh - 52px);
+      height: calc(100vh - 54px);
       overflow: hidden;
     }
 
@@ -212,53 +259,77 @@
     .rail {
       width: 68px;
       background: var(--bg-rail);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 1rem 0;
-      gap: 1.25rem;
+      padding: 1.1rem 0;
+      gap: 0.85rem;
       user-select: none;
+      z-index: 20;
     }
 
     .rail-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.35rem;
       color: var(--text-dim);
       font-size: 0.65rem;
+      font-weight: 500;
       text-decoration: none;
       cursor: pointer;
-      transition: all 0.15s;
-      width: 52px;
-      padding: 0.45rem 0;
+      transition: all 0.2s var(--ease-spring);
+      width: 54px;
+      padding: 0.5rem 0;
       border-radius: var(--radius-sm);
+      border: 1px solid transparent;
     }
 
-    .rail-item .rail-icon {
-      font-size: 1.15rem;
+    .rail-item svg, .rail-item .rail-icon {
+      transition: transform 0.2s var(--ease-spring), color 0.2s;
     }
 
     .rail-item:hover {
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .rail-item:hover svg, .rail-item:hover .rail-icon {
+      transform: scale(1.1);
+      color: #93c5fd;
+    }
+
+    .rail-item:active {
+      transform: scale(0.95);
     }
 
     .rail-item.active {
       color: #fff;
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.3);
+      background: rgba(59, 130, 246, 0.16);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .rail-item.active svg, .rail-item.active .rail-icon {
+      color: #60a5fa;
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
     }
 
     .rail-bottom {
       margin-top: auto;
     }
 
-    /* ── Navigation Drawer / Sidebar ──────────────────── */
+    /* ── Navigation Drawer / Sidebar (Frosted Acrylic) ─ */
     .sidebar {
       width: 240px;
       background: var(--bg-sidebar);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -266,10 +337,11 @@
       overflow-y: auto;
       gap: 1.75rem;
       user-select: none;
+      z-index: 15;
     }
 
     .section-title {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--text-dim);
       text-transform: uppercase;
@@ -286,25 +358,33 @@
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.55rem;
       padding: 0.5rem 0.65rem;
       border-radius: var(--radius-sm);
       font-size: 0.82rem;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.15s;
+      border: 1px solid transparent;
+      transition: all 0.18s var(--ease-spring);
     }
 
     .nav-item:hover {
       background: var(--bg-surface);
       color: var(--text);
+      border-color: rgba(255, 255, 255, 0.06);
+      transform: translateX(2px);
+    }
+
+    .nav-item:active {
+      transform: scale(0.98);
     }
 
     .nav-item.active {
-      background: #1a2337;
+      background: rgba(59, 130, 246, 0.14);
       color: #93c5fd;
-      font-weight: 500;
-      border: 1px solid rgba(59, 130, 246, 0.25);
+      font-weight: 600;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
     .nav-badge {
@@ -312,8 +392,9 @@
       font-size: 0.7rem;
       font-family: var(--font-mono);
       color: var(--text-dim);
-      background: rgba(0, 0, 0, 0.25);
-      padding: 0.1rem 0.4rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.1rem 0.45rem;
       border-radius: 4px;
     }
 
@@ -336,27 +417,36 @@
 
     .tag-pill {
       background: var(--bg-surface);
+      backdrop-filter: blur(8px);
       border: 1px solid var(--border);
       color: var(--text-muted);
       font-size: 0.72rem;
       font-family: var(--font-mono);
-      padding: 0.28rem 0.6rem;
+      padding: 0.28rem 0.65rem;
       border-radius: var(--radius-full);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.18s var(--ease-spring);
+      box-shadow: var(--glass-inner-bevel);
     }
 
     .tag-pill:hover {
       background: var(--bg-surface-hover);
-      color: var(--accent);
+      color: #93c5fd;
       border-color: var(--accent);
       transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .tag-pill:active {
+      transform: scale(0.95);
     }
 
     .tag-pill.active {
-      background: rgba(59, 130, 246, 0.15);
+      background: rgba(59, 130, 246, 0.2);
       border-color: var(--accent);
       color: #93c5fd;
+      font-weight: 600;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
     }
 
     /* ── Main Work Area ────────────────────────────────── */
@@ -364,19 +454,22 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: var(--bg-main);
+      background: transparent;
       overflow: hidden;
       position: relative;
     }
 
-    /* ── Search & Filter Toolbar ───────────────────────── */
+    /* ── Search & Filter Toolbar (Frosted Acrylic) ──────── */
     .toolbar {
-      padding: 1.25rem 2rem 0.85rem 2rem;
+      padding: 1.15rem 2rem 0.85rem 2rem;
       display: flex;
       flex-direction: column;
       gap: 0.85rem;
-      background: var(--bg-main);
-      border-bottom: 1px solid rgba(31, 39, 56, 0.5);
+      background: var(--bg-sidebar);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), var(--glass-inner-bevel);
       z-index: 10;
     }
 
@@ -399,57 +492,78 @@
       color: var(--text-dim);
       font-size: 1rem;
       pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease, transform 0.2s var(--ease-spring);
+    }
+
+    .search-box:focus-within .search-icon {
+      color: var(--accent);
+      transform: scale(1.1);
     }
 
     .search-input {
       width: 100%;
       height: 48px;
       padding: 0 3rem 0 2.85rem;
-      background: #0f1422;
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--border-highlight);
       border-radius: var(--radius-md);
       color: #fff;
       font-family: var(--font-sans);
       font-size: 0.92rem;
       outline: none;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      transition: all 0.22s var(--ease-spring);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), var(--glass-inner-bevel);
     }
 
     .search-input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow), 0 6px 20px rgba(0, 0, 0, 0.5);
-      background: #111827;
+      box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 24px rgba(0, 0, 0, 0.45);
+      background: rgba(22, 31, 52, 0.85);
     }
 
     .search-input::placeholder {
-      color: #4b5563;
+      color: var(--text-dim);
       font-size: 0.88rem;
     }
 
     .search-clear {
       position: absolute;
       right: 0.9rem;
-      background: none;
-      border: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid transparent;
       color: var(--text-dim);
       cursor: pointer;
-      font-size: 1.1rem;
+      font-size: 1rem;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
       display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s var(--ease-spring);
     }
 
     .search-clear.visible {
-      display: block;
+      display: flex;
     }
 
     .search-clear:hover {
-      color: var(--text);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.1);
     }
 
     .tool-btn {
       height: 48px;
       padding: 0 1.15rem;
-      background: #101524;
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
       color: var(--text-muted);
@@ -459,20 +573,28 @@
       align-items: center;
       gap: 0.5rem;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s var(--ease-spring);
       white-space: nowrap;
+      box-shadow: var(--glass-inner-bevel);
     }
 
     .tool-btn:hover {
       background: var(--bg-surface-hover);
       color: var(--text);
       border-color: var(--border-highlight);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .tool-btn:active {
+      transform: scale(0.96);
     }
 
     .tool-btn.active {
-      background: rgba(59, 130, 246, 0.12);
+      background: rgba(59, 130, 246, 0.18);
       border-color: var(--accent);
       color: #93c5fd;
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
 
     .tool-select-wrap {
@@ -484,7 +606,9 @@
     .tool-select {
       height: 48px;
       padding: 0 2.2rem 0 1.15rem;
-      background: #101524;
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
       color: var(--text-muted);
@@ -497,8 +621,9 @@
       outline: none;
       appearance: none;
       -webkit-appearance: none;
-      transition: all 0.15s;
+      transition: all 0.2s var(--ease-spring);
       white-space: nowrap;
+      box-shadow: var(--glass-inner-bevel);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 0.75rem center;
@@ -508,16 +633,18 @@
       background-color: var(--bg-surface-hover);
       color: var(--text);
       border-color: var(--border-highlight);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     }
 
     .tool-select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
       color: #fff;
     }
 
     .tool-select.active {
-      background-color: rgba(59, 130, 246, 0.12);
+      background-color: rgba(59, 130, 246, 0.18);
       border-color: var(--accent);
       color: #93c5fd;
       font-weight: 600;
@@ -529,10 +656,12 @@
       padding: 0.5rem;
     }
 
-    /* ── Filter Dropdown Drawer ────────────────────────── */
+    /* ── Filter Dropdown Drawer (Frosted Glass) ────────── */
     .filter-drawer {
       display: none;
-      background: var(--bg-surface);
+      background: rgba(14, 20, 34, 0.85);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 1rem 1.25rem;
@@ -541,6 +670,19 @@
       align-items: center;
       flex-wrap: wrap;
       font-size: 0.82rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), var(--glass-inner-bevel);
+      animation: filterSlideIn 0.2s var(--ease-spring);
+    }
+
+    @keyframes filterSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .filter-drawer.open {
@@ -558,77 +700,87 @@
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .filter-select {
-      background: #0d111c;
+      background: rgba(8, 12, 22, 0.8);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 0.35rem 0.7rem;
+      padding: 0.4rem 0.75rem;
       border-radius: var(--radius-sm);
       outline: none;
       font-size: 0.8rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     .filter-date-input {
-      background: #0d111c;
+      background: rgba(8, 12, 22, 0.8);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 0.3rem 0.55rem;
+      padding: 0.35rem 0.6rem;
       border-radius: var(--radius-sm);
       outline: none;
       font-size: 0.78rem;
       font-family: var(--font-mono);
       color-scheme: dark;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .filter-date-input:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     .filter-pill-btn {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
       color: #fbbf24;
-      padding: 0.32rem 0.75rem;
+      padding: 0.35rem 0.8rem;
       border-radius: var(--radius-sm);
       font-size: 0.78rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.18s var(--ease-spring);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
     }
 
     .filter-pill-btn:hover {
-      background: rgba(245, 158, 11, 0.2);
+      background: rgba(245, 158, 11, 0.22);
       border-color: rgba(245, 158, 11, 0.6);
+      transform: translateY(-1px);
     }
 
     .filter-pill-btn.active {
       background: #d97706;
       border-color: #f59e0b;
       color: #fff;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
     }
 
     .filter-reset-btn {
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text-dim);
-      padding: 0.32rem 0.75rem;
+      padding: 0.35rem 0.8rem;
       border-radius: var(--radius-sm);
       font-size: 0.78rem;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.18s var(--ease-spring);
     }
 
     .filter-reset-btn:hover {
       color: #fff;
       border-color: var(--border-highlight);
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
     }
 
     /* ── Active Filter Chips Row ───────────────────────── */
@@ -636,9 +788,9 @@
       display: flex;
       align-items: center;
       gap: 0.65rem;
-      padding: 0.4rem 2rem 0.2rem 2rem;
+      padding: 0.45rem 2rem 0.25rem 2rem;
       flex-wrap: wrap;
-      animation: fadeIn 0.15s ease;
+      animation: fadeIn 0.18s ease;
     }
 
     .chips-label {
@@ -661,12 +813,14 @@
       align-items: center;
       gap: 0.4rem;
       background: rgba(59, 130, 246, 0.14);
+      backdrop-filter: blur(8px);
       border: 1px solid rgba(59, 130, 246, 0.35);
       color: #93c5fd;
       font-size: 0.73rem;
-      padding: 0.2rem 0.6rem;
+      padding: 0.22rem 0.65rem;
       border-radius: 999px;
       font-weight: 500;
+      box-shadow: var(--glass-inner-bevel);
     }
 
     .filter-chip.chip-warning {
@@ -691,11 +845,12 @@
       line-height: 1;
       padding: 0;
       margin-left: 0.15rem;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, transform 0.15s;
     }
 
     .filter-chip-remove:hover {
       opacity: 1;
+      transform: scale(1.2);
     }
 
     .chips-clear-all {
@@ -756,33 +911,40 @@
     }
 
 
-    /* ── Photo Card ────────────────────────────────────── */
+    /* ── Photo Card (Frosted Glass & Ambient Glow) ─────── */
     .photo-card {
       background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
       overflow: hidden;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.22s var(--ease-spring), border-color 0.2s ease, box-shadow 0.22s var(--ease-spring);
       display: flex;
       flex-direction: column;
       position: relative;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), var(--glass-inner-bevel);
     }
 
     .photo-card:hover {
       border-color: var(--border-highlight);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.15), var(--glass-inner-bevel);
+    }
+
+    .photo-card:active {
+      transform: translateY(-2px) scale(0.99);
     }
 
     .photo-card.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent), 0 12px 30px rgba(59, 130, 246, 0.25);
+      box-shadow: 0 0 0 2px var(--accent), 0 12px 30px rgba(59, 130, 246, 0.35);
     }
 
     .photo-card.selected-multi {
       border-color: #3b82f6;
-      box-shadow: 0 0 0 2px #3b82f6, 0 12px 32px rgba(59, 130, 246, 0.35);
+      box-shadow: 0 0 0 2px #3b82f6, 0 14px 36px rgba(59, 130, 246, 0.4);
     }
 
     /* Selection checkbox / ring on top-left */
@@ -790,18 +952,19 @@
       position: absolute;
       top: 8px;
       left: 8px;
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: rgba(15, 20, 32, 0.75);
+      background: rgba(10, 15, 26, 0.75);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border: 2px solid rgba(255, 255, 255, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       opacity: 0;
-      transition: all 0.15s ease;
+      transition: all 0.18s var(--ease-spring);
       z-index: 10;
       color: #fff;
       font-size: 0.75rem;
@@ -817,11 +980,11 @@
     .card-select-btn.active {
       background: #3b82f6;
       border-color: #3b82f6;
-      box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.7);
     }
 
     .card-select-btn:hover {
-      transform: scale(1.12);
+      transform: scale(1.15);
       border-color: #fff;
     }
 
@@ -831,7 +994,7 @@
       transform: translateX(-50%) translateY(20px);
     }
 
-    /* ── Floating Selection Action Dock ────────────────── */
+    /* ── Floating Selection Action Dock (Frosted Acrylic) ─ */
     .floating-selection-dock {
       position: fixed;
       bottom: 24px;
@@ -839,18 +1002,18 @@
       transform: translateX(-50%) translateY(40px);
       opacity: 0;
       pointer-events: none;
-      background: rgba(14, 18, 28, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(12, 17, 29, 0.85);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
       border: 1.5px solid rgba(59, 130, 246, 0.5);
       border-radius: 999px;
       padding: 0.45rem 1.15rem;
       display: flex;
       align-items: center;
       gap: 0.65rem;
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 28px rgba(59, 130, 246, 0.35), var(--glass-inner-bevel);
       z-index: 210;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.25s var(--ease-spring);
       color: #fff;
     }
 
@@ -861,49 +1024,53 @@
     }
 
     .dock-count-badge {
-      background: #3b82f6;
+      background: var(--accent);
       color: #fff;
       font-weight: 700;
       font-size: 0.75rem;
-      padding: 0.2rem 0.65rem;
+      padding: 0.22rem 0.7rem;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     .dock-btn {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border);
       color: var(--text-muted);
       border-radius: 999px;
-      padding: 0.32rem 0.8rem;
+      padding: 0.35rem 0.85rem;
       font-size: 0.78rem;
       font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      transition: all 0.15s ease;
+      transition: all 0.18s var(--ease-spring);
       white-space: nowrap;
     }
 
     .dock-btn:hover {
       color: #fff;
       border-color: var(--accent);
-      background: rgba(59, 130, 246, 0.15);
+      background: rgba(59, 130, 246, 0.2);
+      transform: translateY(-1px);
     }
 
     .dock-btn-danger:hover {
       color: #ef4444;
       border-color: #ef4444;
-      background: rgba(239, 68, 68, 0.15);
+      background: rgba(239, 68, 68, 0.2);
+      transform: translateY(-1px);
     }
 
     .dock-btn-warning:hover {
       color: #fbbf24;
       border-color: #f59e0b;
-      background: rgba(245, 158, 11, 0.15);
+      background: rgba(245, 158, 11, 0.2);
+      transform: translateY(-1px);
     }
 
     .dock-close-btn {
@@ -923,7 +1090,8 @@
 
     .dock-close-btn:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
+      transform: scale(1.1);
     }
 
     /* ── Location Picker Modal Styles ──────────────────── */
@@ -944,18 +1112,18 @@
     .location-search-input {
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.85rem;
-      background: #0d111c;
+      background: rgba(10, 15, 26, 0.85);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
       color: #fff;
       font-size: 0.92rem;
       outline: none;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .location-search-input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
     }
 
     .location-suggestions-list {
@@ -970,19 +1138,20 @@
     .location-suggestion-item {
       padding: 0.6rem 0.85rem;
       border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid transparent;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      transition: all 0.15s ease;
+      transition: all 0.18s var(--ease-spring);
     }
 
     .location-suggestion-item:hover,
     .location-suggestion-item.selected {
-      background: rgba(59, 130, 246, 0.14);
+      background: rgba(59, 130, 246, 0.16);
       border-color: rgba(59, 130, 246, 0.4);
+      transform: translateX(2px);
     }
 
     .location-item-icon {
@@ -1010,7 +1179,7 @@
     .card-thumb-wrap {
       width: 100%;
       aspect-ratio: 1;
-      background: #080a10;
+      background: #060911;
       overflow: hidden;
       position: relative;
     }
@@ -1024,7 +1193,7 @@
     }
 
     .photo-card:hover .card-thumb {
-      transform: scale(1.04);
+      transform: scale(1.05);
     }
 
     .card-details {
@@ -1048,13 +1217,15 @@
     .match-badge.high {
       background: var(--match-green-bg);
       color: var(--match-green);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
     }
 
     .match-badge.medium {
       background: var(--match-amber-bg);
       color: var(--match-amber);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
     }
 
     .card-row {
@@ -1079,7 +1250,7 @@
       text-overflow: ellipsis;
     }
 
-    /* ── Floating AI Assistant Bar (from inspiration) ─── */
+    /* ── Floating AI Assistant Bar (Frosted Acrylic) ──── */
     .floating-ai-bar {
       position: absolute;
       bottom: 1.5rem;
@@ -1087,23 +1258,24 @@
       transform: translateX(-50%);
       width: 90%;
       max-width: 680px;
-      background: rgba(19, 24, 36, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(59, 130, 246, 0.35);
+      background: rgba(14, 19, 32, 0.82);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
+      border: 1.5px solid rgba(59, 130, 246, 0.35);
       border-radius: var(--radius-lg);
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 24px rgba(59, 130, 246, 0.2), var(--glass-inner-bevel);
       padding: 0.75rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.45rem;
       z-index: 25;
-      transition: all 0.2s ease;
+      transition: all 0.22s var(--ease-spring);
     }
 
     .floating-ai-bar:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 24px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 32px rgba(59, 130, 246, 0.35), var(--glass-inner-bevel);
+      transform: translateX(-50%) translateY(-2px);
     }
 
     .ai-label {
@@ -1116,6 +1288,9 @@
 
     .ai-sparkle {
       color: #facc15;
+      display: flex;
+      align-items: center;
+      filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6));
     }
 
     .ai-input-row {
@@ -1139,23 +1314,28 @@
     }
 
     .ai-action-btn {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.18s var(--ease-spring);
     }
 
     .ai-action-btn:hover {
       color: #fff;
       border-color: var(--accent);
-      background: rgba(59, 130, 246, 0.2);
+      background: rgba(59, 130, 246, 0.25);
+      transform: scale(1.08);
+    }
+
+    .ai-action-btn:active {
+      transform: scale(0.94);
     }
 
     /* ── Empty & Loading States ────────────────────────── */
@@ -1188,30 +1368,36 @@
     }
 
     .cta-btn {
-      background: var(--accent);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: #fff;
-      border: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
       padding: 0.65rem 1.35rem;
       border-radius: var(--radius-md);
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.15s;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      transition: all 0.2s var(--ease-spring);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4), var(--glass-inner-bevel);
     }
 
     .cta-btn:hover {
-      opacity: 0.9;
+      opacity: 0.95;
       transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55), var(--glass-inner-bevel);
     }
 
-    /* ── Detail Modal ──────────────────────────────────── */
+    .cta-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* ── Detail Modal (Frosted Glass & Depth) ──────────── */
     .modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(4, 7, 12, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(3, 6, 12, 0.8);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
       z-index: 100;
       justify-content: center;
       align-items: center;
@@ -1223,7 +1409,9 @@
     }
 
     .modal-window {
-      background: var(--bg-surface);
+      background: rgba(13, 18, 30, 0.88);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border: 1px solid var(--border-highlight);
       border-radius: var(--radius-lg);
       max-width: 960px;
@@ -1232,30 +1420,30 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
-      animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.85), 0 0 30px rgba(59, 130, 246, 0.15), var(--glass-inner-bevel);
+      animation: modalIn 0.22s var(--ease-spring);
     }
 
     @keyframes modalIn {
       from {
         opacity: 0;
-        transform: scale(0.96);
+        transform: scale(0.95) translateY(8px);
       }
 
       to {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) translateY(0);
       }
     }
 
     .modal-top {
-      height: 48px;
+      height: 50px;
       padding: 0 1.25rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      background: #0e121c;
+      background: rgba(10, 14, 24, 0.7);
     }
 
     .modal-title {
@@ -1265,15 +1453,24 @@
     }
 
     .modal-close-btn {
-      background: none;
-      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid transparent;
       color: var(--text-dim);
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s var(--ease-spring);
     }
 
     .modal-close-btn:hover {
       color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.1);
     }
 
     .modal-content-split {
@@ -1284,7 +1481,7 @@
 
     .modal-img-pane {
       flex: 1.2;
-      background: #07090f;
+      background: rgba(5, 8, 15, 0.95);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1308,6 +1505,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       min-width: 0;
+      background: rgba(10, 14, 24, 0.4);
     }
 
     .info-block h4 {
@@ -1348,7 +1546,7 @@
       font-size: 0.72rem;
       color: var(--text-dim);
       word-break: break-all;
-      background: #090c13;
+      background: rgba(6, 9, 16, 0.8);
       padding: 0.5rem;
       border-radius: 4px;
       border: 1px solid var(--border);
@@ -1375,17 +1573,19 @@
     }
 
     .setting-input {
-      background: #0c0f17;
+      background: rgba(8, 12, 22, 0.85);
       border: 1px solid var(--border);
       color: #fff;
       padding: 0.65rem 0.85rem;
       border-radius: var(--radius-sm);
       font-size: 0.85rem;
       outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .setting-input:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     .btn-row {
@@ -1394,21 +1594,23 @@
       margin-top: 0.5rem;
     }
 
-    /* ── Toast ─────────────────────────────────────────── */
+    /* ── Toast (Frosted Acrylic) ───────────────────────── */
     .toast {
       position: fixed;
       bottom: 2rem;
       right: 2rem;
-      background: #182030;
+      background: rgba(18, 26, 44, 0.9);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       border: 1px solid var(--accent);
       color: #fff;
       padding: 0.75rem 1.25rem;
       border-radius: var(--radius-md);
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 16px rgba(59, 130, 246, 0.3), var(--glass-inner-bevel);
       z-index: 200;
       opacity: 0;
       transform: translateY(12px);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.22s var(--ease-spring);
       pointer-events: none;
       font-size: 0.85rem;
     }
@@ -1548,24 +1750,24 @@
       transform: scale(1.04);
     }
 
-    /* ── Google Drive Style Floating Import Widget ───── */
+    /* ── Google Drive Style Floating Import Widget (Frosted) ── */
     .import-floating-widget {
       position: fixed;
       bottom: 24px;
       right: 24px;
       width: 370px;
       max-width: calc(100vw - 36px);
-      background: rgba(14, 18, 28, 0.96);
+      background: rgba(12, 17, 28, 0.88);
       border: 1.5px solid rgba(59, 130, 246, 0.45);
       border-radius: var(--radius-lg);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 24px rgba(59, 130, 246, 0.35);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 28px rgba(59, 130, 246, 0.35), var(--glass-inner-bevel);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
       z-index: 250;
       display: none;
       flex-direction: column;
       overflow: hidden;
-      animation: widgetIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: widgetIn 0.25s var(--ease-spring);
     }
 
     @keyframes widgetIn {
@@ -1590,7 +1792,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #0b0e17;
+      background: rgba(8, 12, 22, 0.75);
       border-bottom: 1px solid var(--border);
       user-select: none;
       cursor: pointer;
@@ -1646,7 +1848,8 @@
 
     .widget-action-btn:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.1);
     }
 
     .widget-body {
@@ -3458,7 +3661,11 @@
           <div class="mac-dot max"></div>
         </div>
         <div class="brand">
-          <span class="brand-icon">⚡</span>
+          <span class="brand-icon">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </span>
           <span>PIXELMEMORY<span class="brand-sub">AI</span></span>
         </div>
       </div>
@@ -3468,19 +3675,30 @@
       <div class="header-right">
         <button class="tool-btn" id="rescanFolderHeaderBtn"
           style="padding: 0.38rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.45rem; border-color: rgba(99, 102, 241, 0.4); color: var(--text);">
-          <span>🔄</span>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
           <span>Rescan Folder</span>
         </button>
         <button class="cta-btn" id="importFolderHeaderBtn"
           style="padding: 0.38rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);">
-          <span>📥</span>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
           <span>Import Folder</span>
         </button>
         <div class="model-pill" id="modelPill">
           <div class="live-dot"></div>
           <span id="modelText">Local Model: Moondream2 · MiniLM-L6</span>
         </div>
-        <button class="icon-btn" id="settingsBtn" title="Platform Settings & Library">⚙️</button>
+        <button class="icon-btn" id="settingsBtn" title="Platform Settings & Library">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -3489,31 +3707,71 @@
       <!-- Far Left Icon Rail -->
       <nav class="rail">
         <div class="rail-item active" id="railFolders" title="All Photos">
-          <span class="rail-icon">📁</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+          </span>
           <span>Photos</span>
         </div>
         <div class="rail-item" id="railAlbums" title="Photo Albums">
-          <span class="rail-icon">🖼️</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2"/>
+              <path d="M3 9h18"/>
+              <path d="M9 21V9"/>
+            </svg>
+          </span>
           <span>Albums</span>
         </div>
         <div class="rail-item" id="railNotes" title="Notes & Journals">
-          <span class="rail-icon">📝</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+          </span>
           <span>Notes</span>
         </div>
         <div class="rail-item" id="railPeople" title="People & Pets">
-          <span class="rail-icon">👥</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
           <span>People</span>
         </div>
         <div class="rail-item" id="railImport" title="Import Folder">
-          <span class="rail-icon">📥</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+              <polyline points="12 10 12 16 9 13"/>
+              <polyline points="12 16 15 13"/>
+            </svg>
+          </span>
           <span>Import</span>
         </div>
         <div class="rail-item" id="railTags" title="Tags">
-          <span class="rail-icon">🏷️</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/>
+              <path d="M7 7h.01"/>
+            </svg>
+          </span>
           <span>Tags</span>
         </div>
         <div class="rail-item rail-bottom" id="railIndex" title="Settings">
-          <span class="rail-icon">⚙️</span>
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </span>
           <span>Settings</span>
         </div>
       </nav>
@@ -3525,49 +3783,66 @@
           <div class="nav-group">
             <div class="nav-item active" id="navAllPhotos"
               style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 0.45rem;">
-                <span>📁</span>
+              <div style="display: flex; align-items: center; gap: 0.55rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;">
+                  <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                </svg>
                 <span>My Local Photos</span>
               </div>
               <div style="display: flex; align-items: center; gap: 0.35rem;">
                 <button type="button" class="tiny-edit-btn" id="sidebarQuickRescanBtn"
-                  title="Rescan folder for newly added photos" style="padding: 1px 5px; font-size: 0.68rem;">🔄
-                  Rescan</button>
+                  title="Rescan folder for newly added photos" style="padding: 2px 6px; font-size: 0.68rem; display: flex; align-items: center; gap: 3px;">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  Rescan
+                </button>
                 <span class="nav-badge" id="navTotalCount">0</span>
               </div>
             </div>
             <div class="nav-item" id="navAllNotes" title="Album notes and story journals">
-              <span>📝</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #a78bfa;">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
               <span>Notes & Stories</span>
               <span class="nav-badge" id="navNotesCount"
                 style="background: rgba(99, 102, 241, 0.15); color: #a78bfa; border-color: rgba(99, 102, 241, 0.3);">0</span>
             </div>
             <div class="nav-item" id="navDateUnknown" title="Photos without date metadata">
-              <span>📅</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #fbbf24;">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/>
+                <line x1="3" x2="21" y1="10" y2="10"/>
+              </svg>
               <span>Date Unknown</span>
               <span class="nav-badge" id="navUnknownCount"
                 style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">0</span>
             </div>
             <div class="nav-item" id="navGpsPhotos" title="Photos with GPS coordinates">
-              <span>📍</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #34d399;">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
               <span>With GPS Location</span>
               <span class="nav-badge" id="navGpsCount"
                 style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">0</span>
             </div>
             <div class="nav-item nav-sub" data-query="sunset">
-              <span>› 📁</span>
+              <span style="opacity: 0.5;">›</span>
               <span>/Sunsets & Golden Hour</span>
             </div>
             <div class="nav-item nav-sub" data-query="hiking or mountains or nature">
-              <span>› 📁</span>
+              <span style="opacity: 0.5;">›</span>
               <span>/Trips & Mountains</span>
             </div>
             <div class="nav-item nav-sub" data-query="city or street or architecture">
-              <span>› 📁</span>
+              <span style="opacity: 0.5;">›</span>
               <span>/Urban & Streets</span>
             </div>
             <div class="nav-item nav-sub" data-query="party or celebration or coffee">
-              <span>› 📁</span>
+              <span style="opacity: 0.5;">›</span>
               <span>/Moments & Life</span>
             </div>
           </div>
@@ -3598,27 +3873,43 @@
         <div class="toolbar">
           <div class="search-row">
             <div class="search-box">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
               <input type="text" id="queryInput" class="search-input"
                 placeholder="Find photos of a vintage red car parked near a snowy mountain in the evening..."
                 autocomplete="off" autofocus />
               <button class="search-clear" id="clearBtn">&times;</button>
             </div>
             <button class="tool-btn" id="filterBtn">
-              <span>⚙️ Filters</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
+              <span>Filters</span>
               <span class="filter-active-dot" id="filterActiveDot" style="display: none;"></span>
             </button>
-            <button class="tool-btn" id="sortBtn">↕ Sort</button>
+            <button class="tool-btn" id="sortBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 16 4 4 4-4"/>
+                <path d="M7 20V4"/>
+                <path d="m21 8-4-4-4 4"/>
+                <path d="M17 4v16"/>
+              </svg>
+              <span>Sort</span>
+            </button>
             <div class="tool-select-wrap">
               <select class="tool-select" id="groupBySelectToolbar" title="Group photos by...">
-                <option value="none" selected>📑 Group: None</option>
-                <option value="day">📅 Group: Day</option>
-                <option value="month">📅 Group: Month</option>
-                <option value="year">🗓️ Group: Year</option>
-                <option value="location">📍 Group: Location</option>
-                <option value="country">🌐 Group: Country</option>
-                <option value="camera">📷 Group: Camera</option>
-                <option value="type">📁 Group: Type</option>
+                <option value="none" selected>Group: None</option>
+                <option value="day">Group: Day</option>
+                <option value="month">Group: Month</option>
+                <option value="year">Group: Year</option>
+                <option value="location">Group: Location</option>
+                <option value="country">Group: Country</option>
+                <option value="camera">Group: Camera</option>
+                <option value="type">Group: Type</option>
               </select>
             </div>
           </div>
@@ -3626,7 +3917,7 @@
           <!-- Collapsible Filters Drawer -->
           <div class="filter-drawer" id="filterDrawer">
             <div class="filter-group">
-              <label>📑 Group By</label>
+              <label>Group By</label>
               <select class="filter-select" id="groupBySelect">
                 <option value="none" selected>None (Flat Grid)</option>
                 <option value="day">Date (Day)</option>
@@ -3640,7 +3931,7 @@
             </div>
 
             <div class="filter-group">
-              <label>📅 Date Filter</label>
+              <label>Date Filter</label>
               <select class="filter-select" id="filterDatePreset">
                 <option value="all" selected>All Time</option>
                 <option value="unknown">Date Unknown (No EXIF Date)</option>
@@ -3691,8 +3982,9 @@
             </div>
 
             <div class="filter-group" style="margin-left: auto; gap: 0.4rem;">
-              <button class="filter-pill-btn" id="btnDateUnknownQuick" title="Toggle photos with no date metadata">📅
-                Date Unknown</button>
+              <button class="filter-pill-btn" id="btnDateUnknownQuick" title="Toggle photos with no date metadata">
+                <span>Date Unknown</span>
+              </button>
               <button class="filter-reset-btn" id="btnResetFilters" title="Reset all filters">Reset</button>
             </div>
           </div>
@@ -3755,18 +4047,32 @@
           </div>
         </div>
 
-        <!-- Floating Bottom AI Assistant Bar (from inspiration screenshot) -->
+        <!-- Floating Bottom AI Assistant Bar (Frosted Acrylic) -->
         <div class="floating-ai-bar">
           <div class="ai-label">
-            <span class="ai-sparkle">✨</span>
-            <span>Ask AI about your photos... (e.g., 'Find vintage red car on highway' or 'Photos near Grand
-              Canyon')</span>
+            <span class="ai-sparkle">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+              </svg>
+            </span>
+            <span>Ask AI about your photos... (e.g., 'Find vintage red car on highway' or 'Photos near Grand Canyon')</span>
           </div>
           <div class="ai-input-row">
             <input type="text" id="aiInput" class="ai-input" placeholder="Type a search query or question..."
               autocomplete="off" />
-            <button class="ai-action-btn" id="aiMicBtn" title="Voice Search">🎙️</button>
-            <button class="ai-action-btn" id="aiSendBtn" title="Search">↵</button>
+            <button class="ai-action-btn" id="aiMicBtn" title="Voice Search">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+            </button>
+            <button class="ai-action-btn" id="aiSendBtn" title="Search">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" x2="19" y1="12" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
           </div>
         </div>
       </main>
@@ -3935,6 +4241,19 @@
               style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 90px; overflow-y: auto;">
               <!-- Populated dynamically without string escaping bugs -->
             </div>
+          </div>
+
+          <!-- Album Destination Setting -->
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.76rem; font-weight: 600; color: #fff;">🖼️ Album Sync & Destination</span>
+              <span id="importAlbumBadge" style="font-size: 0.68rem; color: #a78bfa; background: rgba(167,139,250,0.12); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(167,139,250,0.25);">Auto-Sync</span>
+            </div>
+            <select id="importTargetAlbumSelect" class="setting-input" style="width: 100%; font-size: 0.78rem; padding: 5px 8px; background: #0f172a; border-color: rgba(255,255,255,0.15); border-radius: 6px;">
+              <option value="auto">✨ Auto-Sync with album(s) containing this folder</option>
+              <option value="-1">➕ Create New Album Named After Folder</option>
+              <option value="none">🚫 None (All Photos Only)</option>
+            </select>
           </div>
         </div>
 
@@ -5548,13 +5867,20 @@
         <span>🖼️</span>
         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(album.name)}</span>
         <span class="nav-badge">${album.photo_count}</span>
+        <button class="album-rescan-btn" title="Rescan Album Folder" data-albumid="${album.id}" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:0.75rem; padding:0 3px;" onmouseenter="this.style.color='#fff'" onmouseleave="this.style.color='var(--text-muted)'">🔄</button>
         <button class="album-edit-btn" title="Rename Album" data-albumid="${album.id}">✏️</button>
         <button class="album-del-btn" title="Delete Album" data-albumid="${album.id}">&times;</button>
       `;
 
           item.addEventListener('click', (e) => {
-            if (e.target.closest('.album-del-btn') || e.target.closest('.album-edit-btn')) return;
+            if (e.target.closest('.album-del-btn') || e.target.closest('.album-edit-btn') || e.target.closest('.album-rescan-btn')) return;
             showAlbumPhotos(album.id, album.name);
+          });
+
+          const rescanBtn = item.querySelector('.album-rescan-btn');
+          rescanBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            rescanAlbumFolder(album.id, album.name);
           });
 
           const editBtn = item.querySelector('.album-edit-btn');
@@ -5575,6 +5901,17 @@
         });
       } catch (err) {
         console.error('Failed to load albums:', err);
+      }
+    }
+
+    async function rescanAlbumFolder(albumId, albumName) {
+      try {
+        const res = await fetch(`${API}/api/albums/${albumId}/folder`);
+        const data = await res.json();
+        const folder = data.folder_path || '';
+        openImportModal(folder, true, albumId);
+      } catch (e) {
+        openImportModal(null, true, albumId);
       }
     }
 
@@ -5608,7 +5945,8 @@
 
         $('#resultMeta').innerHTML = `
       Album: <span>"${escapeHtml(albumName)}"</span> (${allResults.length} photos)
-      <button class="small-add-btn" style="margin-left: 0.6rem;" onclick="openRenameAlbumModal(${albumId}, '${escapeHtml(albumName)}')">✏️ Rename</button>
+      <button class="small-add-btn" style="margin-left: 0.6rem; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.3); color: #34d399;" onclick="rescanAlbumFolder(${albumId}, '${escapeHtml(albumName)}')">🔄 Rescan Folder</button>
+      <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="openRenameAlbumModal(${albumId}, '${escapeHtml(albumName)}')">✏️ Rename</button>
       <button class="small-add-btn" style="margin-left: 0.4rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #c4b5fd;" onclick="openNotesModal(${albumId}, '${escapeHtml(albumName)}')">📝 Notes</button>
       <button class="small-add-btn" style="margin-left: 0.4rem; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(99,102,241,0.3); color: #a78bfa;" onclick="openStoryTimeline(${albumId}, '${escapeHtml(albumName)}')">📖 Story Timeline</button>
       <button class="small-add-btn" style="margin-left: 0.4rem;" onclick="showAllPhotos()">✕ View All Photos</button>
@@ -5916,7 +6254,7 @@
       }
     }
 
-    async function openImportModal(folderToPreselect = null, isRescanMode = false) {
+    async function openImportModal(folderToPreselect = null, isRescanMode = false, targetAlbumId = null) {
       if (folderToPreselect) {
         $('#importFolderInput').value = folderToPreselect.replace(/\\/g, '/');
       }
@@ -5924,6 +6262,32 @@
       const incRadio = document.querySelector('input[name="rescanMode"][value="incremental"]');
       if (incRadio) incRadio.checked = true;
       updateRescanModeUI('incremental');
+
+      // Populate Album Destination Select
+      const albumSelect = $('#importTargetAlbumSelect');
+      if (albumSelect) {
+        let opts = `<option value="auto">✨ Auto-Sync with album(s) containing this folder</option>`;
+        if (allAlbums && allAlbums.length > 0) {
+          opts += `<optgroup label="Select Specific Album:">`;
+          allAlbums.forEach(a => {
+            opts += `<option value="${a.id}">📁 ${escapeHtml(a.name)} (${a.photo_count} photos)</option>`;
+          });
+          opts += `</optgroup>`;
+        }
+        opts += `
+          <option value="-1">➕ Create New Album Named After Folder</option>
+          <option value="none">🚫 None (All Photos Only)</option>
+        `;
+        albumSelect.innerHTML = opts;
+
+        if (targetAlbumId) {
+          albumSelect.value = String(targetAlbumId);
+        } else if (currentAlbumId) {
+          albumSelect.value = String(currentAlbumId);
+        } else {
+          albumSelect.value = 'auto';
+        }
+      }
 
       $('#importModal').classList.add('active');
       setTimeout(() => $('#importFolderInput').focus(), 100);
@@ -6006,6 +6370,23 @@
       const rescanMode = document.querySelector('input[name="rescanMode"]:checked')?.value || 'incremental';
       const removeDeleted = $('#rescanRemoveDeletedCheck') ? $('#rescanRemoveDeletedCheck').checked : true;
 
+      const albumChoice = $('#importTargetAlbumSelect')?.value || 'auto';
+      let targetAlbumId = null;
+      let autoAlbumSync = true;
+      if (albumChoice === 'auto') {
+        targetAlbumId = null;
+        autoAlbumSync = true;
+      } else if (albumChoice === '-1') {
+        targetAlbumId = -1;
+        autoAlbumSync = false;
+      } else if (albumChoice === 'none') {
+        targetAlbumId = null;
+        autoAlbumSync = false;
+      } else {
+        targetAlbumId = parseInt(albumChoice, 10);
+        autoAlbumSync = false;
+      }
+
       const endpoint = `${API}/api/import/rescan`;
 
       const startBtn = $('#importStartBtn');
@@ -6024,6 +6405,8 @@
             vlm_model: selectedModel,
             rescan_mode: rescanMode,
             remove_deleted: removeDeleted,
+            target_album_id: targetAlbumId,
+            auto_album_sync: autoAlbumSync,
           }),
         });
         const data = await res.json();
@@ -6071,11 +6454,14 @@
 
     $('#importBrowseFolderBtn')?.addEventListener('click', async () => {
       const btn = $('#importBrowseFolderBtn');
-      const origHtml = btn.innerHTML;
+      const origHtml = '📁 Browse Computer...';
       btn.disabled = true;
-      btn.innerHTML = '⏳ Opening...';
+      btn.innerHTML = '⏳ Opening Picker...';
       try {
-        const res = await fetch(`${API}/api/system/browse-folder`);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 60000);
+        const res = await fetch(`${API}/api/system/browse-folder`, { signal: controller.signal });
+        clearTimeout(timer);
         const data = await res.json();
         if (data.status === 'ok' && data.path) {
           const cleanPath = data.path.replace(/\\/g, '/');
@@ -6084,7 +6470,7 @@
         }
       } catch (err) {
         console.error('Folder browse error:', err);
-        showToast('Could not open folder picker.');
+        showToast('Folder picker closed or timed out.');
       } finally {
         btn.disabled = false;
         btn.innerHTML = origHtml;
@@ -6267,10 +6653,12 @@
             // Auto-refresh the gallery so new photos appear immediately!
             await loadPlatformStats();
             await loadAlbums();
-            if (!currentAlbumId) {
+            if (currentAlbumId) {
+              await showAlbumPhotos(currentAlbumId, currentAlbumName);
+            } else {
               doSearch('');
             }
-            showToast('Photo library updated with newly imported photos!');
+            showToast('Photo library and albums updated!');
 
             // Auto-fade widget after 10s if not dismissed
             setTimeout(() => {

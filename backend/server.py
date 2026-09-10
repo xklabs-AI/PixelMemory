@@ -6,6 +6,7 @@ Run:
     # or: uvicorn backend.server:app --host 0.0.0.0 --port 8642
 """
 
+import sys
 from typing import Optional
 import os
 import re
@@ -34,6 +35,7 @@ from backend.db import (
     add_photo_to_album, remove_photo_from_album,
     get_album_image_ids, get_photo_albums, delete_album,
     bulk_add_photos_to_album, bulk_remove_photos_from_album, bulk_move_photos_to_album,
+    get_folder_for_album, get_albums_for_folder,
     delete_images, bulk_update_location,
     get_all_image_paths, update_description, mark_embedded,
     get_faces_for_image, get_face_by_id, insert_face, update_face_person,
@@ -58,6 +60,8 @@ class ImportRequest(BaseModel):
     vlm_model: Optional[str] = None
     rescan_mode: str = "incremental"  # "incremental" | "full"
     remove_deleted: bool = True
+    target_album_id: Optional[int] = None
+    auto_album_sync: bool = True
 
 
 class SetModelRequest(BaseModel):
@@ -487,6 +491,8 @@ def start_import_endpoint(req: ImportRequest):
         vlm_model=req.vlm_model,
         rescan_mode=req.rescan_mode,
         remove_deleted=req.remove_deleted,
+        target_album_id=req.target_album_id,
+        auto_album_sync=req.auto_album_sync,
     )
     if res["status"] == "started":
         return {
@@ -531,6 +537,8 @@ def rescan_folder_endpoint(req: ImportRequest):
         vlm_model=req.vlm_model,
         rescan_mode=req.rescan_mode,
         remove_deleted=req.remove_deleted,
+        target_album_id=req.target_album_id,
+        auto_album_sync=req.auto_album_sync,
     )
     res["is_rescan"] = True
     res["folder_path"] = str(fpath).replace("\\", "/")
@@ -543,35 +551,61 @@ def rescan_folder_endpoint(req: ImportRequest):
 
 
 def _open_folder_dialog_sync() -> Optional[str]:
-    # 1. Try Tkinter topmost
+    # 1. Try Python subprocess with Tkinter in an isolated process
+    py_code = (
+        "import sys\n"
+        "try:\n"
+        "    import tkinter as tk\n"
+        "    from tkinter import filedialog\n"
+        "    root = tk.Tk()\n"
+        "    root.withdraw()\n"
+        "    root.wm_attributes('-topmost', 1)\n"
+        "    path = filedialog.askdirectory(parent=root, title='Select Photo Folder to Import or Rescan')\n"
+        "    root.destroy()\n"
+        "    if path:\n"
+        "        print('PICKED:' + path)\n"
+        "except Exception as e:\n"
+        "    sys.stderr.write(str(e))\n"
+    )
     try:
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.wm_attributes("-topmost", 1)
-        path = filedialog.askdirectory(title="Select Photo Folder to Import or Rescan")
-        root.destroy()
-        if path:
-            return str(Path(path).resolve()).replace("\\", "/")
-    except Exception as e:
-        print(f"Tkinter dialog error: {e}")
-
-    # 2. Fallback: PowerShell FolderBrowserDialog
-    try:
-        ps_cmd = (
-            "Add-Type -AssemblyName System.Windows.Forms; "
-            "$dlg = New-Object System.Windows.Forms.FolderBrowserDialog; "
-            "$dlg.Description = 'Select Photo Folder to Import or Rescan'; "
-            "$dlg.ShowNewFolderButton = $false; "
-            "if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dlg.SelectedPath }"
+        proc = subprocess.run(
+            [sys.executable, "-c", py_code],
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
-        res = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True, timeout=120)
-        p = res.stdout.strip()
-        if p and Path(p).exists():
-            return str(Path(p).resolve()).replace("\\", "/")
+        for line in proc.stdout.splitlines():
+            if line.startswith("PICKED:"):
+                p = line[len("PICKED:"):].strip()
+                if p and Path(p).exists():
+                    return str(Path(p).resolve()).replace("\\", "/")
     except Exception as e:
-        print(f"PowerShell dialog error: {e}")
+        print(f"Tkinter picker subprocess error: {e}")
+
+    # 2. Fallback: PowerShell FolderBrowserDialog with TopMost Form
+    ps_cmd = (
+        "Add-Type -AssemblyName System.Windows.Forms; "
+        "$dlg = New-Object System.Windows.Forms.FolderBrowserDialog; "
+        "$dlg.Description = 'Select Photo Folder to Import or Rescan'; "
+        "$dlg.ShowNewFolderButton = $false; "
+        "$form = New-Object System.Windows.Forms.Form; "
+        "$form.TopMost = $true; "
+        "if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output ('PICKED:' + $dlg.SelectedPath) }"
+    )
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_cmd],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        for line in proc.stdout.splitlines():
+            if line.startswith("PICKED:"):
+                p = line[len("PICKED:"):].strip()
+                if p and Path(p).exists():
+                    return str(Path(p).resolve()).replace("\\", "/")
+    except Exception as e:
+        print(f"PowerShell picker error: {e}")
 
     return None
 
@@ -737,6 +771,22 @@ def create_album_endpoint(req: CreateAlbumRequest):
         if "UNIQUE constraint failed" in str(e):
             raise HTTPException(400, f"An album named '{name}' already exists.")
         raise HTTPException(500, f"Failed to create album: {e}")
+
+
+@app.get("/api/albums/{album_id}/folder")
+def get_album_folder_endpoint(album_id: int):
+    """Detect the folder associated with an album based on its member photos."""
+    with get_conn() as conn:
+        album = get_album_by_id(conn, album_id)
+        if not album:
+            raise HTTPException(404, f"Album {album_id} not found.")
+        detected_folder = get_folder_for_album(conn, album_id)
+    return {
+        "status": "ok",
+        "album_id": album_id,
+        "album_name": album["name"],
+        "folder_path": detected_folder,
+    }
 
 
 @app.get("/api/albums/{album_id}")

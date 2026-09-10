@@ -23,7 +23,7 @@ from backend.config import DATA_DIR, CPU_WORKERS, BATCH_SIZE
 from backend.db import (
     init_db, get_conn, get_pending_metadata, get_pending_descriptions,
     get_pending_embeds, update_metadata, update_description, mark_embedded,
-    get_image_by_id, get_stats,
+    get_image_by_id, get_stats, get_albums_for_folder, bulk_add_photos_to_album, create_album,
 )
 from backend.scanner import scan_directory
 from backend.metadata import process_metadata
@@ -304,6 +304,8 @@ def execute_import(
     vlm_model: Optional[str] = None,
     rescan_mode: str = "incremental",
     remove_deleted: bool = True,
+    target_album_id: Optional[int] = None,
+    auto_album_sync: bool = True,
 ):
     """Executes the full import/rescan pipeline in sequence, updating tracker."""
     try:
@@ -319,22 +321,61 @@ def execute_import(
         )
         tracker.stats.update(scan_stats)
 
-        # 2. Metadata extraction & AI description for newly discovered or re-processed files
-        needed_work = scan_stats.get("new", 0) + scan_stats.get("reprocessed", 0)
-        if needed_work > 0:
+        # 2. Synchronize new/existing photos with albums
+        with get_conn() as conn:
+            new_ids = scan_stats.get("new_image_ids", [])
+            all_folder_ids = scan_stats.get("all_folder_image_ids", [])
+
+            if target_album_id == -1:
+                # Create a new album with folder's name if not already existing
+                folder_title = Path(directory).name or "New Album"
+                existing = conn.execute("SELECT id FROM albums WHERE LOWER(name) = ?", (folder_title.lower(),)).fetchone()
+                if existing:
+                    target_id = existing["id"]
+                else:
+                    target_id = create_album(conn, folder_title)
+                if all_folder_ids:
+                    bulk_add_photos_to_album(conn, target_id, all_folder_ids)
+            elif target_album_id and target_album_id > 0:
+                # Add to specific album
+                photos_to_add = all_folder_ids if rescan_mode == "full" else (new_ids or all_folder_ids)
+                if photos_to_add:
+                    bulk_add_photos_to_album(conn, target_album_id, photos_to_add)
+            elif auto_album_sync:
+                # Auto-sync: find any albums containing photos from this directory (or matching name)
+                matching_albums = get_albums_for_folder(conn, directory)
+                for alb in matching_albums:
+                    photos_to_add = all_folder_ids if rescan_mode == "full" else new_ids
+                    if photos_to_add:
+                        bulk_add_photos_to_album(conn, alb["id"], photos_to_add)
+
+        # 3. Check for newly discovered files or incomplete tasks from previous runs
+        with get_conn() as conn:
+            has_pending_meta = len(get_pending_metadata(conn, limit=1)) > 0
+            has_pending_desc = len(get_pending_descriptions(conn, limit=1)) > 0
+            has_pending_embed = len(get_pending_embeds(conn, limit=1)) > 0
+
+        needed_work = (
+            scan_stats.get("new", 0) > 0
+            or scan_stats.get("reprocessed", 0) > 0
+            or has_pending_meta
+            or has_pending_desc
+            or has_pending_embed
+        )
+        if needed_work:
             tracker.phase_started_at = time.time()
             tracker.phase = "metadata"
             meta_count = run_metadata_extraction(callback=tracker.update_metadata)
             tracker.stats["metadata_done"] = meta_count
 
-            # 3. AI Vision Descriptions
+            # 4. AI Vision Descriptions
             if not skip_describe:
                 tracker.phase_started_at = time.time()
                 tracker.phase = "describing"
                 desc_count = run_description_generation(vlm_model=vlm_model, callback=tracker.update_describing)
                 tracker.stats["described"] = desc_count
 
-                # 4. Vector Embedding
+                # 5. Vector Embedding
                 tracker.phase_started_at = time.time()
                 tracker.phase = "embedding"
                 embed_count = run_embedding(callback=tracker.update_embedding)
@@ -372,10 +413,12 @@ class ImportQueueManager:
         vlm_model: Optional[str] = None,
         rescan_mode: str = "incremental",
         remove_deleted: bool = True,
+        target_album_id: Optional[int] = None,
+        auto_album_sync: bool = True,
     ) -> dict:
         with self.lock:
             # Avoid duplicate queuing of exact same folder
-            for d, _, _, _, _ in self.queue:
+            for d, _, _, _, _, _, _ in self.queue:
                 if Path(d).resolve() == Path(directory).resolve():
                     pos = [x[0] for x in self.queue].index(d) + 1
                     return {
@@ -384,7 +427,10 @@ class ImportQueueManager:
                         "queue_length": len(self.queue),
                     }
 
-            self.queue.append((directory, skip_describe, vlm_model, rescan_mode, remove_deleted))
+            self.queue.append((
+                directory, skip_describe, vlm_model, rescan_mode,
+                remove_deleted, target_album_id, auto_album_sync
+            ))
             queue_len = len(self.queue)
 
             if not self.is_running:
@@ -410,7 +456,10 @@ class ImportQueueManager:
                 if not self.queue:
                     self.is_running = False
                     return
-                directory, skip_describe, vlm_model, rescan_mode, remove_deleted = self.queue.popleft()
+                (
+                    directory, skip_describe, vlm_model, rescan_mode,
+                    remove_deleted, target_album_id, auto_album_sync
+                ) = self.queue.popleft()
                 remaining = len(self.queue)
 
             self.tracker.set_queue_info(remaining, Path(directory).name)
@@ -420,6 +469,8 @@ class ImportQueueManager:
                 vlm_model=vlm_model,
                 rescan_mode=rescan_mode,
                 remove_deleted=remove_deleted,
+                target_album_id=target_album_id,
+                auto_album_sync=auto_album_sync,
             )
 
             if self.tracker.cancel_requested:

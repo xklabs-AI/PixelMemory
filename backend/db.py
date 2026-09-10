@@ -344,6 +344,8 @@ def delete_album(conn: sqlite3.Connection, album_id: int) -> bool:
 
 def bulk_add_photos_to_album(conn: sqlite3.Connection, album_id: int, image_ids: list[int]) -> int:
     """Batch add multiple images to an album."""
+    if not image_ids:
+        return 0
     count = 0
     for iid in image_ids:
         conn.execute(
@@ -353,6 +355,56 @@ def bulk_add_photos_to_album(conn: sqlite3.Connection, album_id: int, image_ids:
         count += 1
     conn.execute("UPDATE albums SET updated_at = datetime('now') WHERE id = ?", (album_id,))
     return count
+
+
+def get_albums_for_folder(conn: sqlite3.Connection, folder_path: str) -> list[dict]:
+    """Find albums that contain photos from folder_path or whose name matches the folder name."""
+    norm_folder = str(Path(folder_path).resolve()).replace("\\", "/")
+    folder_name = Path(folder_path).name.strip().lower()
+
+    # 1. Albums containing photos matching folder_path prefix
+    rows = conn.execute("""
+        SELECT DISTINCT a.id, a.name
+        FROM albums a
+        JOIN album_images ai ON a.id = ai.album_id
+        JOIN images i ON ai.image_id = i.id
+        WHERE REPLACE(i.file_path, '\\', '/') LIKE ? || '/%'
+           OR REPLACE(i.file_path, '\\', '/') = ?
+    """, (norm_folder, norm_folder)).fetchall()
+
+    albums_dict = {r["id"]: dict(r) for r in rows}
+
+    # 2. Match by album name == folder name
+    name_rows = conn.execute(
+        "SELECT id, name FROM albums WHERE LOWER(name) = ?", (folder_name,)
+    ).fetchall()
+    for r in name_rows:
+        if r["id"] not in albums_dict:
+            albums_dict[r["id"]] = dict(r)
+
+    return list(albums_dict.values())
+
+
+def get_folder_for_album(conn: sqlite3.Connection, album_id: int) -> str | None:
+    """Detect the primary folder on disk for an album based on its member photos."""
+    rows = conn.execute("""
+        SELECT i.file_path
+        FROM images i
+        JOIN album_images ai ON i.id = ai.image_id
+        WHERE ai.album_id = ?
+        LIMIT 50
+    """, (album_id,)).fetchall()
+    if not rows:
+        return None
+    paths = [Path(r["file_path"]).parent for r in rows if r["file_path"]]
+    if not paths:
+        return None
+    # Find common parent directory
+    common = paths[0]
+    for p in paths[1:]:
+        while common not in p.parents and common != p:
+            common = common.parent
+    return str(common).replace("\\", "/")
 
 
 def bulk_remove_photos_from_album(conn: sqlite3.Connection, album_id: int, image_ids: list[int]) -> int:
