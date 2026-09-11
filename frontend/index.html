@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
     rel="stylesheet">
   <style>
     /* ── Reset & Color Tokens ──────────────────────────── */
@@ -3646,6 +3646,1046 @@
       border-color: rgba(99, 102, 241, 0.5);
       color: #fff;
     }
+
+    /* ═══════════════════════════════════════════════════════
+       THEME SYSTEM (Dark, Ocean, White, Tropical, Christmas, Galaxy, Sunset)
+       ═══════════════════════════════════════════════════════ */
+
+    /* ── 1. Ocean Theme (Deep Abyssal Blue & Glowing Cyan) ── */
+    [data-theme="ocean"] {
+      --bg-main: #061320;
+      --bg-sidebar: rgba(8, 26, 42, 0.82);
+      --bg-rail: rgba(5, 18, 30, 0.9);
+      --bg-surface: rgba(11, 35, 58, 0.7);
+      --bg-surface-hover: rgba(18, 52, 85, 0.85);
+      --bg-card: rgba(9, 29, 48, 0.68);
+      --border: rgba(56, 189, 248, 0.16);
+      --border-highlight: rgba(56, 189, 248, 0.32);
+      --border-glass: rgba(56, 189, 248, 0.14);
+      --border-glow: rgba(14, 165, 233, 0.55);
+      --text: #f0f9ff;
+      --text-muted: #7dd3fc;
+      --text-dim: #38bdf8;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.45);
+      --accent-indigo: #0284c7;
+      --match-green: #14b8a6;
+      --match-green-bg: rgba(20, 184, 166, 0.18);
+      --match-amber: #f59e0b;
+      --match-amber-bg: rgba(245, 158, 11, 0.18);
+    }
+    [data-theme="ocean"] body {
+      background-color: #040e18;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.16) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.14) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(20, 184, 166, 0.12) 0px, transparent 55%);
+    }
+
+    /* ── 2. White / Light Theme (Clean Minimalist Frosted Studio) ── */
+    [data-theme="white"],
+    [data-theme="light"] {
+      --bg-main: #f1f5f9;
+      --bg-sidebar: rgba(255, 255, 255, 0.88);
+      --bg-rail: rgba(241, 245, 249, 0.95);
+      --bg-surface: rgba(255, 255, 255, 0.92);
+      --bg-surface-hover: rgba(238, 242, 255, 0.98);
+      --bg-card: rgba(255, 255, 255, 0.94);
+      --border: rgba(15, 23, 42, 0.1);
+      --border-highlight: rgba(15, 23, 42, 0.2);
+      --border-glass: rgba(15, 23, 42, 0.08);
+      --border-glow: rgba(37, 99, 235, 0.35);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.25);
+      --accent-indigo: #4f46e5;
+      --match-green: #059669;
+      --match-green-bg: rgba(5, 150, 105, 0.14);
+      --match-amber: #d97706;
+      --match-amber-bg: rgba(217, 119, 6, 0.14);
+    }
+    [data-theme="white"] body,
+    [data-theme="light"] body {
+      background-color: #e8eef6;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.1) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.07) 0px, transparent 55%);
+    }
+    [data-theme="white"] .top-header,
+    [data-theme="light"] .top-header {
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="white"] .brand,
+    [data-theme="light"] .brand {
+      color: #0f172a;
+    }
+    [data-theme="white"] .search-input,
+    [data-theme="light"] .search-input,
+    [data-theme="white"] .ai-input,
+    [data-theme="light"] .ai-input {
+      color: #0f172a;
+      background: rgba(241, 245, 249, 0.9);
+    }
+    [data-theme="white"] .modal-window,
+    [data-theme="light"] .modal-window {
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="white"] .modal-title,
+    [data-theme="light"] .modal-title {
+      color: #0f172a;
+    }
+
+    /* ── 3. Tropical Theme (Rainforest Emerald, Warm Sunset Coral) ── */
+    [data-theme="tropical"] {
+      --bg-main: #061811;
+      --bg-sidebar: rgba(7, 28, 20, 0.84);
+      --bg-rail: rgba(4, 20, 14, 0.9);
+      --bg-surface: rgba(10, 42, 30, 0.7);
+      --bg-surface-hover: rgba(16, 62, 44, 0.85);
+      --bg-card: rgba(8, 33, 24, 0.68);
+      --border: rgba(52, 211, 153, 0.16);
+      --border-highlight: rgba(52, 211, 153, 0.32);
+      --border-glass: rgba(52, 211, 153, 0.14);
+      --border-glow: rgba(16, 185, 129, 0.55);
+      --text: #ecfdf5;
+      --text-muted: #6ee7b7;
+      --text-dim: #34d399;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.45);
+      --accent-indigo: #f59e0b;
+      --match-green: #10b981;
+      --match-green-bg: rgba(16, 185, 129, 0.18);
+      --match-amber: #f97316;
+      --match-amber-bg: rgba(249, 115, 22, 0.18);
+    }
+    [data-theme="tropical"] body {
+      background-color: #04120d;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.16) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.14) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(20, 184, 166, 0.12) 0px, transparent 55%);
+    }
+
+    /* ── 4. Christmas Theme (Festive Ruby Crimson, Evergreen Pine & Gold) ── */
+    [data-theme="christmas"] {
+      --bg-main: #14080a;
+      --bg-sidebar: rgba(30, 11, 15, 0.85);
+      --bg-rail: rgba(22, 7, 10, 0.9);
+      --bg-surface: rgba(48, 16, 22, 0.7);
+      --bg-surface-hover: rgba(72, 24, 33, 0.85);
+      --bg-card: rgba(38, 13, 18, 0.68);
+      --border: rgba(244, 63, 94, 0.18);
+      --border-highlight: rgba(234, 179, 8, 0.35);
+      --border-glass: rgba(244, 63, 94, 0.14);
+      --border-glow: rgba(239, 68, 68, 0.55);
+      --text: #fff1f2;
+      --text-muted: #fecdd3;
+      --text-dim: #fb7185;
+      --accent: #ef4444;
+      --accent-glow: rgba(239, 68, 68, 0.45);
+      --accent-indigo: #eab308;
+      --match-green: #22c55e;
+      --match-green-bg: rgba(34, 197, 94, 0.18);
+      --match-amber: #eab308;
+      --match-amber-bg: rgba(234, 179, 8, 0.18);
+    }
+    [data-theme="christmas"] body {
+      background-color: #0e0507;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.18) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(34, 197, 94, 0.14) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(234, 179, 8, 0.12) 0px, transparent 55%);
+    }
+
+    /* ── 5. Galaxy Theme (Cosmic Midnight Violet, Starlight Magenta) ── */
+    [data-theme="galaxy"] {
+      --bg-main: #0c071c;
+      --bg-sidebar: rgba(20, 10, 38, 0.85);
+      --bg-rail: rgba(13, 6, 26, 0.9);
+      --bg-surface: rgba(36, 17, 65, 0.7);
+      --bg-surface-hover: rgba(54, 26, 96, 0.85);
+      --bg-card: rgba(27, 13, 50, 0.68);
+      --border: rgba(168, 85, 247, 0.18);
+      --border-highlight: rgba(216, 180, 254, 0.35);
+      --border-glass: rgba(168, 85, 247, 0.14);
+      --border-glow: rgba(168, 85, 247, 0.55);
+      --text: #faf5ff;
+      --text-muted: #e9d5ff;
+      --text-dim: #c084fc;
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.45);
+      --accent-indigo: #ec4899;
+      --match-green: #34d399;
+      --match-green-bg: rgba(52, 211, 153, 0.18);
+      --match-amber: #f472b6;
+      --match-amber-bg: rgba(244, 114, 182, 0.18);
+    }
+    [data-theme="galaxy"] body {
+      background-color: #080413;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.18) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.14) 0px, transparent 55%);
+    }
+
+    /* ── 6. Sunset Theme (Twilight Rose & Tangerine Glow) ── */
+    [data-theme="sunset"] {
+      --bg-main: #180a12;
+      --bg-sidebar: rgba(35, 12, 24, 0.85);
+      --bg-rail: rgba(24, 8, 16, 0.9);
+      --bg-surface: rgba(54, 18, 36, 0.7);
+      --bg-surface-hover: rgba(80, 26, 52, 0.85);
+      --bg-card: rgba(42, 14, 28, 0.68);
+      --border: rgba(249, 115, 22, 0.18);
+      --border-highlight: rgba(251, 146, 60, 0.35);
+      --border-glass: rgba(249, 115, 22, 0.14);
+      --border-glow: rgba(249, 115, 22, 0.55);
+      --text: #fff7ed;
+      --text-muted: #fed7aa;
+      --text-dim: #fb923c;
+      --accent: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.45);
+      --accent-indigo: #f43f5e;
+      --match-green: #10b981;
+      --match-green-bg: rgba(16, 185, 129, 0.18);
+      --match-amber: #f97316;
+      --match-amber-bg: rgba(249, 115, 22, 0.18);
+    }
+    [data-theme="sunset"] body {
+      background-color: #10060c;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(249, 115, 22, 0.18) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.15) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(234, 179, 8, 0.12) 0px, transparent 55%);
+    }
+
+    /* ── Theme Popover Dropdown ────────────────────────── */
+    .theme-popover {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 240px;
+      background: var(--bg-surface);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
+      border: 1px solid var(--border-highlight);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), var(--glass-inner-bevel);
+      padding: 0.75rem;
+      z-index: 100;
+      animation: popIn 0.18s var(--ease-spring);
+    }
+    .theme-popover-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      padding-left: 0.25rem;
+    }
+    .theme-options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .theme-option-card {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-align: left;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+    .theme-option-card:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border);
+    }
+    .theme-option-card.active {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .theme-swatch-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       COLLAGE STUDIO STYLES
+       ═══════════════════════════════════════════════════════ */
+    .collage-modal-window {
+      max-width: 1280px;
+      width: 95vw;
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .collage-modal-header {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .collage-badge {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: #38bdf8;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+    }
+    .collage-studio-body {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-main);
+    }
+    @media (max-width: 960px) {
+      .collage-studio-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        overflow-y: auto;
+      }
+    }
+
+    /* ── Left Preview Pane ────────────────────────────── */
+    .collage-preview-pane {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .collage-canvas-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      z-index: 5;
+    }
+    .canvas-info-badge {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+    .canvas-tool-btn {
+      background: var(--bg-surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+    .canvas-tool-btn:hover {
+      border-color: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .collage-canvas-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      overflow: auto;
+      background: 
+        radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+        rgba(0, 0, 0, 0.3);
+    }
+    .collage-canvas-wrapper {
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s var(--ease-spring);
+    }
+    #collageCanvas {
+      display: block;
+      max-width: 100%;
+      max-height: 52vh;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    /* ── Bottom Photo Tray ────────────────────────────── */
+    .collage-photos-tray {
+      padding: 0.65rem 1rem;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .tray-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .tray-items-scroller {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      scrollbar-width: thin;
+    }
+    .collage-tray-item {
+      position: relative;
+      width: 58px;
+      height: 58px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      cursor: grab;
+      background: #000;
+      transition: all 0.15s ease;
+    }
+    .collage-tray-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .collage-tray-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .collage-tray-item .tray-item-index {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .collage-tray-item .tray-item-remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(239, 68, 68, 0.85);
+      color: #fff;
+      font-size: 0.7rem;
+      line-height: 1;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .collage-tray-item:hover .tray-item-remove {
+      opacity: 1;
+    }
+    .collage-tray-add-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border-highlight);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .collage-tray-add-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── Right Controls Pane ──────────────────────────── */
+    .collage-controls-pane {
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      background: var(--bg-sidebar);
+    }
+    .control-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .control-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .control-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Aspect Ratio Grid */
+    .aspect-ratio-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    @media (max-width: 1200px) {
+      .aspect-ratio-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .aspect-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.5rem 0.35rem;
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .aspect-pill small {
+      font-size: 0.62rem;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+    .aspect-pill:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-highlight);
+      color: var(--text);
+    }
+    .aspect-pill.active {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .aspect-ratio-box {
+      border: 1.5px solid currentColor;
+      border-radius: 2px;
+      opacity: 0.8;
+    }
+    .ratio-1-1 { width: 14px; height: 14px; }
+    .ratio-4-3 { width: 16px; height: 12px; }
+    .ratio-3-2 { width: 18px; height: 12px; }
+    .ratio-16-9 { width: 20px; height: 11px; }
+    .ratio-9-16 { width: 11px; height: 20px; }
+    .ratio-2-3 { width: 12px; height: 18px; }
+    .ratio-3-4 { width: 12px; height: 16px; }
+    .ratio-4-5 { width: 13px; height: 16px; }
+
+    /* Layout Templates Grid */
+    .layout-template-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    @media (max-width: 1200px) {
+      .layout-template-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .layout-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.35rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .layout-card:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-highlight);
+      color: var(--text);
+    }
+    .layout-card.active {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .layout-preview-icon {
+      width: 32px;
+      height: 24px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 2px;
+      display: flex;
+      gap: 2px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    .layout-ico-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1.5px;
+    }
+    .layout-ico-grid span { background: rgba(255, 255, 255, 0.6); border-radius: 1px; }
+    .layout-ico-hero-left {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.5px;
+    }
+    .layout-ico-hero-left .hero { background: rgba(255, 255, 255, 0.75); grid-row: span 2; border-radius: 1px; }
+    .layout-ico-hero-left .sub { background: rgba(255, 255, 255, 0.45); border-radius: 1px; }
+    .layout-ico-hero-top {
+      display: grid;
+      grid-template-rows: 1.2fr 1fr;
+      gap: 1.5px;
+    }
+    .layout-ico-hero-top .hero-top { background: rgba(255, 255, 255, 0.75); grid-column: span 2; border-radius: 1px; }
+    .layout-ico-hero-top .sub { background: rgba(255, 255, 255, 0.45); border-radius: 1px; }
+    .layout-ico-columns {
+      display: flex;
+      gap: 1.5px;
+    }
+    .layout-ico-columns span { flex: 1; background: rgba(255, 255, 255, 0.6); border-radius: 1px; }
+    .layout-ico-polaroid {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      justify-content: center;
+    }
+    .layout-ico-polaroid .pol-card {
+      width: 12px;
+      height: 16px;
+      background: #fff;
+      padding: 1.5px 1.5px 4px 1.5px;
+      border-radius: 1px;
+    }
+    .layout-ico-polaroid .pol-inner {
+      width: 100%;
+      height: 100%;
+      background: #3b82f6;
+    }
+    .layout-ico-filmstrip {
+      display: flex;
+      gap: 1.5px;
+      background: #111;
+      padding: 2px 1px;
+      border-top: 1.5px dashed rgba(255,255,255,0.4);
+      border-bottom: 1.5px dashed rgba(255,255,255,0.4);
+    }
+    .layout-ico-filmstrip span { flex: 1; background: rgba(255, 255, 255, 0.5); border-radius: 1px; }
+    .layout-ico-masonry {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5px;
+    }
+    .layout-ico-masonry span { background: rgba(255,255,255,0.6); border-radius: 1px; }
+    .layout-ico-masonry span:nth-child(1) { height: 14px; }
+    .layout-ico-masonry span:nth-child(2) { height: 8px; }
+    .layout-ico-masonry span:nth-child(3) { height: 8px; }
+    .layout-ico-masonry span:nth-child(4) { height: 14px; }
+
+    /* Sliders */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .slider-val {
+      font-family: var(--font-mono);
+      color: var(--text);
+    }
+    .custom-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 2px;
+      outline: none;
+    }
+    .custom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-glow);
+      transition: transform 0.1s;
+    }
+    .custom-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Background Palette */
+    .bg-palette-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .palette-swatch {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .palette-swatch:hover {
+      transform: scale(1.15);
+    }
+    .palette-swatch.active {
+      border-color: var(--accent);
+      transform: scale(1.2);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .palette-color-picker-label {
+      position: relative;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px dashed var(--border-highlight);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      font-size: 0.7rem;
+    }
+    .palette-color-picker-label input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    /* Custom Switch */
+    .custom-switch-label {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+    }
+    .custom-switch-label input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .custom-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      transition: 0.2s;
+    }
+    .custom-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .custom-switch-label input:checked + .custom-switch-slider {
+      background: var(--accent);
+    }
+    .custom-switch-label input:checked + .custom-switch-slider:before {
+      transform: translateX(14px);
+    }
+
+    /* Export Section */
+    .export-section {
+      gap: 0.75rem;
+    }
+    .export-btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .export-main-btn {
+      grid-column: 1 / -1;
+      padding: 0.65rem;
+      font-size: 0.85rem;
+    }
+    .save-feedback {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .save-feedback.success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Photo Picker Modal for Collage */
+    .collage-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 0.6rem;
+      max-height: 55vh;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .picker-photo-card {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: #000;
+      transition: all 0.15s ease;
+    }
+    .picker-photo-card:hover {
+      transform: scale(1.03);
+      border-color: var(--border-highlight);
+    }
+    .picker-photo-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .picker-photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .picker-check-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .picker-photo-card.selected .picker-check-badge {
+      background: var(--accent);
+      border-color: #fff;
+    }
+
+    /* ── AI Search Insight Banner ──────────────────────── */
+    .ai-insight-banner {
+      background: var(--bg-surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-highlight);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      margin: 0.5rem 1.25rem 0.25rem 1.25rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), var(--glass-inner-bevel);
+      animation: fadeIn 0.2s var(--ease-spring);
+    }
+    .ai-insight-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .ai-insight-sparkle {
+      font-size: 1.15rem;
+      color: var(--accent);
+      animation: pulse 2.5s infinite ease-in-out;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .ai-insight-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .ai-insight-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+    }
+    .ai-insight-explanation {
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .ai-insight-explanation strong, .ai-insight-explanation b {
+      color: #fff;
+      font-weight: 600;
+    }
+    .ai-insight-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+    .ai-insight-close-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .ai-insight-chips-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .ai-extracted-chip {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.28);
+      color: #93c5fd;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .ai-extracted-chip .chip-remove {
+      cursor: pointer;
+      font-size: 0.8rem;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.1s;
+    }
+    .ai-extracted-chip .chip-remove:hover {
+      opacity: 1;
+      color: #fff;
+    }
+    .ai-insight-suggestions-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px dashed var(--border);
+      padding-top: 0.4rem;
+    }
+    .suggestions-label {
+      font-weight: 600;
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .suggestions-list {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .suggestion-pill {
+      background: var(--bg-surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      padding: 0.18rem 0.55rem;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .suggestion-pill:hover {
+      border-color: var(--accent);
+      color: var(--text);
+      background: rgba(59, 130, 246, 0.15);
+      transform: translateY(-1px);
+    }
+    .ai-mic-active {
+      background: #ef4444 !important;
+      color: #fff !important;
+      animation: pulse 1s infinite ease-in-out;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
+    }
   </style>
 </head>
 
@@ -3693,6 +4733,26 @@
           <div class="live-dot"></div>
           <span id="modelText">Local Model: Moondream2 · MiniLM-L6</span>
         </div>
+        <!-- Theme Popover Dropdown -->
+        <div style="position: relative;">
+          <button class="icon-btn" id="themeHeaderBtn" title="Switch UI Theme (Ocean, White, Tropical, Christmas, Galaxy, Sunset, Dark)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2"/>
+              <path d="M12 20v2"/>
+              <path d="m4.93 4.93 1.41 1.41"/>
+              <path d="m17.66 17.66 1.41 1.41"/>
+              <path d="M2 12h2"/>
+              <path d="M20 12h2"/>
+              <path d="m6.34 17.66-1.41 1.41"/>
+              <path d="m19.07 4.93-1.41 1.41"/>
+            </svg>
+          </button>
+          <div class="theme-popover" id="themePopover" style="display: none;">
+            <div class="theme-popover-title">Visual Theme</div>
+            <div class="theme-options-grid" id="themeOptionsGrid"></div>
+          </div>
+        </div>
         <button class="icon-btn" id="settingsBtn" title="Platform Settings & Library">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -3725,6 +4785,16 @@
             </svg>
           </span>
           <span>Albums</span>
+        </div>
+        <div class="rail-item" id="railCollage" title="Photo Collage Studio">
+          <span class="rail-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="8" height="8" x="3" y="3" rx="1.5"/>
+              <rect width="8" height="8" x="13" y="3" rx="1.5"/>
+              <rect width="18" height="8" x="3" y="13" rx="1.5"/>
+            </svg>
+          </span>
+          <span>Collage</span>
         </div>
         <div class="rail-item" id="railNotes" title="Notes & Journals">
           <span class="rail-icon">
@@ -4003,6 +5073,23 @@
           <div id="statsSummary">12 searchable vectors</div>
         </div>
 
+        <!-- AI Query Understanding Insight Banner -->
+        <div class="ai-insight-banner" id="aiInsightBanner" style="display: none;">
+          <div class="ai-insight-main">
+            <div class="ai-insight-sparkle">✨</div>
+            <div class="ai-insight-content">
+              <div class="ai-insight-title">AI Search Understanding</div>
+              <div class="ai-insight-explanation" id="aiInsightExplanation">Searching for matching scenes...</div>
+              <div class="ai-insight-chips-row" id="aiInsightChipsRow"></div>
+            </div>
+            <button class="ai-insight-close-btn" id="aiInsightCloseBtn" title="Dismiss AI Insights">✕</button>
+          </div>
+          <div class="ai-insight-suggestions" id="aiInsightSuggestions" style="display: none;">
+            <span class="suggestions-label">Try:</span>
+            <div class="suggestions-list" id="aiInsightSuggestionsList"></div>
+          </div>
+        </div>
+
         <!-- Photo Grid Gallery -->
         <div class="gallery-viewport" id="viewport">
           <div class="gallery-grid" id="grid"></div>
@@ -4189,11 +5276,17 @@
             <div class="info-path" id="modalPath"></div>
           </div>
 
-          <div class="info-block" style="margin-top: 0.5rem;">
+          <div class="info-block" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
             <button class="cta-btn" id="modalAddToAlbumBtn"
-              style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem;">
+              style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem;">
               <span>➕</span>
               <span>Add to Album</span>
+            </button>
+            <button class="tool-btn" id="modalCreateCollageBtn"
+              style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem; font-size: 0.85rem; color: #67e8f9; border-color: rgba(6, 182, 212, 0.4);"
+              title="Create a collage with this and related photos">
+              <span>✨</span>
+              <span>Collage</span>
             </button>
           </div>
         </div>
@@ -4535,6 +5628,18 @@
           </div>
         </div>
 
+        <!-- UI Theme Selection in Settings -->
+        <div class="setting-row">
+          <label>🎨 Interface Visual Theme</label>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+            Choose a visual atmosphere for the entire interface (saved automatically):
+          </div>
+          <div class="theme-settings-grid" id="settingsThemeGrid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 0.5rem;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
         <div class="setting-row">
           <label>Index Photo Directory</label>
           <input type="text" id="ingestFolderInput" class="setting-input" placeholder="e.g. ./photos/archive" />
@@ -4597,6 +5702,7 @@
   <div class="floating-selection-dock" id="floatingSelectionDock">
     <div class="dock-count-badge" id="dockSelectedCount">0 selected</div>
     <button class="dock-btn" id="dockSelectAllBtn">Select All</button>
+    <button class="dock-btn" id="dockCollageBtn" title="Create a photo collage with selected pictures" style="color: #67e8f9; border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.12); font-weight: 600;">✨ Collage</button>
     <button class="dock-btn" id="dockStoryBtn" title="Generate AI Story for selected photos" style="color: #c4b5fd; border-color: rgba(99,102,241,0.35); background: rgba(99,102,241,0.12);">📖 Story</button>
     <button class="dock-btn" id="dockAddAlbumBtn" title="Add selected photos to an album">➕ Album</button>
     <button class="dock-btn" id="dockMoveAlbumBtn" title="Move selected photos to another album">↗️ Move</button>
@@ -4955,6 +6061,284 @@
     </div>
   </div>
 
+  <!-- Collage Studio Modal -->
+  <div class="modal-backdrop" id="collageModal">
+    <div class="modal-window collage-modal-window">
+      <div class="modal-top collage-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>✨ Photo Collage Studio</span>
+            <span class="collage-badge" id="collagePhotoCountBadge">0 photos</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <button type="button" class="tool-btn" id="collagePickMoreBtn" title="Add more photos from library">
+            <span>+ Add Photos</span>
+          </button>
+          <button class="modal-close-btn" id="collageCloseBtn">&times;</button>
+        </div>
+      </div>
+
+      <div class="collage-studio-body">
+        <!-- Left: Live Canvas Viewport -->
+        <div class="collage-preview-pane">
+          <div class="collage-canvas-toolbar">
+            <div class="canvas-info-badge" id="canvasDimensionsBadge">2048 × 2048 px · 1:1</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button class="canvas-tool-btn" id="collageShuffleBtn" title="Randomize photo order">
+                🔀 Shuffle
+              </button>
+              <button class="canvas-tool-btn" id="collageFitToggleBtn" title="Toggle Fill (Cover) vs Fit (Contain)">
+                🖼️ Fit: Cover
+              </button>
+            </div>
+          </div>
+
+          <div class="collage-canvas-stage" id="collageCanvasStage">
+            <div class="collage-canvas-wrapper" id="collageCanvasWrapper">
+              <canvas id="collageCanvas" width="2048" height="2048"></canvas>
+            </div>
+          </div>
+
+          <!-- Bottom Photos Strip (Reorder, Swap, Remove) -->
+          <div class="collage-photos-tray">
+            <div class="tray-label">
+              <span>Collage Photos (<span id="collageTrayCount">0</span>)</span>
+              <span style="font-size: 0.68rem; color: var(--text-dim);">Drag or click arrows to reorder</span>
+            </div>
+            <div class="tray-items-scroller" id="collageTrayItems"></div>
+          </div>
+        </div>
+
+        <!-- Right: Inspector / Controls Pane -->
+        <div class="collage-controls-pane">
+          <!-- Section 1: Aspect Ratio -->
+          <div class="control-section">
+            <label class="control-heading">1. Aspect Ratio</label>
+            <div class="aspect-ratio-grid" id="aspectRatioGrid">
+              <button type="button" class="aspect-pill active" data-ratio="1:1" data-w="1" data-h="1">
+                <span class="aspect-ratio-box ratio-1-1"></span>
+                <span>1:1</span>
+                <small>Square</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="4:3" data-w="4" data-h="3">
+                <span class="aspect-ratio-box ratio-4-3"></span>
+                <span>4:3</span>
+                <small>Standard</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="3:2" data-w="3" data-h="2">
+                <span class="aspect-ratio-box ratio-3-2"></span>
+                <span>3:2</span>
+                <small>4x6 Photo</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="16:9" data-w="16" data-h="9">
+                <span class="aspect-ratio-box ratio-16-9"></span>
+                <span>16:9</span>
+                <small>Widescreen</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="9:16" data-w="9" data-h="16">
+                <span class="aspect-ratio-box ratio-9-16"></span>
+                <span>9:16</span>
+                <small>Story/Reels</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="2:3" data-w="2" data-h="3">
+                <span class="aspect-ratio-box ratio-2-3"></span>
+                <span>2:3</span>
+                <small>Portrait</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="3:4" data-w="3" data-h="4">
+                <span class="aspect-ratio-box ratio-3-4"></span>
+                <span>3:4</span>
+                <small>Vertical</small>
+              </button>
+              <button type="button" class="aspect-pill" data-ratio="4:5" data-w="4" data-h="5">
+                <span class="aspect-ratio-box ratio-4-5"></span>
+                <span>4:5</span>
+                <small>8x10 Print</small>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 2: Layout Frame Template -->
+          <div class="control-section">
+            <label class="control-heading">2. Layout Frame Style</label>
+            <div class="layout-template-grid" id="layoutTemplateGrid">
+              <button type="button" class="layout-card active" data-layout="grid">
+                <div class="layout-preview-icon layout-ico-grid">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <span>Grid</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="hero-left">
+                <div class="layout-preview-icon layout-ico-hero-left">
+                  <span class="hero"></span><span class="sub"></span><span class="sub"></span>
+                </div>
+                <span>Hero Left</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="hero-top">
+                <div class="layout-preview-icon layout-ico-hero-top">
+                  <span class="hero-top"></span><span class="sub"></span><span class="sub"></span>
+                </div>
+                <span>Hero Top</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="side-by-side">
+                <div class="layout-preview-icon layout-ico-columns">
+                  <span></span><span></span><span></span>
+                </div>
+                <span>Columns</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="polaroid">
+                <div class="layout-preview-icon layout-ico-polaroid">
+                  <div class="pol-card"><div class="pol-inner"></div></div>
+                  <div class="pol-card"><div class="pol-inner"></div></div>
+                </div>
+                <span>Polaroid</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="filmstrip">
+                <div class="layout-preview-icon layout-ico-filmstrip">
+                  <span></span><span></span><span></span>
+                </div>
+                <span>Filmstrip</span>
+              </button>
+              <button type="button" class="layout-card" data-layout="masonry">
+                <div class="layout-preview-icon layout-ico-masonry">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <span>Masonry</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Spacing & Radius -->
+          <div class="control-section">
+            <label class="control-heading">3. Spacing & Borders</label>
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Inner Spacing / Gap</span>
+                <span class="slider-val" id="valGap">16px</span>
+              </div>
+              <input type="range" id="sliderGap" min="0" max="48" value="16" class="custom-slider" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Outer Margin / Border</span>
+                <span class="slider-val" id="valPadding">24px</span>
+              </div>
+              <input type="range" id="sliderPadding" min="0" max="64" value="24" class="custom-slider" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Corner Rounding</span>
+                <span class="slider-val" id="valRadius">16px</span>
+              </div>
+              <input type="range" id="sliderRadius" min="0" max="48" value="16" class="custom-slider" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Photo Border Width</span>
+                <span class="slider-val" id="valBorderWidth">0px</span>
+              </div>
+              <input type="range" id="sliderBorderWidth" min="0" max="16" value="0" class="custom-slider" />
+            </div>
+          </div>
+
+          <!-- Section 4: Frame & Background Color -->
+          <div class="control-section">
+            <label class="control-heading">4. Frame & Background Color</label>
+            <div class="bg-palette-row">
+              <button type="button" class="palette-swatch active" data-bg="#ffffff" style="background:#ffffff;" title="Crisp White"></button>
+              <button type="button" class="palette-swatch" data-bg="#090d16" style="background:#090d16;" title="Onyx Dark"></button>
+              <button type="button" class="palette-swatch" data-bg="#f5f0e6" style="background:#f5f0e6;" title="Warm Cream / Linen"></button>
+              <button type="button" class="palette-swatch" data-bg="#1e293b" style="background:#1e293b;" title="Slate Navy"></button>
+              <button type="button" class="palette-swatch" data-bg="gradient-ocean" style="background: linear-gradient(135deg, #0f172a, #0369a1, #0d9488);" title="Ocean Gradient"></button>
+              <button type="button" class="palette-swatch" data-bg="gradient-sunset" style="background: linear-gradient(135deg, #431407, #c2410c, #db2777);" title="Sunset Glow"></button>
+              <button type="button" class="palette-swatch" data-bg="gradient-galaxy" style="background: linear-gradient(135deg, #1e1b4b, #581c87, #be185d);" title="Cosmic Galaxy"></button>
+              <button type="button" class="palette-swatch" data-bg="gradient-emerald" style="background: linear-gradient(135deg, #022c22, #047857, #ca8a04);" title="Emerald Aurora"></button>
+              <label class="palette-color-picker-label" title="Custom color picker">
+                <input type="color" id="collageCustomColor" value="#ffffff" />
+                <span class="picker-icon">🎨</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 5: Caption & Title Overlay -->
+          <div class="control-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+              <label class="control-heading" style="margin-bottom: 0;">5. Caption & Title Overlay</label>
+              <label class="custom-switch-label">
+                <input type="checkbox" id="collageTextToggle" />
+                <span class="custom-switch-slider"></span>
+              </label>
+            </div>
+            <div id="collageTextControls" style="display: none; flex-direction: column; gap: 0.6rem;">
+              <input type="text" id="collageTitleInput" class="setting-input" placeholder="Title (e.g. Summer Vacation 2026)" />
+              <input type="text" id="collageSubtitleInput" class="setting-input" placeholder="Subtitle / Date (e.g. July 2026 · Lake Tahoe)" />
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <select id="collageFontSelect" class="filter-select">
+                  <option value="Inter">Modern Sans (Inter)</option>
+                  <option value="Playfair Display">Editorial Serif</option>
+                  <option value="Caveat">Handwritten Script</option>
+                  <option value="JetBrains Mono">Monospace</option>
+                </select>
+                <select id="collageTextAlignSelect" class="filter-select">
+                  <option value="center">Align: Center</option>
+                  <option value="left">Align: Left</option>
+                  <option value="bottom-polaroid">Polaroid Bottom</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6: Export Actions -->
+          <div class="control-section export-section">
+            <label class="control-heading">6. Export & Share</label>
+            <div class="export-btn-grid">
+              <button type="button" class="cta-btn export-main-btn" id="collageDownloadPngBtn">
+                <span>📥 Download High-Res PNG</span>
+              </button>
+              <button type="button" class="tool-btn" id="collageDownloadJpgBtn">
+                <span>🖼️ Download JPEG</span>
+              </button>
+              <button type="button" class="tool-btn" id="collageCopyClipboardBtn">
+                <span>📋 Copy to Clipboard</span>
+              </button>
+              <button type="button" class="tool-btn" id="collageSaveLibraryBtn" style="color: #67e8f9; border-color: rgba(6,182,212,0.4);">
+                <span>💾 Save to PixelMemory</span>
+              </button>
+            </div>
+            <div id="collageSaveFeedback" class="save-feedback" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Picker Modal for Collage -->
+  <div class="modal-backdrop" id="collagePickerModal">
+    <div class="modal-window" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-top">
+        <div class="modal-title">📸 Select Photos for Collage</div>
+        <button class="modal-close-btn" id="collagePickerCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <input type="text" id="collagePickerSearchInput" class="setting-input" placeholder="Filter library photos..." style="max-width: 320px;" />
+          <span id="collagePickerCountText" style="font-size: 0.75rem; color: var(--text-muted);">0 photos selected</span>
+        </div>
+        <div class="collage-picker-grid" id="collagePickerGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="tool-btn" id="collagePickerCancelBtn">Cancel</button>
+        <button type="button" class="cta-btn" id="collagePickerConfirmBtn">Add to Collage</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast" class="toast"></div>
 
@@ -4999,6 +6383,1001 @@
       toast.classList.add('show');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    // ── Visual Themes System ─────────────────────────────────
+    const THEMES = [
+      { id: 'dark', name: 'Dark Onyx', icon: '🌑', color: '#3b82f6', desc: 'Cyber Sapphire & Glass' },
+      { id: 'ocean', name: 'Ocean Abyssal', icon: '🌊', color: '#06b6d4', desc: 'Marine Cyan & Deep Sea Glow' },
+      { id: 'white', name: 'White Studio', icon: '☀️', color: '#2563eb', desc: 'Clean Minimalist Frosted Light' },
+      { id: 'tropical', name: 'Tropical Palm', icon: '🌴', color: '#10b981', desc: 'Rainforest Emerald & Amber' },
+      { id: 'christmas', name: 'Christmas Festive', icon: '🎄', color: '#ef4444', desc: 'Ruby Crimson & Pine Gold' },
+      { id: 'galaxy', name: 'Galaxy Cosmic', icon: '🌌', color: '#a855f7', desc: 'Midnight Violet & Magenta' },
+      { id: 'sunset', name: 'Sunset Glow', icon: '🌅', color: '#f97316', desc: 'Twilight Rose & Tangerine' },
+    ];
+
+    let currentTheme = localStorage.getItem('pixelmemory_theme') || 'dark';
+
+    function applyTheme(themeId, save = true) {
+      const matched = THEMES.find(t => t.id === themeId) || THEMES[0];
+      currentTheme = matched.id;
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      document.body.setAttribute('data-theme', currentTheme);
+      if (save) {
+        try { localStorage.setItem('pixelmemory_theme', currentTheme); } catch (e) {}
+      }
+
+      // Update UI active indicators
+      document.querySelectorAll('.theme-option-card').forEach(card => {
+        card.classList.toggle('active', card.getAttribute('data-theme-id') === currentTheme);
+      });
+      document.querySelectorAll('.settings-theme-card').forEach(card => {
+        card.classList.toggle('active', card.getAttribute('data-theme-id') === currentTheme);
+      });
+    }
+
+    function initThemeUI() {
+      // 1. Populate Header Popover
+      const popoverGrid = $('#themeOptionsGrid');
+      if (popoverGrid) {
+        popoverGrid.innerHTML = THEMES.map(t => `
+          <button type="button" class="theme-option-card ${t.id === currentTheme ? 'active' : ''}" data-theme-id="${t.id}">
+            <span class="theme-swatch-dot" style="background: ${t.color};"></span>
+            <span style="flex: 1;">${t.icon} ${t.name}</span>
+          </button>
+        `).join('');
+
+        popoverGrid.querySelectorAll('.theme-option-card').forEach(btn => {
+          btn.addEventListener('click', () => {
+            applyTheme(btn.getAttribute('data-theme-id'));
+            $('#themePopover').style.display = 'none';
+          });
+        });
+      }
+
+      // 2. Populate Settings Theme Grid
+      const settingsGrid = $('#settingsThemeGrid');
+      if (settingsGrid) {
+        settingsGrid.innerHTML = THEMES.map(t => `
+          <div class="theme-option-card settings-theme-card ${t.id === currentTheme ? 'active' : ''}" data-theme-id="${t.id}" style="padding: 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-surface); cursor: pointer; display: flex; align-items: center; gap: 0.55rem;">
+            <span class="theme-swatch-dot" style="background: ${t.color}; width: 18px; height: 18px;"></span>
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 600; font-size: 0.78rem;">${t.icon} ${t.name}</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted);">${t.desc}</span>
+            </div>
+          </div>
+        `).join('');
+
+        settingsGrid.querySelectorAll('.settings-theme-card').forEach(card => {
+          card.addEventListener('click', () => {
+            applyTheme(card.getAttribute('data-theme-id'));
+          });
+        });
+      }
+
+      // 3. Header toggle button & click-outside dismiss
+      const headerBtn = $('#themeHeaderBtn');
+      const popover = $('#themePopover');
+      if (headerBtn && popover) {
+        headerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isShown = popover.style.display !== 'none';
+          popover.style.display = isShown ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!popover.contains(e.target) && e.target !== headerBtn) {
+            popover.style.display = 'none';
+          }
+        });
+      }
+
+      // Apply initial theme immediately
+      applyTheme(currentTheme, false);
+    }
+
+    // ── Collage Studio Engine ────────────────────────────────
+    let collageState = {
+      photos: [],
+      aspectRatio: '1:1',
+      ratioW: 1,
+      ratioH: 1,
+      layout: 'grid',
+      gap: 16,
+      padding: 24,
+      radius: 16,
+      borderWidth: 0,
+      borderColor: '#ffffff',
+      bgType: 'solid',
+      bgValue: '#ffffff',
+      fitMode: 'cover',
+      showText: false,
+      title: '',
+      subtitle: '',
+      font: 'Inter',
+      textAlign: 'center',
+      textColor: '#0f172a',
+    };
+
+    const collageImageCache = new Map();
+
+    async function loadCanvasImage(url) {
+      if (collageImageCache.has(url)) {
+        return collageImageCache.get(url);
+      }
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          collageImageCache.set(url, img);
+          resolve(img);
+        };
+        img.onerror = () => {
+          resolve(null);
+        };
+        img.src = url;
+      });
+    }
+
+    function openCollageModal(initialPhotosOrIds = []) {
+      let photos = [];
+      if (Array.isArray(initialPhotosOrIds) && initialPhotosOrIds.length > 0) {
+        if (typeof initialPhotosOrIds[0] === 'object') {
+          photos = [...initialPhotosOrIds];
+        } else {
+          const idSet = new Set(initialPhotosOrIds.map(Number));
+          photos = allResults.filter(p => idSet.has(Number(p.id)));
+          if (photos.length === 0 && currentFilteredPhotos.length > 0) {
+            photos = currentFilteredPhotos.filter(p => idSet.has(Number(p.id)));
+          }
+        }
+      }
+
+      if (photos.length === 0) {
+        const pool = (currentFilteredPhotos.length > 0 ? currentFilteredPhotos : allResults);
+        if (pool.length > 0) {
+          photos = pool.slice(0, 4);
+        }
+      }
+
+      collageState.photos = photos;
+      updateCollageUIFromState();
+      $('#collageModal').classList.add('active');
+      renderCollageTray();
+      renderCollageCanvas();
+    }
+
+    function closeCollageModal() {
+      $('#collageModal').classList.remove('active');
+    }
+
+    function updateCollageUIFromState() {
+      $('#collagePhotoCountBadge').textContent = `${collageState.photos.length} photos`;
+      $('#collageTrayCount').textContent = collageState.photos.length;
+
+      document.querySelectorAll('#aspectRatioGrid .aspect-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-ratio') === collageState.aspectRatio);
+      });
+
+      document.querySelectorAll('#layoutTemplateGrid .layout-card').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-layout') === collageState.layout);
+      });
+
+      if ($('#sliderGap')) {
+        $('#sliderGap').value = collageState.gap;
+        $('#valGap').textContent = `${collageState.gap}px`;
+      }
+      if ($('#sliderPadding')) {
+        $('#sliderPadding').value = collageState.padding;
+        $('#valPadding').textContent = `${collageState.padding}px`;
+      }
+      if ($('#sliderRadius')) {
+        $('#sliderRadius').value = collageState.radius;
+        $('#valRadius').textContent = `${collageState.radius}px`;
+      }
+      if ($('#sliderBorderWidth')) {
+        $('#sliderBorderWidth').value = collageState.borderWidth;
+        $('#valBorderWidth').textContent = `${collageState.borderWidth}px`;
+      }
+
+      document.querySelectorAll('.bg-palette-row .palette-swatch').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-bg') === collageState.bgValue);
+      });
+
+      if ($('#collageFitToggleBtn')) {
+        $('#collageFitToggleBtn').textContent = `🖼️ Fit: ${collageState.fitMode === 'cover' ? 'Cover' : 'Contain'}`;
+      }
+
+      if ($('#collageTextToggle')) $('#collageTextToggle').checked = collageState.showText;
+      if ($('#collageTextControls')) $('#collageTextControls').style.display = collageState.showText ? 'flex' : 'none';
+      if ($('#collageTitleInput')) $('#collageTitleInput').value = collageState.title;
+      if ($('#collageSubtitleInput')) $('#collageSubtitleInput').value = collageState.subtitle;
+      if ($('#collageFontSelect')) $('#collageFontSelect').value = collageState.font;
+      if ($('#collageTextAlignSelect')) $('#collageTextAlignSelect').value = collageState.textAlign;
+    }
+
+    function renderCollageTray() {
+      const container = $('#collageTrayItems');
+      if (!container) return;
+
+      if (collageState.photos.length === 0) {
+        container.innerHTML = `
+          <div style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; padding: 0.5rem 0;">
+            No photos in collage. Click "+ Add Photos" to pick pictures.
+          </div>
+          <button type="button" class="collage-tray-add-btn" id="collageTrayAddBtn">
+            <span style="font-size: 1.1rem; line-height: 1;">+</span>
+            <span>Add</span>
+          </button>
+        `;
+        $('#collageTrayAddBtn')?.addEventListener('click', openCollagePickerModal);
+        return;
+      }
+
+      container.innerHTML = collageState.photos.map((p, idx) => `
+        <div class="collage-tray-item" data-index="${idx}" title="Drag or click arrows to move">
+          <img src="${API}/api/thumb/${p.id}" alt="Photo ${idx + 1}" />
+          <span class="tray-item-index">${idx + 1}</span>
+          <button type="button" class="tray-item-remove" data-remove-idx="${idx}" title="Remove photo">&times;</button>
+        </div>
+      `).join('') + `
+        <button type="button" class="collage-tray-add-btn" id="collageTrayAddBtn" title="Add more photos">
+          <span style="font-size: 1.1rem; line-height: 1;">+</span>
+          <span>Add</span>
+        </button>
+      `;
+
+      container.querySelectorAll('.tray-item-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = Number(btn.getAttribute('data-remove-idx'));
+          collageState.photos.splice(idx, 1);
+          updateCollageUIFromState();
+          renderCollageTray();
+          renderCollageCanvas();
+        });
+      });
+
+      $('#collageTrayAddBtn')?.addEventListener('click', openCollagePickerModal);
+
+      let draggedIdx = null;
+      container.querySelectorAll('.collage-tray-item').forEach(item => {
+        item.setAttribute('draggable', 'true');
+        item.addEventListener('dragstart', (e) => {
+          draggedIdx = Number(item.getAttribute('data-index'));
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const targetIdx = Number(item.getAttribute('data-index'));
+          if (draggedIdx !== null && draggedIdx !== targetIdx) {
+            const moved = collageState.photos.splice(draggedIdx, 1)[0];
+            collageState.photos.splice(targetIdx, 0, moved);
+            renderCollageTray();
+            renderCollageCanvas();
+          }
+        });
+      });
+    }
+
+    function calculateCollageFrames(count, layout, stageW, stageH, padding, gap) {
+      const frames = [];
+      const availW = stageW - padding * 2;
+      const availH = stageH - padding * 2;
+
+      if (count <= 0) return frames;
+
+      if (count === 1) {
+        frames.push({ x: padding, y: padding, width: availW, height: availH });
+        return frames;
+      }
+
+      if (layout === 'hero-left') {
+        if (count === 2) {
+          const w = (availW - gap) / 2;
+          frames.push({ x: padding, y: padding, width: w, height: availH });
+          frames.push({ x: padding + w + gap, y: padding, width: w, height: availH });
+        } else {
+          const heroW = availW * 0.58;
+          const sideW = availW - heroW - gap;
+          const subCount = count - 1;
+          const subH = (availH - gap * (subCount - 1)) / subCount;
+
+          frames.push({ x: padding, y: padding, width: heroW, height: availH });
+          for (let i = 0; i < subCount; i++) {
+            frames.push({
+              x: padding + heroW + gap,
+              y: padding + i * (subH + gap),
+              width: sideW,
+              height: subH,
+            });
+          }
+        }
+        return frames;
+      }
+
+      if (layout === 'hero-top') {
+        if (count === 2) {
+          const h = (availH - gap) / 2;
+          frames.push({ x: padding, y: padding, width: availW, height: h });
+          frames.push({ x: padding, y: padding + h + gap, width: availW, height: h });
+        } else {
+          const heroH = availH * 0.58;
+          const subH = availH - heroH - gap;
+          const subCount = count - 1;
+          const subW = (availW - gap * (subCount - 1)) / subCount;
+
+          frames.push({ x: padding, y: padding, width: availW, height: heroH });
+          for (let i = 0; i < subCount; i++) {
+            frames.push({
+              x: padding + i * (subW + gap),
+              y: padding + heroH + gap,
+              width: subW,
+              height: subH,
+            });
+          }
+        }
+        return frames;
+      }
+
+      if (layout === 'side-by-side') {
+        const isLandscape = stageW >= stageH;
+        if (isLandscape) {
+          const colW = (availW - gap * (count - 1)) / count;
+          for (let i = 0; i < count; i++) {
+            frames.push({
+              x: padding + i * (colW + gap),
+              y: padding,
+              width: colW,
+              height: availH,
+            });
+          }
+        } else {
+          const rowH = (availH - gap * (count - 1)) / count;
+          for (let i = 0; i < count; i++) {
+            frames.push({
+              x: padding,
+              y: padding + i * (rowH + gap),
+              width: availW,
+              height: rowH,
+            });
+          }
+        }
+        return frames;
+      }
+
+      if (layout === 'polaroid') {
+        let cols = 2, rows = Math.ceil(count / 2);
+        if (count === 1) { cols = 1; rows = 1; }
+        else if (count === 3) { cols = 3; rows = 1; }
+        else if (count >= 5 && stageW > stageH) { cols = 3; rows = Math.ceil(count / 3); }
+
+        const cellW = (availW - gap * (cols - 1)) / cols;
+        const cellH = (availH - gap * (rows - 1)) / rows;
+
+        for (let i = 0; i < count; i++) {
+          const c = i % cols;
+          const r = Math.floor(i / cols);
+          frames.push({
+            x: padding + c * (cellW + gap),
+            y: padding + r * (cellH + gap),
+            width: cellW,
+            height: cellH,
+            isPolaroid: true,
+          });
+        }
+        return frames;
+      }
+
+      if (layout === 'filmstrip') {
+        const isHoriz = stageW >= stageH;
+        if (isHoriz) {
+          const stripH = availH * 0.82;
+          const stripY = padding + (availH - stripH) / 2;
+          const frameW = (availW - gap * (count - 1)) / count;
+          for (let i = 0; i < count; i++) {
+            frames.push({
+              x: padding + i * (frameW + gap),
+              y: stripY,
+              width: frameW,
+              height: stripH,
+              isFilmstrip: true,
+            });
+          }
+        } else {
+          const frameH = (availH - gap * (count - 1)) / count;
+          for (let i = 0; i < count; i++) {
+            frames.push({
+              x: padding,
+              y: padding + i * (frameH + gap),
+              width: availW,
+              height: frameH,
+              isFilmstrip: true,
+            });
+          }
+        }
+        return frames;
+      }
+
+      if (layout === 'masonry') {
+        const cols = count >= 4 ? 2 : count;
+        const colW = (availW - gap * (cols - 1)) / cols;
+        const colHeights = new Array(cols).fill(padding);
+
+        for (let i = 0; i < count; i++) {
+          let minCol = 0;
+          for (let c = 1; c < cols; c++) {
+            if (colHeights[c] < colHeights[minCol]) minCol = c;
+          }
+          const heightRatio = (i % 3 === 0) ? 1.25 : (i % 3 === 1) ? 0.85 : 1.05;
+          const h = (availH / Math.ceil(count / cols)) * heightRatio - gap;
+          const x = padding + minCol * (colW + gap);
+          const y = colHeights[minCol];
+          frames.push({ x, y, width: colW, height: h });
+          colHeights[minCol] += h + gap;
+        }
+        return frames;
+      }
+
+      // Default: Grid
+      let cols = 2, rows = 2;
+      if (count === 2) {
+        if (stageW >= stageH) { cols = 2; rows = 1; }
+        else { cols = 1; rows = 2; }
+      } else if (count === 3) {
+        if (stageW >= stageH) { cols = 3; rows = 1; }
+        else { cols = 1; rows = 3; }
+      } else if (count === 4) {
+        cols = 2; rows = 2;
+      } else if (count <= 6) {
+        if (stageW >= stageH) { cols = 3; rows = 2; }
+        else { cols = 2; rows = 3; }
+      } else if (count <= 9) {
+        cols = 3; rows = 3;
+      } else {
+        cols = 4; rows = Math.ceil(count / 4);
+      }
+
+      const cellW = (availW - gap * (cols - 1)) / cols;
+      const cellH = (availH - gap * (rows - 1)) / rows;
+
+      for (let i = 0; i < count; i++) {
+        const c = i % cols;
+        const r = Math.floor(i / cols);
+        frames.push({
+          x: padding + c * (cellW + gap),
+          y: padding + r * (cellH + gap),
+          width: cellW,
+          height: cellH,
+        });
+      }
+      return frames;
+    }
+
+    let collageRenderToken = 0;
+
+    async function renderCollageCanvas(targetCanvas = null, scaleMultiplier = 1) {
+      const renderId = ++collageRenderToken;
+      const canvas = targetCanvas || $('#collageCanvas');
+      if (!canvas) return;
+
+      const baseDim = 2048 * scaleMultiplier;
+      const canvasW = Math.round(baseDim * (collageState.ratioW / Math.max(collageState.ratioW, collageState.ratioH)));
+      const canvasH = Math.round(baseDim * (collageState.ratioH / Math.max(collageState.ratioW, collageState.ratioH)));
+
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+
+      const dimBadge = $('#canvasDimensionsBadge');
+      if (dimBadge && !targetCanvas) {
+        dimBadge.textContent = `${canvasW} × ${canvasH} px · ${collageState.aspectRatio}`;
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // 1. Draw Background
+      ctx.save();
+      if (collageState.bgValue && collageState.bgValue.startsWith('gradient-')) {
+        let grad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
+        if (collageState.bgValue === 'gradient-ocean') {
+          grad.addColorStop(0, '#0f172a');
+          grad.addColorStop(0.5, '#0369a1');
+          grad.addColorStop(1, '#0d9488');
+        } else if (collageState.bgValue === 'gradient-sunset') {
+          grad.addColorStop(0, '#431407');
+          grad.addColorStop(0.5, '#c2410c');
+          grad.addColorStop(1, '#db2777');
+        } else if (collageState.bgValue === 'gradient-galaxy') {
+          grad.addColorStop(0, '#1e1b4b');
+          grad.addColorStop(0.5, '#581c87');
+          grad.addColorStop(1, '#be185d');
+        } else if (collageState.bgValue === 'gradient-emerald') {
+          grad.addColorStop(0, '#022c22');
+          grad.addColorStop(0.5, '#047857');
+          grad.addColorStop(1, '#ca8a04');
+        }
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = collageState.bgValue || '#ffffff';
+      }
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      ctx.restore();
+
+      // Reserve bottom space for text
+      let textReservedH = 0;
+      if (collageState.showText && (collageState.title || collageState.subtitle)) {
+        textReservedH = Math.round(canvasH * 0.12);
+      }
+
+      // 2. Compute Layout Frames
+      const scaledPadding = (collageState.padding / 1000) * baseDim;
+      const scaledGap = (collageState.gap / 1000) * baseDim;
+      const scaledRadius = (collageState.radius / 1000) * baseDim;
+      const scaledBorderWidth = (collageState.borderWidth / 1000) * baseDim;
+
+      const frames = calculateCollageFrames(
+        collageState.photos.length,
+        collageState.layout,
+        canvasW,
+        canvasH - textReservedH,
+        scaledPadding,
+        scaledGap
+      );
+
+      const imgPromises = collageState.photos.map(p => loadCanvasImage(`${API}/api/preview/${p.id}`));
+      const loadedImgs = await Promise.all(imgPromises);
+
+      if (renderId !== collageRenderToken && !targetCanvas) return;
+
+      // 3. Draw Photos
+      for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        const img = loadedImgs[i];
+        if (!frame) continue;
+
+        ctx.save();
+
+        if (frame.isPolaroid) {
+          const cardX = frame.x;
+          const cardY = frame.y;
+          const cardW = frame.width;
+          const cardH = frame.height;
+          const polBorder = cardW * 0.05;
+          const polBottom = cardH * 0.18;
+
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+          ctx.shadowBlur = 18 * scaleMultiplier;
+          ctx.shadowOffsetY = 8 * scaleMultiplier;
+
+          ctx.fillStyle = '#ffffff';
+          drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 4 * scaleMultiplier);
+          ctx.fill();
+
+          ctx.shadowColor = 'transparent';
+
+          const innerX = cardX + polBorder;
+          const innerY = cardY + polBorder;
+          const innerW = cardW - polBorder * 2;
+          const innerH = cardH - polBorder - polBottom;
+
+          if (img) {
+            ctx.save();
+            drawRoundedRect(ctx, innerX, innerY, innerW, innerH, 2 * scaleMultiplier);
+            ctx.clip();
+            drawCoverImage(ctx, img, innerX, innerY, innerW, innerH, collageState.fitMode);
+            ctx.restore();
+          } else {
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(innerX, innerY, innerW, innerH);
+          }
+
+          const photoMeta = collageState.photos[i];
+          if (photoMeta && photoMeta.date_taken) {
+            ctx.fillStyle = '#64748b';
+            ctx.font = `600 ${Math.round(cardH * 0.045)}px 'Caveat', cursive, sans-serif`;
+            ctx.textAlign = 'center';
+            const dateStr = photoMeta.date_taken.split('T')[0];
+            ctx.fillText(dateStr, cardX + cardW / 2, cardY + cardH - polBottom * 0.35);
+          }
+        } else if (frame.isFilmstrip) {
+          ctx.fillStyle = '#111827';
+          drawRoundedRect(ctx, frame.x, frame.y, frame.width, frame.height, 4 * scaleMultiplier);
+          ctx.fill();
+
+          const holeW = 6 * scaleMultiplier;
+          const holeH = 10 * scaleMultiplier;
+          ctx.fillStyle = '#ffffff';
+          const numHoles = Math.floor(frame.width / (holeW * 3));
+          for (let h = 0; h < numHoles; h++) {
+            const hx = frame.x + (h + 0.5) * (frame.width / numHoles);
+            ctx.fillRect(hx - holeW / 2, frame.y + 4 * scaleMultiplier, holeW, holeH);
+            ctx.fillRect(hx - holeW / 2, frame.y + frame.height - holeH - 4 * scaleMultiplier, holeW, holeH);
+          }
+
+          const photoX = frame.x + 8 * scaleMultiplier;
+          const photoY = frame.y + holeH + 8 * scaleMultiplier;
+          const photoW = frame.width - 16 * scaleMultiplier;
+          const photoH = frame.height - (holeH + 8 * scaleMultiplier) * 2;
+
+          if (img) {
+            ctx.save();
+            drawRoundedRect(ctx, photoX, photoY, photoW, photoH, 2 * scaleMultiplier);
+            ctx.clip();
+            drawCoverImage(ctx, img, photoX, photoY, photoW, photoH, collageState.fitMode);
+            ctx.restore();
+          }
+        } else {
+          if (img) {
+            drawRoundedRect(ctx, frame.x, frame.y, frame.width, frame.height, scaledRadius);
+            ctx.clip();
+            drawCoverImage(ctx, img, frame.x, frame.y, frame.width, frame.height, collageState.fitMode);
+
+            if (scaledBorderWidth > 0) {
+              ctx.strokeStyle = collageState.borderColor || '#ffffff';
+              ctx.lineWidth = scaledBorderWidth;
+              drawRoundedRect(ctx, frame.x, frame.y, frame.width, frame.height, scaledRadius);
+              ctx.stroke();
+            }
+          } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            drawRoundedRect(ctx, frame.x, frame.y, frame.width, frame.height, scaledRadius);
+            ctx.fill();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      // 4. Draw Title / Subtitle Text Overlay
+      if (collageState.showText && (collageState.title || collageState.subtitle)) {
+        ctx.save();
+        const textY = canvasH - textReservedH + textReservedH * 0.38;
+        const fontName = collageState.font || 'Inter';
+
+        let textColor = collageState.textColor || '#0f172a';
+        if (collageState.bgValue === '#090d16' || (collageState.bgValue && collageState.bgValue.startsWith('gradient-'))) {
+          textColor = '#ffffff';
+        }
+
+        ctx.fillStyle = textColor;
+        ctx.textAlign = collageState.textAlign === 'left' ? 'left' : collageState.textAlign === 'bottom-polaroid' ? 'center' : 'center';
+
+        const textX = collageState.textAlign === 'left' ? scaledPadding : canvasW / 2;
+
+        if (collageState.title) {
+          const titleSize = Math.round(baseDim * 0.038);
+          ctx.font = `700 ${titleSize}px '${fontName}', sans-serif`;
+          ctx.fillText(collageState.title, textX, textY);
+        }
+
+        if (collageState.subtitle) {
+          const subSize = Math.round(baseDim * 0.022);
+          ctx.font = `500 ${subSize}px '${fontName}', sans-serif`;
+          ctx.fillStyle = textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)';
+          ctx.fillText(collageState.subtitle, textX, textY + baseDim * 0.035);
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawCoverImage(ctx, img, dx, dy, dWidth, dHeight, fitMode = 'cover') {
+      const imgW = img.naturalWidth || img.width;
+      const imgH = img.naturalHeight || img.height;
+      if (!imgW || !imgH) return;
+
+      if (fitMode === 'contain') {
+        const imgRatio = imgW / imgH;
+        const frameRatio = dWidth / dHeight;
+        let drawW, drawH, drawX, drawY;
+
+        if (imgRatio > frameRatio) {
+          drawW = dWidth;
+          drawH = dWidth / imgRatio;
+          drawX = dx;
+          drawY = dy + (dHeight - drawH) / 2;
+        } else {
+          drawH = dHeight;
+          drawW = dHeight * imgRatio;
+          drawX = dx + (dWidth - drawW) / 2;
+          drawY = dy;
+        }
+        ctx.drawImage(img, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
+      } else {
+        const imgRatio = imgW / imgH;
+        const frameRatio = dWidth / dHeight;
+        let sx, sy, sWidth, sHeight;
+
+        if (imgRatio > frameRatio) {
+          sHeight = imgH;
+          sWidth = imgH * frameRatio;
+          sx = (imgW - sWidth) / 2;
+          sy = 0;
+        } else {
+          sWidth = imgW;
+          sHeight = imgW / frameRatio;
+          sx = 0;
+          sy = (imgH - sHeight) / 2;
+        }
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+      }
+    }
+
+    async function downloadCollage(format = 'image/png') {
+      const exportCanvas = document.createElement('canvas');
+      await renderCollageCanvas(exportCanvas, 1);
+      const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+      const dataUrl = exportCanvas.toDataURL(format, 0.95);
+      const link = document.createElement('a');
+      link.download = `pixelmemory_collage_${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
+      link.href = dataUrl;
+      link.click();
+      showToast('📥 Collage downloaded successfully!');
+    }
+
+    async function copyCollageToClipboard() {
+      try {
+        const exportCanvas = document.createElement('canvas');
+        await renderCollageCanvas(exportCanvas, 1);
+        exportCanvas.toBlob(async (blob) => {
+          if (!blob) throw new Error('Blob generation failed');
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('📋 Collage copied to clipboard!');
+        }, 'image/png');
+      } catch (err) {
+        showToast('Clipboard copy failed. Try Download instead.');
+      }
+    }
+
+    async function saveCollageToLibrary() {
+      const feedback = $('#collageSaveFeedback');
+      const btn = $('#collageSaveLibraryBtn');
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳ Saving...</span>';
+
+        const exportCanvas = document.createElement('canvas');
+        await renderCollageCanvas(exportCanvas, 1);
+        const dataUrl = exportCanvas.toDataURL('image/png', 0.92);
+
+        const res = await fetch(`${API}/api/collage/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_data: dataUrl,
+            title: collageState.title || 'Photo Collage',
+            album_id: currentAlbumId || null,
+            aspect_ratio: collageState.aspectRatio,
+            layout: collageState.layout,
+          }),
+        });
+
+        const data = await res.json();
+        if (data.status === 'ok') {
+          showToast('💾 Collage saved to PixelMemory library!');
+          if (feedback) {
+            feedback.style.display = 'block';
+            feedback.className = 'save-feedback success';
+            feedback.textContent = '✔ Successfully saved into library!';
+            setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+          }
+          loadPlatformStats();
+        } else {
+          throw new Error(data.message || 'Save failed');
+        }
+      } catch (err) {
+        showToast(`Failed to save collage: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>💾 Save to PixelMemory</span>';
+      }
+    }
+
+    let pickerSelectedIds = new Set();
+
+    function openCollagePickerModal() {
+      pickerSelectedIds = new Set(collageState.photos.map(p => Number(p.id)));
+      renderCollagePickerGrid();
+      $('#collagePickerModal').classList.add('active');
+    }
+
+    function renderCollagePickerGrid(query = '') {
+      const grid = $('#collagePickerGrid');
+      if (!grid) return;
+
+      const q = (query || '').toLowerCase().trim();
+      let pool = (allResults && allResults.length > 0) ? allResults : currentFilteredPhotos;
+      if (q) {
+        pool = pool.filter(p => (p.raw_description || '').toLowerCase().includes(q) || (p.file_path || '').toLowerCase().includes(q));
+      }
+
+      $('#collagePickerCountText').textContent = `${pickerSelectedIds.size} selected`;
+
+      if (pool.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 2rem;">No matching photos found.</div>';
+        return;
+      }
+
+      grid.innerHTML = pool.map(p => {
+        const isSelected = pickerSelectedIds.has(Number(p.id));
+        return `
+          <div class="picker-photo-card ${isSelected ? 'selected' : ''}" data-photo-id="${p.id}">
+            <img src="${API}/api/thumb/${p.id}" loading="lazy" alt="Photo ${p.id}" />
+            <div class="picker-check-badge">${isSelected ? '✓' : ''}</div>
+          </div>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.picker-photo-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = Number(card.getAttribute('data-photo-id'));
+          if (pickerSelectedIds.has(id)) {
+            pickerSelectedIds.delete(id);
+            card.classList.remove('selected');
+            card.querySelector('.picker-check-badge').textContent = '';
+          } else {
+            pickerSelectedIds.add(id);
+            card.classList.add('selected');
+            card.querySelector('.picker-check-badge').textContent = '✓';
+          }
+          $('#collagePickerCountText').textContent = `${pickerSelectedIds.size} selected`;
+        });
+      });
+    }
+
+    function initCollageStudioUI() {
+      document.querySelectorAll('#aspectRatioGrid .aspect-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          collageState.aspectRatio = btn.getAttribute('data-ratio');
+          collageState.ratioW = Number(btn.getAttribute('data-w'));
+          collageState.ratioH = Number(btn.getAttribute('data-h'));
+          updateCollageUIFromState();
+          renderCollageCanvas();
+        });
+      });
+
+      document.querySelectorAll('#layoutTemplateGrid .layout-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+          collageState.layout = btn.getAttribute('data-layout');
+          updateCollageUIFromState();
+          renderCollageCanvas();
+        });
+      });
+
+      $('#sliderGap')?.addEventListener('input', (e) => {
+        collageState.gap = Number(e.target.value);
+        $('#valGap').textContent = `${collageState.gap}px`;
+        renderCollageCanvas();
+      });
+
+      $('#sliderPadding')?.addEventListener('input', (e) => {
+        collageState.padding = Number(e.target.value);
+        $('#valPadding').textContent = `${collageState.padding}px`;
+        renderCollageCanvas();
+      });
+
+      $('#sliderRadius')?.addEventListener('input', (e) => {
+        collageState.radius = Number(e.target.value);
+        $('#valRadius').textContent = `${collageState.radius}px`;
+        renderCollageCanvas();
+      });
+
+      $('#sliderBorderWidth')?.addEventListener('input', (e) => {
+        collageState.borderWidth = Number(e.target.value);
+        $('#valBorderWidth').textContent = `${collageState.borderWidth}px`;
+        renderCollageCanvas();
+      });
+
+      document.querySelectorAll('.bg-palette-row .palette-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+          collageState.bgValue = btn.getAttribute('data-bg');
+          updateCollageUIFromState();
+          renderCollageCanvas();
+        });
+      });
+
+      $('#collageCustomColor')?.addEventListener('input', (e) => {
+        collageState.bgValue = e.target.value;
+        document.querySelectorAll('.bg-palette-row .palette-swatch').forEach(s => s.classList.remove('active'));
+        renderCollageCanvas();
+      });
+
+      $('#collageFitToggleBtn')?.addEventListener('click', () => {
+        collageState.fitMode = collageState.fitMode === 'cover' ? 'contain' : 'cover';
+        $('#collageFitToggleBtn').textContent = `🖼️ Fit: ${collageState.fitMode === 'cover' ? 'Cover' : 'Contain'}`;
+        renderCollageCanvas();
+      });
+
+      $('#collageShuffleBtn')?.addEventListener('click', () => {
+        for (let i = collageState.photos.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [collageState.photos[i], collageState.photos[j]] = [collageState.photos[j], collageState.photos[i]];
+        }
+        renderCollageTray();
+        renderCollageCanvas();
+      });
+
+      $('#collageTextToggle')?.addEventListener('change', (e) => {
+        collageState.showText = e.target.checked;
+        $('#collageTextControls').style.display = collageState.showText ? 'flex' : 'none';
+        renderCollageCanvas();
+      });
+
+      $('#collageTitleInput')?.addEventListener('input', (e) => {
+        collageState.title = e.target.value;
+        renderCollageCanvas();
+      });
+
+      $('#collageSubtitleInput')?.addEventListener('input', (e) => {
+        collageState.subtitle = e.target.value;
+        renderCollageCanvas();
+      });
+
+      $('#collageFontSelect')?.addEventListener('change', (e) => {
+        collageState.font = e.target.value;
+        renderCollageCanvas();
+      });
+
+      $('#collageTextAlignSelect')?.addEventListener('change', (e) => {
+        collageState.textAlign = e.target.value;
+        renderCollageCanvas();
+      });
+
+      $('#collageDownloadPngBtn')?.addEventListener('click', () => downloadCollage('image/png'));
+      $('#collageDownloadJpgBtn')?.addEventListener('click', () => downloadCollage('image/jpeg'));
+      $('#collageCopyClipboardBtn')?.addEventListener('click', copyCollageToClipboard);
+      $('#collageSaveLibraryBtn')?.addEventListener('click', saveCollageToLibrary);
+
+      $('#collageCloseBtn')?.addEventListener('click', closeCollageModal);
+      $('#collagePickMoreBtn')?.addEventListener('click', openCollagePickerModal);
+
+      $('#dockCollageBtn')?.addEventListener('click', () => {
+        if (selectedPhotoIds.size > 0) {
+          openCollageModal(Array.from(selectedPhotoIds));
+        } else {
+          openCollageModal([]);
+        }
+      });
+
+      $('#railCollage')?.addEventListener('click', () => {
+        if (selectedPhotoIds.size > 0) {
+          openCollageModal(Array.from(selectedPhotoIds));
+        } else {
+          openCollageModal([]);
+        }
+      });
+
+      $('#collagePickerCloseBtn')?.addEventListener('click', () => $('#collagePickerModal').classList.remove('active'));
+      $('#collagePickerCancelBtn')?.addEventListener('click', () => $('#collagePickerModal').classList.remove('active'));
+      $('#collagePickerSearchInput')?.addEventListener('input', (e) => renderCollagePickerGrid(e.target.value));
+      $('#collagePickerConfirmBtn')?.addEventListener('click', () => {
+        const chosen = allResults.filter(p => pickerSelectedIds.has(Number(p.id)));
+        collageState.photos = chosen;
+        updateCollageUIFromState();
+        renderCollageTray();
+        renderCollageCanvas();
+        $('#collagePickerModal').classList.remove('active');
+      });
     }
 
     // ── Special View Management ─────────────────────────────
@@ -5095,6 +7474,197 @@
         <div class="state-desc">Make sure the PixelMemory server is active on port 8642.</div>
       </div>
     `;
+      }
+    }
+
+    // ── AI Natural Language Intelligent Search ──────────────
+    async function askAiAssistant(prompt) {
+      exitPeopleExplorer();
+      currentAlbumId = null;
+      prompt = (prompt || '').trim();
+      if (!prompt) {
+        doSearch('');
+        const banner = $('#aiInsightBanner');
+        if (banner) banner.style.display = 'none';
+        return;
+      }
+
+      currentQuery = prompt;
+      const grid = $('#grid');
+      const meta = $('#resultMeta');
+      const clearBtn = $('#clearBtn');
+      const banner = $('#aiInsightBanner');
+      const explanationEl = $('#aiInsightExplanation');
+      const chipsRow = $('#aiInsightChipsRow');
+      const suggestionsWrap = $('#aiInsightSuggestions');
+      const suggestionsList = $('#aiInsightSuggestionsList');
+
+      if (clearBtn) clearBtn.classList.add('visible');
+      if (queryInput) queryInput.value = prompt;
+      if (aiInput) aiInput.value = prompt;
+      if (meta) meta.innerHTML = `AI Search: <span>"${escapeHtml(prompt)}"</span>`;
+
+      // Show temporary loading state
+      if (banner) banner.style.display = 'flex';
+      if (explanationEl) explanationEl.innerHTML = `<span style="color: var(--accent);">✨ Analyzing query with local AI...</span>`;
+      if (chipsRow) chipsRow.innerHTML = '';
+      if (suggestionsWrap) suggestionsWrap.style.display = 'none';
+
+      grid.innerHTML = `
+        <div class="state-box" style="grid-column: 1 / -1;">
+          <div class="live-dot" style="width: 14px; height: 14px; margin-bottom: 0.5rem;"></div>
+          <div class="state-title">Understanding intent & searching memories...</div>
+          <div class="state-desc">Extracting visual concepts, dates, locations, and person tags.</div>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`${API}/api/ai/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompt,
+            top_k: 60,
+            filter_mode: activeFilters.relevanceMode || 'balanced'
+          })
+        });
+
+        if (!res.ok) throw new Error('AI search failed');
+        const data = await res.json();
+
+        // 1. Update Explanation
+        let explHtml = data.explanation || `Results for "${escapeHtml(prompt)}"`;
+        explHtml = explHtml.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        if (explanationEl) explanationEl.innerHTML = explHtml;
+
+        // 2. Render Extracted Filter Chips
+        if (chipsRow) {
+          chipsRow.innerHTML = '';
+          const filters = data.filters || {};
+
+          if (data.semantic_query) {
+            const c = document.createElement('span');
+            c.className = 'ai-extracted-chip';
+            c.innerHTML = `🔍 <strong>Visual:</strong> "${escapeHtml(data.semantic_query)}"`;
+            chipsRow.appendChild(c);
+          }
+
+          if (filters.matched_people && filters.matched_people.length > 0) {
+            filters.matched_people.forEach(personName => {
+              const c = document.createElement('span');
+              c.className = 'ai-extracted-chip';
+              c.innerHTML = `👤 <strong>Person:</strong> ${escapeHtml(personName)}`;
+              chipsRow.appendChild(c);
+            });
+          }
+
+          if (filters.date_unknown) {
+            const c = document.createElement('span');
+            c.className = 'ai-extracted-chip';
+            c.innerHTML = `📅 <strong>Date:</strong> Unknown <span class="chip-remove" data-type="date">✕</span>`;
+            chipsRow.appendChild(c);
+            activeFilters.dateMode = 'unknown';
+            const presetSel = $('#filterDatePreset');
+            if (presetSel) presetSel.value = 'unknown';
+          } else if (filters.start_date && filters.end_date) {
+            const yr = filters.start_date.substring(0, 4);
+            if (filters.start_date === `${yr}-01-01` && filters.end_date === `${yr}-12-31`) {
+              const c = document.createElement('span');
+              c.className = 'ai-extracted-chip';
+              c.innerHTML = `📅 <strong>Year:</strong> ${yr} <span class="chip-remove" data-type="date">✕</span>`;
+              chipsRow.appendChild(c);
+              activeFilters.dateMode = yr;
+              const presetSel = $('#filterDatePreset');
+              if (presetSel) presetSel.value = yr;
+            } else {
+              const c = document.createElement('span');
+              c.className = 'ai-extracted-chip';
+              c.innerHTML = `📅 <strong>Date:</strong> ${filters.start_date} to ${filters.end_date} <span class="chip-remove" data-type="date">✕</span>`;
+              chipsRow.appendChild(c);
+              activeFilters.dateMode = 'custom';
+              const presetSel = $('#filterDatePreset');
+              if (presetSel) presetSel.value = 'custom';
+            }
+            activeFilters.startDate = filters.start_date;
+            activeFilters.endDate = filters.end_date;
+          }
+
+          if (filters.geo_only) {
+            const c = document.createElement('span');
+            c.className = 'ai-extracted-chip';
+            c.innerHTML = `📍 <strong>GPS Coordinates</strong> <span class="chip-remove" data-type="geo">✕</span>`;
+            chipsRow.appendChild(c);
+            activeFilters.geo = 'gps';
+            const geoSel = $('#filterGeo');
+            if (geoSel) geoSel.value = 'gps';
+          }
+
+          if (filters.group_by && filters.group_by !== 'none') {
+            const c = document.createElement('span');
+            c.className = 'ai-extracted-chip';
+            c.innerHTML = `📂 <strong>Group:</strong> ${filters.group_by} <span class="chip-remove" data-type="group">✕</span>`;
+            chipsRow.appendChild(c);
+            setGroupBy(filters.group_by);
+          }
+
+          if (filters.sort && filters.sort !== 'relevance') {
+            const c = document.createElement('span');
+            c.className = 'ai-extracted-chip';
+            c.innerHTML = `↕ <strong>Sort:</strong> ${filters.sort} <span class="chip-remove" data-type="sort">✕</span>`;
+            chipsRow.appendChild(c);
+            activeFilters.sort = filters.sort;
+            const sortSel = $('#sortSelect');
+            if (sortSel) sortSel.value = filters.sort;
+          }
+
+          // Attach chip remove listeners
+          chipsRow.querySelectorAll('.chip-remove').forEach(rmBtn => {
+            rmBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const t = rmBtn.dataset.type;
+              if (t === 'date') {
+                setDateFilter('all');
+              } else if (t === 'geo') {
+                setGeoFilter('all');
+              } else if (t === 'group') {
+                setGroupBy('none');
+              } else if (t === 'sort') {
+                activeFilters.sort = 'relevance';
+                const sortSel = $('#sortSelect');
+                if (sortSel) sortSel.value = 'relevance';
+              }
+              if (data.semantic_query) {
+                doSearch(data.semantic_query);
+              } else {
+                applyFiltersAndRender();
+              }
+            });
+          });
+        }
+
+        // 3. Render Suggestions
+        if (data.suggestions && data.suggestions.length > 0 && suggestionsList && suggestionsWrap) {
+          suggestionsList.innerHTML = '';
+          data.suggestions.forEach(sug => {
+            const pill = document.createElement('button');
+            pill.className = 'suggestion-pill';
+            pill.textContent = sug;
+            pill.addEventListener('click', () => {
+              if (aiInput) aiInput.value = sug;
+              askAiAssistant(sug);
+            });
+            suggestionsList.appendChild(pill);
+          });
+          suggestionsWrap.style.display = 'flex';
+        } else if (suggestionsWrap) {
+          suggestionsWrap.style.display = 'none';
+        }
+
+        allResults = data.results || [];
+        applyFiltersAndRender();
+      } catch (err) {
+        console.error('AI ask error:', err);
+        doSearch(prompt);
       }
     }
 
@@ -5758,6 +8328,13 @@
     $('#modalAddToAlbumBtn').addEventListener('click', (e) => {
       if (currentDetailPhoto) {
         openAddToAlbum(e, currentDetailPhoto.id);
+      }
+    });
+
+    $('#modalCreateCollageBtn')?.addEventListener('click', () => {
+      if (currentDetailPhoto) {
+        closeModal();
+        openCollageModal([currentDetailPhoto]);
       }
     });
 
@@ -6937,14 +9514,79 @@
     // Floating AI input bar handler
     aiInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        queryInput.value = aiInput.value;
-        doSearch(aiInput.value);
+        const val = aiInput.value.trim();
+        if (val) {
+          askAiAssistant(val);
+        } else {
+          doSearch('');
+        }
       }
     });
+
     $('#aiSendBtn').addEventListener('click', () => {
-      queryInput.value = aiInput.value;
-      doSearch(aiInput.value);
+      const val = aiInput.value.trim();
+      if (val) {
+        askAiAssistant(val);
+      } else {
+        doSearch('');
+      }
     });
+
+    // AI Insight Banner close button
+    $('#aiInsightCloseBtn')?.addEventListener('click', () => {
+      const b = $('#aiInsightBanner');
+      if (b) b.style.display = 'none';
+    });
+
+    // Voice recognition search
+    const aiMicBtn = $('#aiMicBtn');
+    let speechRecognition = null;
+    let isRecognizing = false;
+
+    if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      speechRecognition = new SpeechRec();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = false;
+      speechRecognition.lang = 'en-US';
+
+      speechRecognition.onstart = () => {
+        isRecognizing = true;
+        aiMicBtn.classList.add('ai-mic-active');
+        aiInput.placeholder = 'Listening... Speak your photo query...';
+      };
+
+      speechRecognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        aiInput.value = transcript;
+        aiInput.placeholder = 'Type a search query or question...';
+        askAiAssistant(transcript);
+      };
+
+      speechRecognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error);
+        isRecognizing = false;
+        aiMicBtn.classList.remove('ai-mic-active');
+        aiInput.placeholder = 'Type a search query or question...';
+      };
+
+      speechRecognition.onend = () => {
+        isRecognizing = false;
+        aiMicBtn.classList.remove('ai-mic-active');
+        aiInput.placeholder = 'Type a search query or question...';
+      };
+
+      aiMicBtn.addEventListener('click', () => {
+        if (isRecognizing) {
+          speechRecognition.stop();
+        } else {
+          speechRecognition.start();
+        }
+      });
+    } else {
+      aiMicBtn.title = 'Speech recognition not supported in this browser';
+      aiMicBtn.style.opacity = '0.5';
+    }
 
     // Filter drawer toggle
     $('#filterBtn').addEventListener('click', () => {
@@ -9868,6 +12510,8 @@
 
     // ── Startup ─────────────────────────────────────────────
     (async () => {
+      initThemeUI();
+      initCollageStudioUI();
       await loadPlatformStats();
       await loadAlbums();
       await updateNotesCountBadge();

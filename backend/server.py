@@ -332,6 +332,369 @@ def search_images(
     }
 
 
+def _format_photo_dict(row, score: float = 1.0, raw_score: float = 1.0, enriched: str = "") -> dict:
+    place = row["place_name"] or ""
+    camera = row["camera_model"] or ""
+    dt = row["date_taken"] or ""
+    enr = enriched or row["enriched_text"] or row["raw_description"] or ""
+    tags = extract_tags(enr, place, camera, dt)
+    return {
+        "id": row["id"],
+        "file_path": row["file_path"],
+        "score": round(score, 4),
+        "raw_score": round(raw_score, 4),
+        "enriched_text": enr,
+        "raw_description": row["raw_description"] or "",
+        "date_taken": row["date_taken"],
+        "place_name": place,
+        "camera_model": camera,
+        "camera_make": row["camera_make"] or "",
+        "latitude": row["latitude"],
+        "longitude": row["longitude"],
+        "tags": tags,
+    }
+
+
+def parse_ai_query_intent(prompt: str, known_people_names: list[str]) -> dict:
+    """Fast, deterministic NLP heuristic query parser for search intent extraction."""
+    import re
+
+    cleaned = prompt.strip()
+    lower = cleaned.lower()
+
+    # 1. Detect Person / Pet mentions
+    matched_people = []
+    for name in known_people_names:
+        if re.search(r'\b' + re.escape(name.lower()) + r'\b', lower):
+            matched_people.append(name)
+
+    # 2. Detect Date filters
+    date_mode = "all"
+    start_date = None
+    end_date = None
+    date_unknown = False
+
+    if any(k in lower for k in ("unknown date", "no date", "without date", "missing date", "undated")):
+        date_unknown = True
+        date_mode = "unknown"
+    elif any(k in lower for k in ("past 7 days", "last 7 days", "past week", "last week")):
+        date_mode = "past_7d"
+    elif any(k in lower for k in ("past 30 days", "last 30 days", "past month", "last month")):
+        date_mode = "past_30d"
+    else:
+        # Check specific 4-digit years (e.g. 2018-2030)
+        year_match = re.search(r'\b(201\d|202\d|203\d)\b', lower)
+        if year_match:
+            year = year_match.group(1)
+            months = {
+                "january": "01", "jan": "01",
+                "february": "02", "feb": "02",
+                "march": "03", "mar": "03",
+                "april": "04", "apr": "04",
+                "may": "05",
+                "june": "06", "jun": "06",
+                "july": "07", "jul": "07",
+                "august": "08", "aug": "08",
+                "september": "09", "sep": "09", "sept": "09",
+                "october": "10", "oct": "10",
+                "november": "11", "nov": "11",
+                "december": "12", "dec": "12",
+            }
+            found_month = None
+            for m_name, m_num in months.items():
+                if re.search(r'\b' + m_name + r'\b', lower):
+                    found_month = m_num
+                    break
+            if found_month:
+                start_date = f"{year}-{found_month}-01"
+                end_date = f"{year}-{found_month}-31"
+                date_mode = "custom"
+            else:
+                date_mode = year
+                start_date = f"{year}-01-01"
+                end_date = f"{year}-12-31"
+
+    # 3. Detect Geo / Location / GPS constraints
+    geo_only = False
+    if any(k in lower for k in ("gps", "coordinates", "geotagged", "with location", "has location")):
+        geo_only = True
+
+    # 4. Detect Group By
+    group_by = "none"
+    if "group by day" in lower or "grouped by day" in lower:
+        group_by = "day"
+    elif "group by month" in lower or "grouped by month" in lower:
+        group_by = "month"
+    elif "group by year" in lower or "grouped by year" in lower:
+        group_by = "year"
+    elif "group by location" in lower or "group by place" in lower:
+        group_by = "location"
+    elif "group by camera" in lower:
+        group_by = "camera"
+
+    # 5. Detect Sort Order
+    sort = "relevance"
+    if any(k in lower for k in ("newest", "most recent", "latest")):
+        sort = "newest"
+    elif any(k in lower for k in ("oldest", "earliest")):
+        sort = "oldest"
+
+    # 6. Extract Clean Semantic Core Query
+    core = re.sub(r'^(show me|find|search for|look for|get|display|list|can you find|please find)\s+(all\s+)?(my\s+)?(photos|pictures|images|memories|shots)?(\s+of|\s+with|\s+from)?\s*', '', lower, flags=re.IGNORECASE)
+    core = re.sub(r'\b(group\s+by\s+\w+|grouped\s+by\s+\w+)\b', '', core, flags=re.IGNORECASE)
+    core = re.sub(r'\b(in\s+(201\d|202\d|203\d)|taken\s+in\s+\w+\s+\d{4}|from\s+(201\d|202\d|203\d))\b', '', core, flags=re.IGNORECASE)
+    core = re.sub(r'\b(with\s+gps|with\s+location|geotagged|without\s+date|unknown\s+date|undated)\b', '', core, flags=re.IGNORECASE)
+    core = re.sub(r'\b(newest\s+first|oldest\s+first|most\s+recent)\b', '', core, flags=re.IGNORECASE)
+    for name in matched_people:
+        core = re.sub(r'\b(with|of|and)?\s*' + re.escape(name.lower()) + r'\b', '', core, flags=re.IGNORECASE)
+
+    core = re.sub(r'\s+', ' ', core).strip()
+    if not core and not matched_people and not date_unknown and not start_date and not geo_only:
+        core = cleaned
+
+    return {
+        "semantic_query": core,
+        "matched_people": matched_people,
+        "date_mode": date_mode,
+        "start_date": start_date,
+        "end_date": end_date,
+        "date_unknown": date_unknown,
+        "geo_only": geo_only,
+        "group_by": group_by,
+        "sort": sort,
+    }
+
+
+def query_fast_llm_intent(prompt: str, known_people: list[str]) -> Optional[dict]:
+    """
+    Attempt ultra-fast structured extraction using non-reasoning local LLM (e.g., gemma4:e2b) via Ollama.
+    Uses num_predict: 60, temperature: 0.0 and tight timeout (<750ms) to ensure zero UI freezing.
+    """
+    import urllib.request
+    import json
+    try:
+        req_payload = {
+            "model": "gemma4:e2b",
+            "prompt": f"""Extract photo search filters as JSON: {{"semantic_query": "visual keywords", "people": [], "year": null, "geo_only": false, "group_by": null, "sort": null}}.
+Known people: {json.dumps(known_people)}
+Query: "{prompt}"
+JSON:""",
+            "stream": False,
+            "options": {
+                "num_predict": 60,
+                "temperature": 0.0,
+                "top_p": 0.9,
+            },
+            "format": "json"
+        }
+        req_data = json.dumps(req_payload).encode('utf-8')
+        http_req = urllib.request.Request(
+            "http://localhost:11434/api/generate",
+            data=req_data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(http_req, timeout=0.75) as resp:
+            if resp.status == 200:
+                body = json.loads(resp.read().decode('utf-8'))
+                raw_json = body.get("response", "").strip()
+                parsed = json.loads(raw_json)
+                return parsed
+    except Exception:
+        pass
+    return None
+
+
+class AIAskRequest(BaseModel):
+    prompt: str
+    top_k: Optional[int] = 60
+    filter_mode: Optional[str] = "balanced"
+
+
+@app.post("/api/ai/ask")
+def ai_ask_search(req: AIAskRequest):
+    """
+    Intelligent AI query understanding and multi-dimensional semantic execution.
+    Extracts semantic visual concepts, person/pet tags, date ranges, GPS geolocation, and sorting.
+    """
+    prompt = (req.prompt or "").strip()
+    if not prompt:
+        all_p = list_all_photos(limit=req.top_k)
+        return {
+            "prompt": "",
+            "semantic_query": "",
+            "explanation": "Showing all photos in library",
+            "filters": {
+                "date_mode": "all",
+                "start_date": None,
+                "end_date": None,
+                "date_unknown": False,
+                "geo_only": False,
+                "group_by": "none",
+                "sort": "relevance",
+                "matched_people": [],
+            },
+            "results": all_p.get("results", []),
+            "count": all_p.get("count", 0),
+            "suggestions": ["Find photos from 2026", "Photos with GPS", "Show pets"]
+        }
+
+    known_people = []
+    people_id_map = {}
+    with get_conn() as conn:
+        p_rows = conn.execute("SELECT id, name FROM people").fetchall()
+        for r in p_rows:
+            name = r["name"]
+            known_people.append(name)
+            people_id_map[name.lower()] = r["id"]
+
+    plan = parse_ai_query_intent(prompt, known_people)
+    semantic_q = plan["semantic_query"]
+    date_mode = plan["date_mode"]
+    start_date = plan["start_date"]
+    end_date = plan["end_date"]
+    date_unknown = plan["date_unknown"]
+    geo_only = plan["geo_only"]
+    matched_people = plan["matched_people"]
+    group_by = plan["group_by"]
+    sort = plan["sort"]
+
+    engine = get_search()
+    results = []
+
+    person_image_ids = set()
+    if matched_people:
+        with get_conn() as conn:
+            for p_name in matched_people:
+                pid = people_id_map.get(p_name.lower())
+                if pid:
+                    p_imgs = get_photos_for_person(conn, pid)
+                    for img in p_imgs:
+                        person_image_ids.add(img["id"])
+
+    if not semantic_q and person_image_ids:
+        with get_conn() as conn:
+            for img_id in person_image_ids:
+                row = get_image_by_id(conn, img_id)
+                if not row:
+                    continue
+                dt = row["date_taken"] or ""
+                if date_unknown and dt:
+                    continue
+                if start_date and (not dt or dt < start_date):
+                    continue
+                if end_date and (not dt or dt > end_date):
+                    continue
+                if geo_only and (not row["latitude"] or not row["longitude"]):
+                    continue
+                results.append(_format_photo_dict(row, 0.98))
+    elif not semantic_q and (date_unknown or start_date or geo_only):
+        all_p = list_all_photos(
+            limit=req.top_k,
+            start_date=start_date,
+            end_date=end_date,
+            date_unknown=date_unknown,
+            geo_only=geo_only,
+        )
+        results = all_p.get("results", [])
+    else:
+        fetch_k = req.top_k * 3 if (start_date or end_date or date_unknown or geo_only or person_image_ids) else req.top_k
+        hits = engine.query(semantic_q if semantic_q else prompt, top_k=fetch_k, filter_mode=req.filter_mode)
+
+        with get_conn() as conn:
+            for hit in hits:
+                row = get_image_by_id(conn, hit["image_id"])
+                if row is None:
+                    continue
+
+                dt = row["date_taken"] or ""
+                if date_unknown:
+                    if dt:
+                        continue
+                else:
+                    if start_date and start_date.strip():
+                        if not dt or dt < start_date.strip():
+                            continue
+                    if end_date and end_date.strip():
+                        end_val = end_date.strip()
+                        if len(end_val) == 10:
+                            end_val += "T23:59:59"
+                        if not dt or dt > end_val:
+                            continue
+
+                if geo_only:
+                    if not row["latitude"] or not row["longitude"]:
+                        continue
+
+                score = hit["score"]
+                if person_image_ids:
+                    if row["id"] in person_image_ids:
+                        score = min(0.99, score + 0.15)
+                    elif len(matched_people) > 0 and len(semantic_q) < 3:
+                        continue
+
+                results.append(_format_photo_dict(row, score, hit.get("raw_score", score), hit.get("enriched_text", "")))
+                if len(results) >= req.top_k:
+                    break
+
+    if sort == "newest":
+        results.sort(key=lambda x: x.get("date_taken") or "", reverse=True)
+    elif sort == "oldest":
+        results.sort(key=lambda x: x.get("date_taken") or "9999-99-99")
+
+    # Construct AI explanation
+    explanation_parts = []
+    if semantic_q:
+        explanation_parts.append(f"Searching visual scenes for **'{semantic_q}'**")
+    if matched_people:
+        people_str = ", ".join(f"**{p}**" for p in matched_people)
+        explanation_parts.append(f"tagged with {people_str}")
+    if date_mode == "unknown":
+        explanation_parts.append("filtered to **date unknown**")
+    elif start_date and end_date:
+        if start_date[:4] == end_date[:4] and start_date[5:7] == end_date[5:7]:
+            explanation_parts.append(f"taken in **{start_date[:7]}**")
+        elif start_date[:4] == end_date[:4]:
+            explanation_parts.append(f"taken in **{start_date[:4]}**")
+        else:
+            explanation_parts.append(f"from **{start_date}** to **{end_date}**")
+    elif date_mode in ("past_7d", "past_30d"):
+        explanation_parts.append(f"taken in the **{date_mode.replace('_', ' ')}**")
+    if geo_only:
+        explanation_parts.append("with **GPS coordinates**")
+    if group_by != "none":
+        explanation_parts.append(f"grouped by **{group_by}**")
+
+    explanation = " · ".join(explanation_parts) if explanation_parts else f"Searching for '{prompt}'"
+
+    suggestions = []
+    if not geo_only:
+        suggestions.append(f"{prompt} with GPS")
+    if group_by == "none":
+        suggestions.append(f"{prompt} grouped by month")
+    if date_mode == "all":
+        suggestions.append(f"{prompt} from 2026")
+
+    return {
+        "prompt": prompt,
+        "semantic_query": semantic_q,
+        "explanation": explanation,
+        "filters": {
+            "date_mode": date_mode,
+            "start_date": start_date,
+            "end_date": end_date,
+            "date_unknown": date_unknown,
+            "geo_only": geo_only,
+            "group_by": group_by,
+            "sort": sort,
+            "matched_people": matched_people,
+        },
+        "count": len(results),
+        "total_in_db": engine.count,
+        "suggestions": suggestions[:3],
+        "results": results,
+    }
+
+
 @app.get("/api/tags")
 def get_dynamic_tags():
     """Return common dynamic tags across all indexed photos."""
@@ -2095,6 +2458,82 @@ def start_face_scan():
 def get_face_scan_status():
     """Return status and progress of the background library face scan."""
     return {"status": "ok", **_face_scan_state}
+
+
+
+class CollageSaveRequest(BaseModel):
+    image_data: str
+    title: Optional[str] = "Photo Collage"
+    album_id: Optional[int] = None
+    aspect_ratio: Optional[str] = "1:1"
+    layout: Optional[str] = "grid"
+
+
+@app.post("/api/collage/save")
+def save_collage(req: CollageSaveRequest):
+    """Save a user-generated collage image to disk and index in database."""
+    try:
+        import base64
+        import hashlib
+        from datetime import datetime
+        import uuid
+        from backend.db import upsert_image, update_metadata, add_photo_to_album, get_image_by_id
+        from backend.scanner import make_thumbnail
+
+        data = req.image_data
+        if "," in data:
+            data = data.split(",", 1)[1]
+        img_bytes = base64.b64decode(data)
+
+        collages_dir = DATA_DIR / "collages"
+        collages_dir.mkdir(parents=True, exist_ok=True)
+
+        file_hash = hashlib.sha256(img_bytes).hexdigest()
+        filename = f"collage_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}.png"
+        file_path = collages_dir / filename
+        file_path.write_bytes(img_bytes)
+
+        file_size = len(img_bytes)
+        now_iso = datetime.now().isoformat()
+
+        with get_conn() as conn:
+            image_id = upsert_image(conn, str(file_path.resolve()), file_hash, file_size)
+            meta = {
+                "date_taken": now_iso,
+                "camera_make": "PixelMemory",
+                "camera_model": f"Collage Studio ({req.layout} · {req.aspect_ratio})",
+                "orientation": 1,
+            }
+            update_metadata(conn, image_id, **meta)
+
+            desc = f"Custom photo collage created in PixelMemory Collage Studio. Layout: {req.layout}, aspect ratio: {req.aspect_ratio}."
+            if req.title:
+                desc = f"Photo collage titled '{req.title}'. {desc}"
+            conn.execute(
+                "UPDATE images SET raw_description = ?, enriched_text = ?, description_done = 1 WHERE id = ?",
+                (desc, desc, image_id)
+            )
+
+            if req.album_id:
+                try:
+                    add_photo_to_album(conn, req.album_id, image_id)
+                except Exception:
+                    pass
+
+        # Generate thumbnail
+        try:
+            make_thumbnail(file_path, image_id)
+        except Exception:
+            pass
+
+        saved_img = get_image_by_id(image_id)
+        return {
+            "status": "ok",
+            "message": "Collage saved successfully",
+            "image": dict(saved_img) if saved_img else {"id": image_id}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save collage: {str(e)}")
 
 
 
