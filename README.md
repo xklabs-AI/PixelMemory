@@ -11,29 +11,36 @@
 
 ---
 
-## ✨ Features
+## ✨ Core Features & Capabilities
 
 - 🔒 **100% Private & Strictly Offline** — Zero cloud dependencies, zero external telemetry. All neural inference, facial detection, vector embeddings, and reverse geocoding run entirely on your local machine.
-- 🖥️ **Native Desktop Application (Tauri v2)** — High-performance native desktop shell (`PixelMemory.exe` / macOS App) featuring a frameless glass header, native OS window controls, and native File Explorer directory pickers.
+- 🖥️ **Native Desktop Application (Tauri v2)** — High-performance native desktop shell (`PixelMemory.exe` / macOS App) featuring a frameless glass header, custom window controls, and native File Explorer/Finder directory pickers.
 - 🧠 **Deep Visual Understanding (Moondream2)** — Pre-configured to use **Moondream2** (`moondream`) via Ollama for ultra-fast GPU visual description (~0.8s/photo) capturing scene categories, objects, actions, clothing, colors, and mood.
+- 🗣️ **Smart Natural Language Query Understanding** — Intelligent query intent parser automatically decomposes queries like *"photos in Tokyo last summer with Alice"* into semantic visual vectors, location filters, date/time ranges, and recognized people.
+- 🗺️ **Interactive Geographic Map View** — Visualizes your photos on an interactive dark-mode world map with geographic clustering based on EXIF GPS metadata.
 - 📖 **Personal Story Timelines (Gemma 4 2B)** — Pre-configured to use **Gemma 4** (`gemma4:e2b`) to transform chronological photo groups and memories into warm, personal first-person journal narratives.
-- 👤 **On-Device Face Recognition** — Built-in YuNet face detection and SFace deep facial embeddings for tagging friends, family, and pets without cloud biometric databases.
+- 👤 **On-Device Face Recognition & Clustering** — Built-in YuNet face detection and SFace deep facial embeddings for tagging friends, family, and pets without cloud biometric databases.
 - 📍 **Offline Reverse Geocoding** — Automatically extracts EXIF GPS coordinates and maps them to human-readable place names (city, region, country) with zero network calls.
-- 🎯 **High-Precision Neural Search** — Dynamic elbow cutoff and semantic conjunction algorithms eliminate unrelated false positives while retaining high recall.
-- ⚡ **Non-Blocking Background Ingest** — Floating progress dock with live speed, step counter, dynamic ETA countdown, and sequential folder queueing.
+- 🔍 **Visual Similarity / "More Like This"** — Instant vector nearest-neighbor search to find visually and contextually similar memories from any photo in your archive.
+- 📷 **Deep EXIF & Camera Metadata Inspector** — Full metadata breakdown showing camera model, lens, focal length, aperture, shutter speed, ISO, timestamp, and AI caption tags.
+- ⚡ **Incremental Ingest & Folder Sync** — High-speed sequential photo indexing with file hash change detection, deleted photo pruning, and live ETA progress dock.
 
 ---
 
-## 🤖 Pre-Configured Default AI Models
+## 🤖 Pre-Configured Default AI Models & Tech Stack
 
 PixelMemory is out-of-the-box optimized for consumer GPUs, Apple Silicon, and modern CPUs:
 
-| Capability | Default Model | Speed / Resource | Purpose |
+| Capability | Model / Engine | Speed / Resource | Purpose |
 | :--- | :--- | :--- | :--- |
 | **Vision (VLM)** | **`moondream`** (Moondream2 1.8B) | ~0.8s/photo · 1.8 GB VRAM | Comprehensive visual captioning for semantic search |
 | **Stories (LLM)** | **`gemma4:e2b`** (Gemma 4 2B) | ~1-2s · ~2 GB VRAM | Warm first-person daily travel journals and narratives |
+| **Query Intent** | **Fast NLP & Intent Parser** | Instant (<1ms) · Local | Automatic extraction of dates, places, people, and semantics |
 | **Embeddings** | **`all-MiniLM-L6-v2`** | ~15ms · CPU / GPU | 384-dimensional dense semantic vector space (Zvec) |
+| **Vector Engine** | **Zvec Index** | Instant (<5ms) · RAM/Disk | Fast cosine similarity vector search and retrieval |
 | **Face Detection** | **YuNet + SFace (ONNX)** | Real-time · CPU / GPU | 128-dimensional cosine face clustering |
+| **Geocoding** | **Reverse Geocoder** | Instant (<1ms) · Local DB | Offline GPS to City/Country mapping |
+| **Desktop Shell** | **Tauri v2 (Rust)** | Native binary (<15MB) | Lightweight native window with glass styling & OS bridges |
 
 ---
 
