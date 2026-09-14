@@ -16,16 +16,16 @@ PREVIEW_SIZE = (2048, 2048)
 # ── Models ───────────────────────────────────────────
 USE_OLLAMA = True
 OLLAMA_HOST = "http://localhost:11434"
-DEFAULT_VLM_MODEL = "moondream:1.8b"
-ACTIVE_VLM_MODEL = "moondream:1.8b"
-OLLAMA_MODEL = "moondream:1.8b"        # fallback / legacy reference
+DEFAULT_VLM_MODEL = "moondream"
+ACTIVE_VLM_MODEL = "moondream"
+OLLAMA_MODEL = "moondream"             # fallback / legacy reference
 VLM_MODEL = "vikhyatk/moondream2"      # HuggingFace fallback
 VLM_REVISION = "2025-01-09"           # pin for reproducibility (HuggingFace fallback)
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 AVAILABLE_VLM_MODELS = [
     {
-        "id": "moondream:1.8b",
+        "id": "moondream",
         "name": "Moondream2 (1.8B)",
         "tag": "⚡ Fast · 1.8GB VRAM",
         "vram": "1.8 GB",
@@ -63,21 +63,21 @@ PORT = 8642
 SEARCH_TOP_K = 40
 
 # ── Story Timeline ──────────────────────────────────
-STORY_LLM_MODEL = "gemma4:e4b"
+STORY_LLM_MODEL = "gemma4:e2b"
 STORY_LLM_THINKING = False  # Set to False to disable Gemma/reasoning model thinking mode for high-speed generation
 
 AVAILABLE_STORY_MODELS = [
+    {
+        "id": "gemma4:e2b",
+        "name": "Gemma 4 (E2B)",
+        "tag": "⚡ Fast · ~2B",
+        "description": "Ultra-fast narrative generation (~1-2s), great for responsive story timelines.",
+    },
     {
         "id": "gemma4:e4b",
         "name": "Gemma 4 (E4B)",
         "tag": "🧠 Rich Prose · ~4B",
         "description": "Higher quality narratives, more vivid storytelling.",
-    },
-    {
-        "id": "gemma4:e2b",
-        "name": "Gemma 4 (E2B)",
-        "tag": "⚡ Fast · ~2B",
-        "description": "Faster generation, great for quick story previews.",
     },
 ]
 STORY_PROMPT_TEMPLATE = (

@@ -139,7 +139,26 @@ class UpdateNoteRequest(BaseModel):
     day_date: Optional[str] = None
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="PixelMemory", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "tauri://localhost",
+        "http://localhost:8642",
+        "http://127.0.0.1:8642",
+        "http://localhost:1420",
+        "http://127.0.0.1:1420",
+        "*",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Lazy singleton
 _search = None

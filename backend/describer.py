@@ -46,6 +46,34 @@ def get_installed_ollama_models(host: str = OLLAMA_HOST) -> list[str]:
     return []
 
 
+def resolve_ollama_model(model_name: str, host: str = OLLAMA_HOST) -> str:
+    """
+    Resolve requested model name to the actual matching tag installed in Ollama.
+    For example: 'moondream' -> 'moondream:latest' or 'moondream:1.8b'.
+    """
+    installed = get_installed_ollama_models(host)
+    if not installed:
+        return model_name
+    if model_name in installed:
+        return model_name
+
+    target_lower = model_name.strip().lower()
+    prefix = target_lower.split(":")[0]
+
+    # Exact base match (e.g. 'moondream' matching 'moondream:latest')
+    for m in installed:
+        m_lower = m.lower()
+        if m_lower == target_lower or m_lower.startswith(prefix + ":") or m_lower == prefix:
+            return m
+
+    # Partial substring match
+    for m in installed:
+        if prefix in m.lower():
+            return m
+
+    return model_name
+
+
 def is_ollama_ready(host: str = OLLAMA_HOST, model_name: Optional[str] = None) -> bool:
     """Check if Ollama server is running and optionally has the target model."""
     target = model_name or get_active_vlm_model()
@@ -54,7 +82,8 @@ def is_ollama_ready(host: str = OLLAMA_HOST, model_name: Optional[str] = None) -
         return False
     if not target:
         return True
-    return any(target in m or m.startswith(target.split(":")[0]) for m in installed)
+    prefix = target.split(":")[0].lower()
+    return any(target.lower() in m.lower() or m.lower().startswith(prefix) for m in installed)
 
 
 def get_available_vlm_models(host: str = OLLAMA_HOST) -> list[dict]:
@@ -141,7 +170,7 @@ class ImageDescriber:
             return f"[image open failed: {e}]"
 
         payload = {
-            "model": self.model_name,
+            "model": resolve_ollama_model(self.model_name),
             "prompt": VLM_PROMPT,
             "images": [b64_data],
             "stream": False,

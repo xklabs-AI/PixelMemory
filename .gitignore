@@ -122,3 +122,12 @@ test_*.py
 verify_*.py
 check_*.py
 inspect_*.py
+
+# ── Node.js & Tauri Desktop Artifacts ────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+src-tauri/target/
+src-tauri/gen/
+

@@ -4693,8 +4693,8 @@
 
   <div class="window">
     <!-- Top Header -->
-    <header class="top-header">
-      <div class="header-left">
+    <header class="top-header" data-tauri-drag-region>
+      <div class="header-left" data-tauri-drag-region>
         <div class="mac-controls">
           <div class="mac-dot close"></div>
           <div class="mac-dot min"></div>
@@ -6344,7 +6344,47 @@
 
   <script>
     const $ = (sel) => document.querySelector(sel);
-    const API = '';
+    const isTauri = typeof window !== 'undefined' && (
+      window.__TAURI_INTERNALS__ !== undefined ||
+      window.__TAURI__ !== undefined ||
+      location.protocol === 'tauri:' ||
+      location.hostname === 'tauri.localhost' ||
+      location.protocol === 'file:' ||
+      location.port === '1420'
+    );
+    const API = isTauri || location.origin === 'null' ? 'http://127.0.0.1:8642' : '';
+
+    // Initialize native Tauri window controls if running in desktop shell
+    function initTauriWindowControls() {
+      try {
+        const tauriWindow = window.__TAURI__?.window?.getCurrentWindow ? window.__TAURI__.window.getCurrentWindow() : null;
+        if (!tauriWindow) return;
+        document.querySelector('.mac-dot.close')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tauriWindow.close();
+        });
+        document.querySelector('.mac-dot.min')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tauriWindow.minimize();
+        });
+        document.querySelector('.mac-dot.max')?.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const isMax = await tauriWindow.isMaximized();
+          if (isMax) {
+            await tauriWindow.unmaximize();
+          } else {
+            await tauriWindow.maximize();
+          }
+        });
+      } catch (e) {
+        console.debug('Tauri window controls init:', e);
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTauriWindowControls);
+    } else {
+      initTauriWindowControls();
+    }
 
     let allResults = [];
     let currentQuery = '';
@@ -9035,6 +9075,24 @@
       btn.disabled = true;
       btn.innerHTML = '⏳ Opening Picker...';
       try {
+        // 1. If running under Tauri desktop, use native OS file dialog plugin
+        if (window.__TAURI__?.dialog?.open) {
+          const selected = await window.__TAURI__.dialog.open({
+            directory: true,
+            multiple: false,
+            title: 'Select Photo Directory to Ingest'
+          });
+          if (selected) {
+            const cleanPath = (typeof selected === 'string' ? selected : selected[0] || '').replace(/\\/g, '/');
+            if (cleanPath) {
+              $('#importFolderInput').value = cleanPath;
+              showToast(`Selected: ${cleanPath}`);
+            }
+          }
+          return;
+        }
+
+        // 2. Fallback to server-side PowerShell dialog in web mode
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 60000);
         const res = await fetch(`${API}/api/system/browse-folder`, { signal: controller.signal });

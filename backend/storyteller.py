@@ -191,8 +191,11 @@ def build_group_prompt(group_title: str, photos: list[dict]) -> str:
 
 def call_ollama_llm(prompt: str, model: str = STORY_LLM_MODEL, think: bool = STORY_LLM_THINKING) -> str:
     """Call Ollama text generation API and return the response text."""
+    from backend.describer import resolve_ollama_model
+    target_model = resolve_ollama_model(model)
+
     payload = {
-        "model": model,
+        "model": target_model,
         "prompt": prompt,
         "stream": False,
         "think": think,

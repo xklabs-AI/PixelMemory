@@ -1,147 +1,242 @@
 # PixelMemory — Local Semantic Photo Search
 
-> **Find any photo using natural language.** Fully offline and privacy-first — powered by local Vision AI, offline reverse geocoding, and vector search. No photos or metadata ever leave your machine.
+> **Find any photo using natural language.** Fully offline and privacy-first — powered by local Vision AI, offline reverse geocoding, face recognition, story timelines, and vector search. No photos or metadata ever leave your machine.
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python 3.10-3.12](https://img.shields.io/badge/Python-3.10%20--%203.12-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg)](https://fastapi.tiangolo.com/)
-[![Ollama Moondream](https://img.shields.io/badge/VLM-Moondream2%20(Ollama)-purple.svg)](https://ollama.com/)
+[![Tauri v2](https://img.shields.io/badge/Desktop-Tauri%20v2%20(Rust)-orange.svg)](https://tauri.app/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
+[![Ollama Moondream2](https://img.shields.io/badge/Vision-Moondream2%20(1.8B)-purple.svg)](https://ollama.com/library/moondream)
+[![Ollama Gemma 4](https://img.shields.io/badge/Stories-Gemma%204%20(2B)-red.svg)](https://ollama.com/library/gemma4)
 
 ---
 
 ## ✨ Features
 
-- 🔒 **100% Private & Local** — Zero cloud dependencies, zero data leaks. All AI inference and vector indexing run locally on your hardware.
-- 🧠 **Deep Visual Understanding** — Powered by **Moondream2** (via Ollama or local PyTorch) to describe subjects, actions, colors, scenery, objects, and mood.
-- 📍 **Offline GPS & Reverse Geocoding** — Automatically extracts EXIF GPS coordinates and maps them to human-readable place names (city, region, country) completely offline.
-- 🎯 **High-Precision Neural Search** — Aspect conjunction and dynamic elbow cutoff algorithms eliminate unrelated false positives while retaining high recall.
-- ⚡ **Non-Blocking Background Ingest** — Google Drive style floating progress dock with live speed, step counter, dynamic ETA countdown, and sequential folder queueing.
-- 📁 **Albums & Curation** — Create custom albums, assign photos with one click, and browse curated collections.
-- 🏷️ **Dynamic Tag Explorer** — Automatic camera model, location, and year tag extraction for quick filtering.
-- 🚀 **Unified Launcher** — Single-command setup and diagnostics with `python launch.py`.
+- 🔒 **100% Private & Strictly Offline** — Zero cloud dependencies, zero external telemetry. All neural inference, facial detection, vector embeddings, and reverse geocoding run entirely on your local machine.
+- 🖥️ **Native Desktop Application (Tauri v2)** — High-performance native desktop shell (`PixelMemory.exe` / macOS App) featuring a frameless glass header, native OS window controls, and native File Explorer directory pickers.
+- 🧠 **Deep Visual Understanding (Moondream2)** — Pre-configured to use **Moondream2** (`moondream`) via Ollama for ultra-fast GPU visual description (~0.8s/photo) capturing scene categories, objects, actions, clothing, colors, and mood.
+- 📖 **Personal Story Timelines (Gemma 4 2B)** — Pre-configured to use **Gemma 4** (`gemma4:e2b`) to transform chronological photo groups and memories into warm, personal first-person journal narratives.
+- 👤 **On-Device Face Recognition** — Built-in YuNet face detection and SFace deep facial embeddings for tagging friends, family, and pets without cloud biometric databases.
+- 📍 **Offline Reverse Geocoding** — Automatically extracts EXIF GPS coordinates and maps them to human-readable place names (city, region, country) with zero network calls.
+- 🎯 **High-Precision Neural Search** — Dynamic elbow cutoff and semantic conjunction algorithms eliminate unrelated false positives while retaining high recall.
+- ⚡ **Non-Blocking Background Ingest** — Floating progress dock with live speed, step counter, dynamic ETA countdown, and sequential folder queueing.
 
 ---
 
-## 🏛️ Architecture
+## 🤖 Pre-Configured Default AI Models
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        INGEST & ANALYSIS PIPELINE                      │
-│                                                                        │
-│  Directory Scanner ──► EXIF / GPS Extractor (CPU) ──────────┐          │
-│                              │                              ▼          │
-│                        Offline Reverse Geocode         SQLite DB       │
-│                                                             ▲          │
-│  Directory Scanner ──► Moondream2 Vision VLM (Local GPU) ───┘          │
-│                        (detailed visual captioning)                    │
-│                                                                        │
-│  Metadata Enrichment ──► sentence-transformers ──► Zvec Vector DB     │
-└────────────────────────────────────────────────────────────────────────┘
+PixelMemory is out-of-the-box optimized for consumer GPUs, Apple Silicon, and modern CPUs:
 
-┌────────────────────────────────────────────────────────────────────────┐
-│                          SEARCH & DISCOVERY                            │
-│                                                                        │
-│  Natural Language Query ──► Neural Conjunction Filter ──► Zvec         │
-│                                      │                                 │
-│                               Ranked Results                           │
-│                                      │                                 │
-│                             FastAPI REST API                           │
-│                                      │                                 │
-│                         Web UI (Glassmorphic SPA)                      │
-└────────────────────────────────────────────────────────────────────────┘
-```
+| Capability | Default Model | Speed / Resource | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Vision (VLM)** | **`moondream`** (Moondream2 1.8B) | ~0.8s/photo · 1.8 GB VRAM | Comprehensive visual captioning for semantic search |
+| **Stories (LLM)** | **`gemma4:e2b`** (Gemma 4 2B) | ~1-2s · ~2 GB VRAM | Warm first-person daily travel journals and narratives |
+| **Embeddings** | **`all-MiniLM-L6-v2`** | ~15ms · CPU / GPU | 384-dimensional dense semantic vector space (Zvec) |
+| **Face Detection** | **YuNet + SFace (ONNX)** | Real-time · CPU / GPU | 128-dimensional cosine face clustering |
 
 ---
 
-## 📋 Prerequisites
+## 🦙 Ollama Setup Guide (End-to-End)
 
-- **Python**: 3.10 or higher
-- **Ollama**: (Recommended) Installed and running locally
-  ```bash
-  ollama pull moondream
+PixelMemory uses [Ollama](https://ollama.com/) for local GPU acceleration of Moondream2 and Gemma 4. Follow the setup steps below for your operating system:
+
+### 🪟 Windows Setup
+
+1. **Install Ollama**:
+   - **Option A (One-command with winget)**:
+     ```powershell
+     winget install -e --id Ollama.Ollama
+     ```
+   - **Option B (Installer)**:
+     Download and run the installer from [ollama.com/download/windows](https://ollama.com/download/windows).
+
+2. **Start Ollama**:
+   Launch Ollama from your Start Menu. A llama icon will appear in your Windows System Tray (near the clock).
+
+3. **Pull the Default Models**:
+   Open PowerShell or Command Prompt and run:
+   ```powershell
+   ollama pull moondream
+   ollama pull gemma4:e2b
+   ```
+
+---
+
+### 🍏 macOS Setup (Apple Silicon M1/M2/M3/M4 & Intel)
+
+1. **Install Ollama**:
+   - **Option A (Homebrew)**:
+     ```bash
+     brew install --cask ollama
+     ```
+   - **Option B (Direct Download)**:
+     Download the `.zip` from [ollama.com/download/mac](https://ollama.com/download/mac) and drag `Ollama.app` into `/Applications`.
+
+2. **Start Ollama**:
+   Launch **Ollama** from Applications or Spotlight. An Ollama menu bar icon will appear at the top of your screen.
+
+3. **Pull the Default Models**:
+   Open Terminal and run:
+   ```bash
+   ollama pull moondream
+   ollama pull gemma4:e2b
+   ```
+
+---
+
+### ✅ Verify Ollama Installation
+
+To confirm both models are ready, run:
+```bash
+ollama list
+```
+You should see `moondream:latest` and `gemma4:e2b` listed.
+
+---
+
+## ⚡ Frictionless Installation
+
+### 🪟 Windows Quick Start
+
+PixelMemory provides automated setup scripts that configure the Python virtual environment and check your tools:
+
+1. **Clone the repository**:
+   ```powershell
+   git clone https://github.com/xklabs-AI/PixelMemory.git
+   cd PixelMemory
+   ```
+
+2. **Run the automated setup**:
+   Double-click `setup.bat` or run in PowerShell:
+   ```powershell
+   .\setup.bat
+   ```
+   *(Or using PowerShell: `.\setup.ps1`)*
+
+   > **Zero-Friction Tip**: If you simply run `.\launch.bat` on a fresh system, it will automatically detect that setup is needed and configure `.venv` for you!
+
+---
+
+### 🍏 macOS & Linux Quick Start
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/xklabs-AI/PixelMemory.git
+   cd PixelMemory
+   ```
+
+2. **Run the automated setup**:
+   ```bash
+   chmod +x setup.sh launch.sh
+   ./setup.sh
+   ```
+
+---
+
+## 🚀 Running PixelMemory
+
+PixelMemory can run either as a **Native Desktop Application** or as a **Local Web Platform**.
+
+### Option 1: Native Desktop Application (Tauri v2)
+
+The desktop mode provides native OS window dragging, glass styling, and native file dialogs:
+
+- **Windows**:
+  ```powershell
+  .\launch.bat --desktop
+  # or: .\launch.ps1 -desktop
   ```
-  *(Alternative: Moondream2 can also run directly via PyTorch/HuggingFace if configured in `backend/config.py`)*
-- **GPU**: NVIDIA GPU with 4GB+ VRAM recommended for fast AI vision captioning (CPU fallback supported).
+- **macOS / Linux**:
+  ```bash
+  ./launch.sh --desktop
+  ```
+
+> [!NOTE]
+> **Compiling Desktop Mode**:
+> Desktop mode requires **Rust/Cargo** ([rustup.rs](https://rustup.rs)) and Microsoft C++ Build Tools on Windows. If not present, PixelMemory will inform you and gracefully offer to run in Web Browser Mode.
 
 ---
 
-## 🚀 Quick Start
+### Option 2: Web Browser Platform (FastAPI)
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/xklabs-AI/PixelMemory.git
-cd PixelMemory
-```
+Runs the high-speed local server and automatically opens your default web browser:
 
-### 2. Create Virtual Environment & Install Dependencies
-```bash
-# Create virtual environment
-python -m venv .venv
+- **Windows**:
+  ```powershell
+  .\launch.bat
+  ```
+- **macOS / Linux**:
+  ```bash
+  ./launch.sh
+  ```
 
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/macOS:
-source .venv/bin/activate
-
-# Install requirements
-pip install -r requirements.txt
-```
-
-### 3. Launch the Application
-Run the unified interactive launcher:
-```bash
-python launch.py
-```
-Or start the server directly:
-```bash
-python -m backend.server
-```
-
-Open your browser at:
-👉 **`http://localhost:8642`**
+Default URL: 👉 **`http://localhost:8642`**
 
 ---
 
-## 📥 Ingesting Your Photos
+### Option 3: Quick Demo Archive (12 Sample Photos)
 
-You can import photos directly from the **Web Interface**:
-1. Click **Import Photos** in the sidebar.
-2. Enter the path to any local directory of photos (e.g. `./photos` or `/path/to/photos`).
-3. Click **Start Import**.
-4. The **Floating Progress Dock** will track progress in the background while you continue searching and browsing. Additional folder imports will be automatically queued sequentially!
+Want to try PixelMemory instantly without waiting for your photo library to index?
+- **Windows**:
+  ```powershell
+  .\launch.bat --demo
+  ```
+- **macOS / Linux**:
+  ```bash
+  ./launch.sh --demo
+  ```
+This seeds 12 curated memories (landscapes, birthdays, pets, food, travel) with GPS and embeddings in ~2 seconds so you can test natural language search right away!
 
-You can also run ingest via CLI:
+---
+
+## 🩺 System Diagnostics & Doctor
+
+To verify your hardware compute, Ollama status, and database health at any time:
+
 ```bash
-python -m backend.ingest /path/to/your/photos
+# Check system status
+python launch.py --status
+
+# Interactive setup and model doctor
+python launch.py --doctor
 ```
 
 ---
 
-## ⚙️ Configuration
+## 📥 Ingesting Your Photo Library
 
-Key settings can be modified in [`backend/config.py`](backend/config.py):
+You can import photos directly through the UI:
+1. Open PixelMemory (Desktop App or Browser).
+2. Click **📁 Ingest Photos** or click **Browse Folder...** (which opens your native OS folder chooser).
+3. Select your photo directory (e.g., `D:\Photos` or `/Users/name/Pictures`).
+4. Click **Start Ingestion**. The floating progress dock will monitor progress in the background while you continue searching!
+
+---
+
+## ⚙️ Configuration Reference
+
+Settings can be customized in [`backend/config.py`](backend/config.py):
 
 | Setting | Default | Description |
-|---|---|---|
-| `DATA_DIR` | `~/.pixelmemory` | Root data directory for SQLite DB, Zvec, and thumbnails |
-| `DB_PATH` | `~/.pixelmemory/pixelmemory.db` | SQLite library database path |
-| `ZVEC_DIR` | `~/.pixelmemory/zvec` | Zvec vector persistence directory |
-| `USE_OLLAMA` | `True` | Whether to use Ollama for Moondream2 inference |
-| `OLLAMA_MODEL` | `moondream:1.8b` | Ollama model tag |
-| `EMBEDDING_MODEL`| `all-MiniLM-L6-v2` | Sentence transformer model for embeddings |
-| `PORT` | `8642` | Web server port |
+| :--- | :--- | :--- |
+| `DEFAULT_VLM_MODEL` | `"moondream"` | Primary Vision model for image captioning |
+| `STORY_LLM_MODEL` | `"gemma4:e2b"` | Primary LLM for travel story generation |
+| `OLLAMA_HOST` | `"http://localhost:11434"` | Local Ollama API server endpoint |
+| `DATA_DIR` | `~/.pixelmemory` | Library database, thumbnails, and Zvec vector store |
+| `PORT` | `8642` | Local backend port |
+| `HOST` | `"0.0.0.0"` | Network bind address |
 
 ---
 
-## 🛡️ Privacy & Security
+## 🛡️ Privacy Commitment
 
-- **Strictly Offline**: All processing occurs locally on your machine.
-- **No Cloud Telemetry**: PixelMemory makes zero external API requests during search or ingestion.
-- **Gitignored User Data**: Databases, photo directories, and vector embeddings are gitignored by default.
+- **Zero Cloud**: 100% of image bytes, facial recognition embeddings, and EXIF coordinates remain strictly on your local disk.
+- **No Telemetry**: No tracking cookies, analytics pings, or cloud API calls.
+- **Gitignored Libraries**: Your photos, database, and thumbnails are excluded from version control by default.
 
 ---
 
 ## 📄 License
 
-This project is open-source software licensed under the [Apache 2.0 License](LICENSE).
+PixelMemory is open-source software licensed under the [Apache 2.0 License](LICENSE).

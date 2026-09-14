@@ -12,6 +12,8 @@ import socket
 import argparse
 import subprocess
 import webbrowser
+import shutil
+import threading
 from pathlib import Path
 from urllib.request import urlopen
 from urllib.error import URLError
@@ -21,9 +23,22 @@ VENV_PYTHON = WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe"
 if not VENV_PYTHON.exists():
     VENV_PYTHON = WORKSPACE_ROOT / ".venv" / "bin" / "python"
 
-# ── Self-relaunch into virtual environment if needed ──────────────────────────
+# ── Self-relaunch into virtual environment or Python 3.12 if needed ──────────
+script_path = str(Path(__file__).resolve())
 if VENV_PYTHON.exists() and Path(sys.executable).resolve() != VENV_PYTHON.resolve():
-    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON)] + sys.argv)
+    code = subprocess.run([str(VENV_PYTHON), script_path] + sys.argv[1:]).returncode
+    sys.exit(code)
+elif not VENV_PYTHON.exists():
+    py312 = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python" / "Python312" / "python.exe"
+    if py312.exists() and Path(sys.executable).resolve() != py312.resolve():
+        code = subprocess.run([str(py312), script_path] + sys.argv[1:]).returncode
+        sys.exit(code)
+
+
+# ── Ensure Cargo bin is in PATH for Tauri ────────────────────────────────────
+CARGO_BIN = Path.home() / ".cargo" / "bin"
+if CARGO_BIN.exists() and str(CARGO_BIN) not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = f"{CARGO_BIN}{os.pathsep}{os.environ.get('PATH', '')}"
 
 # Add workspace to Python path so `backend` imports resolve cleanly
 if str(WORKSPACE_ROOT) not in sys.path:
@@ -56,7 +71,7 @@ C_PURPLE = "\033[38;5;141m"
 
 
 def banner():
-    print(f"""
+    print(rf"""
 {C_PURPLE}{C_BOLD}  ___ _         _ __  __                           
  | _ (_)_ _____| |  \/  |___ _ __  ___ _ _ _  _    
  |  _/ \ \ / -_) | |\/| / -_) '  \/ _ \ '_| || |   
@@ -128,15 +143,21 @@ def print_system_status():
     else:
         print(f"  GPU Compute:  {C_YELLOW}⚠ Disabled{C_RESET} (Running in CPU mode)")
 
-    from backend.describer import is_ollama_ready, get_active_vlm_model, get_available_vlm_models
-    from backend.config import OLLAMA_HOST
-    if is_ollama_ready():
-        active_vlm = get_active_vlm_model()
-        available = [m["id"] for m in get_available_vlm_models() if m.get("installed")]
-        models_str = ", ".join(available) if available else active_vlm
-        print(f"  Ollama VLM:   {C_GREEN}✔ Connected{C_RESET} ({OLLAMA_HOST} · Active: {C_BOLD}{active_vlm}{C_RESET} | Models: {models_str})")
+    from backend.describer import get_installed_ollama_models
+    from backend.config import OLLAMA_HOST, DEFAULT_VLM_MODEL, STORY_LLM_MODEL
+    installed_models = get_installed_ollama_models()
+    has_moondream = any("moondream" in m.lower() for m in installed_models)
+    has_gemma = any("gemma4:e2b" in m.lower() or "gemma4" in m.lower() for m in installed_models)
+
+    if installed_models:
+        vlm_s = f"{C_GREEN}✔ moondream ready{C_RESET}" if has_moondream else f"{C_YELLOW}⚠ missing (run: ollama pull moondream){C_RESET}"
+        story_s = f"{C_GREEN}✔ gemma4:e2b ready{C_RESET}" if has_gemma else f"{C_YELLOW}⚠ missing (run: ollama pull gemma4:e2b){C_RESET}"
+        print(f"  Ollama AI:    {C_GREEN}✔ Connected{C_RESET} ({OLLAMA_HOST})")
+        print(f"    • Vision:   {vlm_s}")
+        print(f"    • Stories:  {story_s}")
     else:
-        print(f"  Ollama VLM:   {C_YELLOW}⚠ Offline{C_RESET} (Fallback: local HuggingFace PyTorch)")
+        print(f"  Ollama AI:    {C_YELLOW}⚠ Offline or Not Running{C_RESET} (Fallback: local HuggingFace PyTorch)")
+        print(f"                Tip: Start Ollama or install from https://ollama.com")
 
     print(f"\n{C_BOLD}── Storage & Library Stats ─────────────────────────────────────────{C_RESET}")
     print(f"  Data Root:    {DATA_DIR}")
@@ -241,6 +262,172 @@ def clear_database():
         print("Cancelled.")
 
 
+def check_desktop_prerequisites() -> bool:
+    """Verify that cargo and build prerequisites are available."""
+    cargo_bin = Path.home() / ".cargo" / "bin"
+    if cargo_bin.exists() and str(cargo_bin) not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = f"{cargo_bin}{os.pathsep}{os.environ.get('PATH', '')}"
+
+    if shutil.which("cargo") is None:
+        print(f"\n{C_RED}Error: Cargo was not found in PATH.{C_RESET}")
+        print(f"Please restart your terminal to reload environment variables, or ensure Rust is installed.\n")
+        return False
+
+    has_msvc = shutil.which("link") is not None
+    vswhere = Path(r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe")
+    if not has_msvc and vswhere.exists():
+        try:
+            out = subprocess.check_output([str(vswhere), "-latest", "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"], text=True)
+            if out.strip():
+                has_msvc = True
+        except Exception:
+            pass
+
+    release_exe = WORKSPACE_ROOT / "src-tauri" / "target" / "release" / "PixelMemory.exe"
+    debug_exe = WORKSPACE_ROOT / "src-tauri" / "target" / "debug" / "PixelMemory.exe"
+    if not has_msvc and not release_exe.exists() and not debug_exe.exists():
+        print(f"\n{C_YELLOW}⚠ Microsoft C++ Build Tools (MSVC link.exe) not detected.{C_RESET}")
+        print(f"  Tauri requires C++ Build Tools to compile native desktop binaries.")
+        print(f"  To install in an elevated (Admin) terminal, run:")
+        print(f"    {C_CYAN}winget install Microsoft.VisualStudio.2022.BuildTools --override \"--passive --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended\"{C_RESET}")
+        print(f"  Or download from: {C_CYAN}https://aka.ms/vs/17/release/vs_BuildTools.exe{C_RESET}\n")
+        print(f"  {C_BOLD}[1]{C_RESET} Launch in Web Browser Mode (FastAPI)")
+        print(f"  {C_BOLD}[2]{C_RESET} Try compiling anyway with Tauri")
+        print(f"  {C_BOLD}[0]{C_RESET} Exit\n")
+        choice = input(f"{C_BOLD}Select an option [1, 2, or 0, default 1]: {C_RESET}").strip()
+        if choice == "2":
+            return True
+        elif choice == "0":
+            return False
+        else:
+            start_server(auto_open=True)
+            return False
+
+    return True
+
+
+def start_desktop_app(port: int = PORT, host: str = "127.0.0.1"):
+    """
+    Launch PixelMemory Native Desktop Application (Tauri).
+    Ensures backend server is active, waits for health check, and launches Tauri.
+    """
+    if not check_desktop_prerequisites():
+        return
+
+    print(f"\n{C_PURPLE}{C_BOLD}Starting PixelMemory Desktop App (Tauri)...{C_RESET}")
+    init_db()
+
+    target_url = f"http://127.0.0.1:{port}"
+
+    if not is_port_in_use(port, "127.0.0.1"):
+        print(f"Starting local AI backend server on {target_url}...")
+        import uvicorn
+        from backend.server import app
+
+        server_err = None
+
+        def _run_server():
+            nonlocal server_err
+            try:
+                config = uvicorn.Config(app=app, host="127.0.0.1", port=port, log_level="warning")
+                server = uvicorn.Server(config)
+                server.run()
+            except BaseException as e:
+                server_err = e
+
+        server_thread = threading.Thread(target=_run_server, daemon=True)
+        server_thread.start()
+
+        # Wait with visible progress indicator and fail-fast on server errors
+        start_wait = time.time()
+        connected = False
+        print("Waiting for backend server to become ready", end="", flush=True)
+        while time.time() - start_wait < 45.0:
+            if server_err:
+                print(f"\n{C_RED}Backend server encountered an error: {server_err}{C_RESET}")
+                return
+            if is_port_in_use(port, "127.0.0.1"):
+                try:
+                    with urlopen(f"{target_url}/api/stats", timeout=1.0) as resp:
+                        if resp.status == 200:
+                            connected = True
+                            print(f" {C_GREEN}✔ ready!{C_RESET}")
+                            break
+                except Exception:
+                    pass
+            print(".", end="", flush=True)
+            time.sleep(0.6)
+
+        if not connected:
+            print(f"\n{C_RED}Failed to connect to backend server at {target_url}{C_RESET}")
+            return
+        print(f"{C_GREEN}✔ Backend server initialized and ready.{C_RESET}")
+    else:
+        print(f"{C_GREEN}✔ Backend server already running on port {port}.{C_RESET}")
+
+    # Check for compiled Tauri executable or run dev via npm
+    candidates = [
+        WORKSPACE_ROOT / "src-tauri" / "target" / "release" / "PixelMemory.exe",
+        WORKSPACE_ROOT / "src-tauri" / "target" / "release" / "app.exe",
+        WORKSPACE_ROOT / "src-tauri" / "target" / "debug" / "PixelMemory.exe",
+        WORKSPACE_ROOT / "src-tauri" / "target" / "debug" / "app.exe",
+    ]
+    binary_to_run = next((p for p in candidates if p.exists()), None)
+
+    try:
+        if binary_to_run:
+            print(f"Launching desktop binary: {binary_to_run.name} ({binary_to_run.parent.name} build)...")
+            subprocess.run([str(binary_to_run)], cwd=str(WORKSPACE_ROOT))
+        else:
+            print(f"Launching Tauri in development mode ({C_CYAN}npm run tauri:dev{C_RESET})...")
+            subprocess.run("npm run tauri:dev", shell=True, cwd=str(WORKSPACE_ROOT))
+    except KeyboardInterrupt:
+        print(f"\n{C_YELLOW}Desktop app closed.{C_RESET}")
+    finally:
+        print(f"{C_GREEN}✔ Desktop session finished.{C_RESET}")
+
+
+def check_or_pull_ollama_models():
+    """Verify Ollama service and prompt to pull default models if missing."""
+    print(f"\n{C_PURPLE}{C_BOLD}── Ollama Local AI Diagnostics & Setup ─────────────────────────────{C_RESET}")
+    from backend.describer import get_installed_ollama_models
+    from backend.config import OLLAMA_HOST
+    installed = get_installed_ollama_models()
+    if not installed:
+        print(f"{C_YELLOW}⚠ Ollama service is not responding at {OLLAMA_HOST}.{C_RESET}")
+        print("  Please make sure Ollama is installed and running:")
+        if IS_WIN:
+            print(f"    • Install via winget:   {C_CYAN}winget install Ollama.Ollama{C_RESET}")
+            print(f"    • Download installer:   {C_CYAN}https://ollama.com/download/windows{C_RESET}")
+        else:
+            print(f"    • Install via Homebrew: {C_CYAN}brew install --cask ollama{C_RESET}")
+            print(f"    • Download installer:   {C_CYAN}https://ollama.com/download/mac{C_RESET}")
+        return
+
+    print(f"{C_GREEN}✔ Ollama service is active at {OLLAMA_HOST}.{C_RESET}")
+    has_moondream = any("moondream" in m.lower() for m in installed)
+    has_gemma = any("gemma4:e2b" in m.lower() or "gemma4" in m.lower() for m in installed)
+
+    print(f"  • Vision Model (Moondream2):  " + (f"{C_GREEN}✔ Installed{C_RESET}" if has_moondream else f"{C_YELLOW}⚠ Not found{C_RESET}"))
+    print(f"  • Story Model (Gemma 4 2B):   " + (f"{C_GREEN}✔ Installed{C_RESET}" if has_gemma else f"{C_YELLOW}⚠ Not found{C_RESET}"))
+
+    missing = []
+    if not has_moondream:
+        missing.append("moondream")
+    if not has_gemma:
+        missing.append("gemma4:e2b")
+
+    if missing:
+        pull = input(f"\n{C_BOLD}Would you like to pull missing models ({', '.join(missing)}) now? (Y/n): {C_RESET}").strip().lower()
+        if pull not in ("n", "no"):
+            for m in missing:
+                print(f"\n{C_CYAN}Pulling {m}...{C_RESET}")
+                subprocess.run(["ollama", "pull", m])
+            print(f"\n{C_GREEN}✔ All models updated successfully!{C_RESET}")
+    else:
+        print(f"\n{C_GREEN}✔ All default models (moondream, gemma4:e2b) are installed and ready!{C_RESET}")
+
+
 def interactive_menu():
     while True:
         banner()
@@ -253,9 +440,11 @@ def interactive_menu():
         print(f"  {C_BOLD}[3]{C_RESET} 📁 Ingest a Local Photo Directory")
         print(f"  {C_BOLD}[4]{C_RESET} 📊 System Health & Library Diagnostics")
         print(f"  {C_BOLD}[5]{C_RESET} 🗑️  Clear / Reset Database")
+        print(f"  {C_BOLD}[6]{C_RESET} {C_CYAN}🖥️  Launch Native Desktop App (Tauri){C_RESET}")
+        print(f"  {C_BOLD}[7]{C_RESET} 🦙 Ollama AI Models & Setup Check")
         print(f"  {C_BOLD}[0]{C_RESET} 🚪 Exit\n")
 
-        choice = input(f"{C_BOLD}Select an option [1-5, or Enter for 1]: {C_RESET}").strip()
+        choice = input(f"{C_BOLD}Select an option [1-7, or Enter for 1]: {C_RESET}").strip()
         if choice in ("", "1"):
             start_server(auto_open=True)
             break
@@ -274,6 +463,12 @@ def interactive_menu():
         elif choice == "5":
             clear_database()
             input(f"{C_DIM}Press Enter to return to menu...{C_RESET}")
+        elif choice == "6":
+            start_desktop_app()
+            break
+        elif choice == "7":
+            check_or_pull_ollama_models()
+            input(f"\n{C_DIM}Press Enter to return to menu...{C_RESET}")
         elif choice == "0":
             print("Goodbye!")
             break
@@ -286,6 +481,8 @@ def main():
     parser.add_argument("--ingest", metavar="DIR", help="Ingest a photo directory")
     parser.add_argument("--skip-describe", action="store_true", help="Skip VLM descriptions during ingest")
     parser.add_argument("--status", action="store_true", help="Display system and library diagnostics and exit")
+    parser.add_argument("--desktop", "--tauri", dest="desktop", action="store_true", help="Launch Native Desktop Application (Tauri)")
+    parser.add_argument("--doctor", "--setup", dest="doctor", action="store_true", help="Check and setup local Ollama AI models")
     parser.add_argument("--port", type=int, default=PORT, help=f"Server port (default: {PORT})")
     parser.add_argument("--host", default=HOST, help=f"Server host (default: {HOST})")
     parser.add_argument("--no-browser", action="store_true", help="Do not automatically open web browser")
@@ -294,6 +491,11 @@ def main():
     if args.status:
         banner()
         print_system_status()
+    elif args.doctor:
+        banner()
+        check_or_pull_ollama_models()
+    elif args.desktop:
+        start_desktop_app(port=args.port, host=args.host)
     elif args.demo:
         seed_demo(auto_open=not args.no_browser, port=args.port)
     elif args.ingest:
