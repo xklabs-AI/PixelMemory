@@ -21,7 +21,13 @@ ACTIVE_VLM_MODEL = "moondream"
 OLLAMA_MODEL = "moondream"             # fallback / legacy reference
 VLM_MODEL = "vikhyatk/moondream2"      # HuggingFace fallback
 VLM_REVISION = "2025-01-09"           # pin for reproducibility (HuggingFace fallback)
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+# ── Embedding Models ──────────────────────────────────
+LOCAL_MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+LOCAL_EMBEDDING_DIR = LOCAL_MODELS_DIR / "all-MiniLM-L6-v2"
+if LOCAL_EMBEDDING_DIR.exists() and (LOCAL_EMBEDDING_DIR / "model.safetensors").exists():
+    EMBEDDING_MODEL = str(LOCAL_EMBEDDING_DIR)
+else:
+    EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 AVAILABLE_VLM_MODELS = [
     {

@@ -1,6 +1,7 @@
 """Pure semantic search over image descriptions using Zvec and SentenceTransformers."""
 
 import threading
+from pathlib import Path
 import zvec
 from sentence_transformers import SentenceTransformer
 import torch
@@ -120,8 +121,17 @@ class SemanticSearch:
     @property
     def embedder(self) -> SentenceTransformer:
         if self._embedder is None:
-            print(f"Loading embedding model: {EMBEDDING_MODEL}...")
-            self._embedder = SentenceTransformer(EMBEDDING_MODEL)
+            is_local = Path(EMBEDDING_MODEL).exists()
+            model_source = "bundled offline package" if is_local else "Hugging Face"
+            print(f"Loading embedding model from {model_source}: {EMBEDDING_MODEL}...")
+            try:
+                self._embedder = SentenceTransformer(EMBEDDING_MODEL)
+            except Exception as e:
+                if is_local:
+                    print(f"Bundled model load error ({e}), trying default model name...")
+                    self._embedder = SentenceTransformer("all-MiniLM-L6-v2")
+                else:
+                    raise
         return self._embedder
 
     def add(self, image_id: int, enriched_text: str) -> None:
