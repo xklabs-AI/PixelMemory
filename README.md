@@ -1,6 +1,6 @@
 # PixelMemory — Local Semantic Photo Search
 
-> **Your closest moments deserve better than a forgotten folder. Rediscover and relive your entire photo library with natural language search, face recognition & story timelines — powered by local Vision AI. No cloud, no telemetry, no compromise.
+> **Your closest moments deserve better than a forgotten folder. Rediscover and relive your entire photo library with natural language search, face recognition & story timelines — powered by local Vision AI. No cloud, no telemetry, no compromise.**
 
 [![Python 3.10-3.12](https://img.shields.io/badge/Python-3.10%20--%203.12-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
