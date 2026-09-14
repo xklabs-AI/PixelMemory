@@ -102,6 +102,25 @@ You should see `moondream:latest` and `gemma4:e2b` listed.
 
 ---
 
+## 📋 Prerequisites
+
+- **Python 3.10–3.12** (3.13+ is not yet supported by all dependencies such as `torch` and `zvec`)
+- **Ollama** installed and running (see [Ollama Setup Guide](#-ollama-setup-guide-end-to-end) above)
+- **macOS only**: Xcode Command Line Tools are required to compile native Python packages:
+  ```bash
+  xcode-select --install
+  ```
+  > **Note**: If `pillow-heif` fails to install (needed for HEIC/HEIF photo support), install the system library:
+  > ```bash
+  > brew install libheif
+  > ```
+- **Linux only**: OpenCV requires system libraries on headless setups:
+  ```bash
+  sudo apt install -y libgl1-mesa-glx libglib2.0-0
+  ```
+
+---
+
 ## ⚡ Frictionless Installation
 
 ### 🪟 Windows Quick Start
@@ -160,8 +179,20 @@ The desktop mode provides native OS window dragging, glass styling, and native f
   ```
 
 > [!NOTE]
-> **Compiling Desktop Mode**:
-> Desktop mode requires **Rust/Cargo** ([rustup.rs](https://rustup.rs)) and Microsoft C++ Build Tools on Windows. If not present, PixelMemory will inform you and gracefully offer to run in Web Browser Mode.
+> **Desktop Mode Prerequisites**:
+> Desktop mode requires **Rust/Cargo** and **Node.js 18+**. Install Rust via:
+> ```bash
+> curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+> source ~/.cargo/env
+> ```
+> On Windows, Microsoft C++ Build Tools are also required. Then install frontend dependencies:
+> ```bash
+> npm install
+> ```
+> If Rust is not present, PixelMemory will inform you and gracefully offer to run in Web Browser Mode.
+
+> [!WARNING]
+> **macOS 27+ SDK Compatibility**: The macOS 27.0 SDK introduces new architecture identifiers (`arm64e.x1`) that the current stable Rust toolchain does not yet recognize. If the desktop build fails with linker errors referencing `unknown architecture`, use **Web Browser Mode** (`./launch.sh`) as a fully functional alternative until Rust ships an updated toolchain.
 
 ---
 
@@ -230,7 +261,7 @@ Settings can be customized in [`backend/config.py`](backend/config.py):
 | `DEFAULT_VLM_MODEL` | `"moondream"` | Primary Vision model for image captioning |
 | `STORY_LLM_MODEL` | `"gemma4:e2b"` | Primary LLM for travel story generation |
 | `OLLAMA_HOST` | `"http://localhost:11434"` | Local Ollama API server endpoint |
-| `DATA_DIR` | `~/.pixelmemory` | Library database, thumbnails, and Zvec vector store |
+| `DATA_DIR` | `~/.pixelmemory` | Library database, thumbnails, and Zvec vector store (auto-created on first run; grows with library size) |
 | `PORT` | `8642` | Local backend port |
 | `HOST` | `"0.0.0.0"` | Network bind address |
 
