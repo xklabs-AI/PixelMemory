@@ -1,6 +1,6 @@
 # PixelMemory — Local Semantic Photo Search
 
-> **Find any photo using natural language.** Fully offline and privacy-first — powered by local Vision AI, offline reverse geocoding, face recognition, story timelines, and vector search. No photos or metadata ever leave your machine.
+> **Your closest moments deserve better than a forgotten folder. Rediscover and relive your entire photo library with natural language search, face recognition & story timelines — powered by local Vision AI. No cloud, no telemetry, no compromise.
 
 [![Python 3.10-3.12](https://img.shields.io/badge/Python-3.10%20--%203.12-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -233,6 +233,16 @@ Settings can be customized in [`backend/config.py`](backend/config.py):
 | `DATA_DIR` | `~/.pixelmemory` | Library database, thumbnails, and Zvec vector store |
 | `PORT` | `8642` | Local backend port |
 | `HOST` | `"0.0.0.0"` | Network bind address |
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] 💬 **Chat with a Photo** — Ask questions about any photo in your library and get natural, conversational answers
+- [ ] 👨‍👩‍👧‍👦 **Chat with a Family Member** — Select a tagged person and discover what they love, where they've been, and who they spend time with — all from your photo history
+- [ ] 🔍 **Duplicate Photo Detection** — Find and manage duplicate or near-duplicate photos across your library
+- [ ] 📦 **Standalone Windows Installer** — One-click setup, no Python or Rust required
+- [ ] 🎞️ **Slideshow Generator** — Turn a selection of photos into an animated slideshow with music
 
 ---
 
