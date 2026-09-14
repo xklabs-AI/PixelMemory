@@ -909,7 +909,12 @@ def rescan_folder_endpoint(req: ImportRequest):
     In 'incremental' mode: skips existing photos, adds new, prunes deleted.
     In 'full' mode: re-analyzes all photos in the folder from scratch, prunes deleted.
     """
-    fpath = Path(req.folder_path).resolve()
+    raw_path = (req.folder_path or "").strip().strip("\"'")
+    fpath = Path(raw_path).expanduser()
+    if not fpath.is_absolute():
+        fpath = (Path.cwd() / fpath).resolve()
+    else:
+        fpath = fpath.resolve()
     if not fpath.exists() or not fpath.is_dir():
         raise HTTPException(400, f"Invalid folder directory: '{req.folder_path}' does not exist on disk.")
 
@@ -933,7 +938,105 @@ def rescan_folder_endpoint(req: ImportRequest):
 
 
 def _open_folder_dialog_sync() -> Optional[str]:
-    # 1. Try Python subprocess with Tkinter in an isolated process
+    # 1. macOS: Native Finder Folder Picker via AppleScript / osascript (instant & native on macOS)
+    if sys.platform == "darwin":
+        try:
+            ascript = (
+                'tell application "System Events"\n'
+                '    activate\n'
+                '    set folderChosen to choose folder with prompt "Select Photo Folder to Import or Rescan"\n'
+                '    POSIX path of folderChosen\n'
+                'end tell'
+            )
+            proc = subprocess.run(
+                ["osascript", "-e", ascript],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if proc.returncode == 0:
+                out = proc.stdout.strip()
+                if out:
+                    p = Path(out).expanduser().resolve()
+                    if p.exists() and p.is_dir():
+                        return str(p).replace("\\", "/")
+            else:
+                # Fallback simple osascript without System Events wrapper
+                proc2 = subprocess.run(
+                    ["osascript", "-e", 'POSIX path of (choose folder with prompt "Select Photo Folder to Import or Rescan")'],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if proc2.returncode == 0:
+                    out2 = proc2.stdout.strip()
+                    if out2:
+                        p = Path(out2).expanduser().resolve()
+                        if p.exists() and p.is_dir():
+                            return str(p).replace("\\", "/")
+        except Exception as e:
+            print(f"macOS osascript folder picker error: {e}")
+
+    # 2. Linux: Zenity or Kdialog
+    if sys.platform.startswith("linux"):
+        try:
+            proc = subprocess.run(
+                ["zenity", "--file-selection", "--directory", "--title=Select Photo Folder to Import or Rescan"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if proc.returncode == 0:
+                out = proc.stdout.strip()
+                if out:
+                    p = Path(out).expanduser().resolve()
+                    if p.exists() and p.is_dir():
+                        return str(p).replace("\\", "/")
+        except Exception:
+            pass
+        try:
+            proc = subprocess.run(
+                ["kdialog", "--getexistingdirectory", "--title", "Select Photo Folder to Import or Rescan"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if proc.returncode == 0:
+                out = proc.stdout.strip()
+                if out:
+                    p = Path(out).expanduser().resolve()
+                    if p.exists() and p.is_dir():
+                        return str(p).replace("\\", "/")
+        except Exception:
+            pass
+
+    # 3. Windows: PowerShell FolderBrowserDialog with TopMost Form
+    if sys.platform.startswith("win"):
+        ps_cmd = (
+            "Add-Type -AssemblyName System.Windows.Forms; "
+            "$dlg = New-Object System.Windows.Forms.FolderBrowserDialog; "
+            "$dlg.Description = 'Select Photo Folder to Import or Rescan'; "
+            "$dlg.ShowNewFolderButton = $false; "
+            "$form = New-Object System.Windows.Forms.Form; "
+            "$form.TopMost = $true; "
+            "if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output ('PICKED:' + $dlg.SelectedPath) }"
+        )
+        try:
+            proc = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_cmd],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            for line in proc.stdout.splitlines():
+                if line.startswith("PICKED:"):
+                    p = line[len("PICKED:"):].strip()
+                    if p and Path(p).exists() and Path(p).is_dir():
+                        return str(Path(p).resolve()).replace("\\", "/")
+        except Exception as e:
+            print(f"PowerShell picker error: {e}")
+
+    # 4. Universal Fallback: Tkinter in an isolated subprocess
     py_code = (
         "import sys\n"
         "try:\n"
@@ -941,7 +1044,10 @@ def _open_folder_dialog_sync() -> Optional[str]:
         "    from tkinter import filedialog\n"
         "    root = tk.Tk()\n"
         "    root.withdraw()\n"
-        "    root.wm_attributes('-topmost', 1)\n"
+        "    try:\n"
+        "        root.wm_attributes('-topmost', 1)\n"
+        "    except Exception:\n"
+        "        pass\n"
         "    path = filedialog.askdirectory(parent=root, title='Select Photo Folder to Import or Rescan')\n"
         "    root.destroy()\n"
         "    if path:\n"
@@ -959,35 +1065,10 @@ def _open_folder_dialog_sync() -> Optional[str]:
         for line in proc.stdout.splitlines():
             if line.startswith("PICKED:"):
                 p = line[len("PICKED:"):].strip()
-                if p and Path(p).exists():
+                if p and Path(p).exists() and Path(p).is_dir():
                     return str(Path(p).resolve()).replace("\\", "/")
     except Exception as e:
         print(f"Tkinter picker subprocess error: {e}")
-
-    # 2. Fallback: PowerShell FolderBrowserDialog with TopMost Form
-    ps_cmd = (
-        "Add-Type -AssemblyName System.Windows.Forms; "
-        "$dlg = New-Object System.Windows.Forms.FolderBrowserDialog; "
-        "$dlg.Description = 'Select Photo Folder to Import or Rescan'; "
-        "$dlg.ShowNewFolderButton = $false; "
-        "$form = New-Object System.Windows.Forms.Form; "
-        "$form.TopMost = $true; "
-        "if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output ('PICKED:' + $dlg.SelectedPath) }"
-    )
-    try:
-        proc = subprocess.run(
-            ["powershell", "-NoProfile", "-Command", ps_cmd],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        for line in proc.stdout.splitlines():
-            if line.startswith("PICKED:"):
-                p = line[len("PICKED:"):].strip()
-                if p and Path(p).exists():
-                    return str(Path(p).resolve()).replace("\\", "/")
-    except Exception as e:
-        print(f"PowerShell picker error: {e}")
 
     return None
 
@@ -1001,6 +1082,82 @@ async def browse_folder_endpoint():
     return {"status": "ok", "path": selected}
 
 
+@app.get("/api/system/validate-folder")
+def validate_folder_endpoint(path: str = ""):
+    """Validate if a folder path exists and is a directory on disk, and count images."""
+    if not path or not path.strip():
+        return {
+            "valid": False,
+            "exists": False,
+            "is_dir": False,
+            "resolved_path": "",
+            "photo_count": 0,
+            "message": "Path is empty",
+        }
+
+    clean_input = path.strip().strip("\"'")
+    try:
+        p = Path(clean_input).expanduser()
+        if not p.is_absolute():
+            p = (Path.cwd() / p).resolve()
+        else:
+            p = p.resolve()
+
+        if not p.exists():
+            return {
+                "valid": False,
+                "exists": False,
+                "is_dir": False,
+                "resolved_path": str(p).replace("\\", "/"),
+                "photo_count": 0,
+                "message": "Folder does not exist on disk",
+            }
+
+        if not p.is_dir():
+            return {
+                "valid": False,
+                "exists": True,
+                "is_dir": False,
+                "resolved_path": str(p).replace("\\", "/"),
+                "photo_count": 0,
+                "message": "Path exists but is a file, not a directory",
+            }
+
+        # Fast photo count
+        valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tiff", ".tif", ".bmp", ".avif", ".raw", ".cr2", ".nef", ".arw", ".dng"}
+        count = 0
+        try:
+            for root_dir, _, files in os.walk(p):
+                for f in files:
+                    ext = Path(f).suffix.lower()
+                    if ext in valid_exts and not f.startswith("."):
+                        count += 1
+                        if count >= 10000:
+                            break
+                if count >= 10000:
+                    break
+        except Exception:
+            pass
+
+        return {
+            "valid": True,
+            "exists": True,
+            "is_dir": True,
+            "resolved_path": str(p).replace("\\", "/"),
+            "photo_count": count,
+            "message": f"Valid directory ({count} photo{'s' if count != 1 else ''} found)",
+        }
+    except Exception as e:
+        return {
+            "valid": False,
+            "exists": False,
+            "is_dir": False,
+            "resolved_path": "",
+            "photo_count": 0,
+            "message": f"Invalid path syntax: {str(e)}",
+        }
+
+
 @app.get("/api/system/folders")
 def list_system_folders_endpoint(query: Optional[str] = None, parent: Optional[str] = None):
     """
@@ -1009,11 +1166,33 @@ def list_system_folders_endpoint(query: Optional[str] = None, parent: Optional[s
     """
     quick_locations = []
 
-    # 1. Available Drives
-    for d in string.ascii_uppercase:
-        drive_path = f"{d}:/"
-        if os.path.exists(f"{d}:"):
-            quick_locations.append({"name": f"Drive ({d}:)", "path": drive_path, "type": "drive"})
+    # 1. Available Drives (Windows)
+    if sys.platform.startswith("win"):
+        for d in string.ascii_uppercase:
+            drive_path = f"{d}:/"
+            if os.path.exists(f"{d}:"):
+                quick_locations.append({"name": f"Drive ({d}:)", "path": drive_path, "type": "drive"})
+    elif sys.platform == "darwin":
+        if os.path.exists("/Volumes"):
+            try:
+                for v in os.listdir("/Volumes"):
+                    vpath = Path("/Volumes") / v
+                    if vpath.is_dir() and not v.startswith("."):
+                        quick_locations.append({"name": f"Volume ({v})", "path": str(vpath).replace("\\", "/"), "type": "drive"})
+            except Exception:
+                pass
+    elif sys.platform.startswith("linux"):
+        if os.path.exists("/media"):
+            try:
+                for user_media in os.listdir("/media"):
+                    um_path = Path("/media") / user_media
+                    if um_path.is_dir():
+                        for v in os.listdir(um_path):
+                            vpath = um_path / v
+                            if vpath.is_dir():
+                                quick_locations.append({"name": f"Drive ({v})", "path": str(vpath).replace("\\", "/"), "type": "drive"})
+            except Exception:
+                pass
 
     # 2. Common User folders & Project Gallery
     home = Path.home()
@@ -1021,6 +1200,8 @@ def list_system_folders_endpoint(query: Optional[str] = None, parent: Optional[s
         ("Pictures", home / "OneDrive" / "Pictures" if (home / "OneDrive" / "Pictures").exists() else home / "Pictures"),
         ("Desktop", home / "Desktop"),
         ("Downloads", home / "Downloads"),
+        ("Documents", home / "Documents"),
+        ("Home", home),
         ("Project Gallery", Path(DATA_DIR).resolve()),
     ]
     for name, p in candidates:
@@ -1033,7 +1214,7 @@ def list_system_folders_endpoint(query: Optional[str] = None, parent: Optional[s
     results = []
     target_dir = None
     if parent:
-        p_obj = Path(parent).resolve()
+        p_obj = Path(parent).expanduser().resolve()
         if p_obj.exists() and p_obj.is_dir():
             target_dir = p_obj
 

@@ -5310,11 +5310,17 @@
             </button>
           </div>
           <div style="position: relative;">
-            <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. C:/Users/name/Pictures or gallery/test"
-              value="gallery/test" style="width: 100%; box-sizing: border-box;" autocomplete="off" />
+            <input type="text" id="importFolderInput" class="setting-input" placeholder="e.g. /Users/name/Pictures, ~/Pictures, C:/Photos, or gallery/test"
+              value="gallery/test" style="width: 100%; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;" autocomplete="off" spellcheck="false" />
             <!-- Live Search Autocomplete Dropdown -->
             <div id="importFolderSearchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; max-height: 190px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-top: 3px;">
             </div>
+          </div>
+
+          <!-- Real-time Folder Path Status / Validation Indicator -->
+          <div id="importFolderStatus" style="display: flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem; font-size: 0.73rem; min-height: 18px; color: var(--text-dim); transition: all 0.2s ease;">
+            <span id="importFolderStatusIcon">📁</span>
+            <span id="importFolderStatusText">Type or browse a folder path</span>
           </div>
 
           <!-- Quick System Locations Pills -->
@@ -8908,8 +8914,90 @@
 
       $('#importModal').classList.add('active');
       setTimeout(() => $('#importFolderInput').focus(), 100);
+      validateFolderPath($('#importFolderInput').value, true);
       await loadQuickSystemLocations();
       await loadIndexedFolders();
+    }
+
+    let validateFolderTimeout = null;
+    let isFolderValid = true;
+
+    async function validateFolderPath(pathStr, immediate = false) {
+      clearTimeout(validateFolderTimeout);
+      const inputEl = $('#importFolderInput');
+      const statusEl = $('#importFolderStatus');
+      const iconEl = $('#importFolderStatusIcon');
+      const textEl = $('#importFolderStatusText');
+      const startBtn = $('#importStartBtn');
+      if (!inputEl || !statusEl || !textEl) return;
+
+      const path = (pathStr !== undefined ? pathStr : inputEl.value).trim();
+
+      if (!path) {
+        isFolderValid = false;
+        inputEl.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        inputEl.style.boxShadow = 'none';
+        if (iconEl) iconEl.textContent = '📁';
+        textEl.textContent = 'Please enter or browse a folder path.';
+        textEl.style.color = 'var(--text-dim)';
+        if (startBtn) {
+          startBtn.style.opacity = '0.6';
+          startBtn.style.cursor = 'not-allowed';
+        }
+        return;
+      }
+
+      const runValidation = async () => {
+        try {
+          if (iconEl) iconEl.textContent = '⏳';
+          textEl.textContent = 'Checking directory path...';
+          textEl.style.color = 'var(--text-dim)';
+
+          const res = await fetch(`${API}/api/system/validate-folder?path=${encodeURIComponent(path)}`);
+          if (!res.ok) throw new Error('Validation request failed');
+          const data = await res.json();
+
+          if (data.valid) {
+            isFolderValid = true;
+            inputEl.style.borderColor = 'rgba(34, 197, 94, 0.7)';
+            inputEl.style.boxShadow = '0 0 0 1px rgba(34, 197, 94, 0.25)';
+            if (iconEl) iconEl.textContent = '✅';
+            const countText = data.photo_count !== undefined ? ` (${data.photo_count} photo${data.photo_count !== 1 ? 's' : ''} detected)` : '';
+            textEl.innerHTML = `<span style="color:#4ade80; font-weight:600;">Valid directory:</span> <span style="font-family:monospace; color:#a7f3d0;">${escapeHtml(data.resolved_path)}</span>${countText}`;
+            if (startBtn) {
+              startBtn.style.opacity = '1';
+              startBtn.style.cursor = 'pointer';
+            }
+          } else {
+            isFolderValid = false;
+            inputEl.style.borderColor = 'rgba(239, 68, 68, 0.75)';
+            inputEl.style.boxShadow = '0 0 0 1px rgba(239, 68, 68, 0.25)';
+            if (iconEl) iconEl.textContent = '❌';
+            textEl.innerHTML = `<span style="color:#f87171; font-weight:600;">Invalid path:</span> <span style="color:#fca5a5;">${escapeHtml(data.message || 'Folder does not exist on disk')}</span>`;
+            if (startBtn) {
+              startBtn.style.opacity = '0.6';
+              startBtn.style.cursor = 'not-allowed';
+            }
+          }
+        } catch (err) {
+          isFolderValid = true;
+          inputEl.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          inputEl.style.boxShadow = 'none';
+          if (iconEl) iconEl.textContent = '📁';
+          textEl.textContent = 'Type folder path to ingest';
+          textEl.style.color = 'var(--text-dim)';
+          if (startBtn) {
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+          }
+        }
+      };
+
+      if (immediate) {
+        await runValidation();
+      } else {
+        validateFolderTimeout = setTimeout(runValidation, 180);
+      }
     }
 
     async function loadQuickSystemLocations() {
@@ -8931,6 +9019,7 @@
             $('#importFolderInput').value = b.dataset.path;
             const sr = $('#importFolderSearchResults');
             if (sr) sr.style.display = 'none';
+            validateFolderPath(b.dataset.path, true);
           };
         });
       } catch (e) {
@@ -8967,6 +9056,7 @@
           const pill = e.target.closest('.indexed-folder-pill');
           if (pill && pill.dataset.path) {
             $('#importFolderInput').value = pill.dataset.path;
+            validateFolderPath(pill.dataset.path, true);
             return;
           }
           const rescanBtn = e.target.closest('.indexed-folder-rescan-btn');
@@ -8982,6 +9072,14 @@
 
     async function startImportOrRescan(isExplicitRescan = false, explicitFolder = null) {
       let folderPath = (explicitFolder || ($('#importFolderInput').value || '').trim() || 'gallery/test').replace(/\\/g, '/');
+
+      // Quick validate before sending
+      if (!isExplicitRescan && !isFolderValid) {
+        showToast('⚠️ Please enter a valid folder path that exists on disk.');
+        $('#importFolderInput')?.focus();
+        return;
+      }
+
       const skipDescribe = !$('#importVisionCheck').checked;
       const selectedModel = document.querySelector('input[name="importVlmModel"]:checked')?.value || 'moondream:1.8b';
       const rescanMode = document.querySelector('input[name="rescanMode"]:checked')?.value || 'incremental';
@@ -9076,6 +9174,7 @@
       btn.innerHTML = '⏳ Opening Picker...';
       try {
         // 1. If running under Tauri desktop, use native OS file dialog plugin
+        let selectedPath = null;
         if (window.__TAURI__?.dialog?.open) {
           const selected = await window.__TAURI__.dialog.open({
             directory: true,
@@ -9083,18 +9182,29 @@
             title: 'Select Photo Directory to Ingest'
           });
           if (selected) {
-            const cleanPath = (typeof selected === 'string' ? selected : selected[0] || '').replace(/\\/g, '/');
-            if (cleanPath) {
-              $('#importFolderInput').value = cleanPath;
-              showToast(`Selected: ${cleanPath}`);
-            }
+            selectedPath = (typeof selected === 'string' ? selected : selected[0] || '').replace(/\\/g, '/');
           }
+        } else if (window.__TAURI_PLUGIN_DIALOG__?.open) {
+          const selected = await window.__TAURI_PLUGIN_DIALOG__.open({
+            directory: true,
+            multiple: false,
+            title: 'Select Photo Directory to Ingest'
+          });
+          if (selected) {
+            selectedPath = (typeof selected === 'string' ? selected : selected[0] || '').replace(/\\/g, '/');
+          }
+        }
+
+        if (selectedPath) {
+          $('#importFolderInput').value = selectedPath;
+          showToast(`Selected: ${selectedPath}`);
+          validateFolderPath(selectedPath, true);
           return;
         }
 
-        // 2. Fallback to server-side PowerShell dialog in web mode
+        // 2. Web browser mode: Call server-side native OS dialog (osascript on Mac, PowerShell on Windows, Zenity on Linux)
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 60000);
+        const timer = setTimeout(() => controller.abort(), 120000);
         const res = await fetch(`${API}/api/system/browse-folder`, { signal: controller.signal });
         clearTimeout(timer);
         const data = await res.json();
@@ -9102,6 +9212,9 @@
           const cleanPath = data.path.replace(/\\/g, '/');
           $('#importFolderInput').value = cleanPath;
           showToast(`Selected: ${cleanPath}`);
+          validateFolderPath(cleanPath, true);
+        } else if (data.status === 'cancelled') {
+          // Keep current path if cancelled
         }
       } catch (err) {
         console.error('Folder browse error:', err);
@@ -9116,9 +9229,11 @@
     $('#importFolderInput')?.addEventListener('input', (e) => {
       clearTimeout(searchFolderTimeout);
       const query = e.target.value.trim();
+      validateFolderPath(e.target.value, false);
+
       const resultsEl = $('#importFolderSearchResults');
       if (!resultsEl) return;
-      if (!query || query.length < 2) {
+      if (!query || query.length < 3) {
         resultsEl.style.display = 'none';
         return;
       }
@@ -9144,12 +9259,22 @@
             item.onclick = () => {
               $('#importFolderInput').value = item.dataset.path;
               resultsEl.style.display = 'none';
+              validateFolderPath(item.dataset.path, true);
             };
           });
         } catch (err) {
           resultsEl.style.display = 'none';
         }
-      }, 250);
+      }, 300);
+    });
+
+    $('#importFolderInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const resultsEl = $('#importFolderSearchResults');
+        if (resultsEl) resultsEl.style.display = 'none';
+        startImportOrRescan(false);
+      }
     });
 
     document.addEventListener('click', (e) => {
