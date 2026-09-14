@@ -10,7 +10,9 @@ from PIL import Image, ImageOps
 
 from backend.config import DATA_DIR
 
-MODELS_DIR = DATA_DIR / "models"
+# ── Models Directory Resolution ───────────────────────
+BUNDLED_MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+USER_MODELS_DIR = DATA_DIR / "models"
 FACES_THUMB_DIR = DATA_DIR / "face_thumbs"
 
 YUNET_URL = (
@@ -21,15 +23,26 @@ SFACE_URL = (
     "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/"
     "models/face_recognition_sface/face_recognition_sface_2021dec.onnx"
 )
-
-YUNET_PATH = MODELS_DIR / "face_detection_yunet_2023mar.onnx"
-SFACE_PATH = MODELS_DIR / "face_recognition_sface_2021dec.onnx"
-
 NANODET_URL = (
     "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/"
     "models/object_detection_nanodet/object_detection_nanodet_2022nov.onnx"
 )
-NANODET_PATH = MODELS_DIR / "object_detection_nanodet_2022nov.onnx"
+
+
+def _resolve_model_path(filename: str, min_size: int = 10000) -> Path:
+    """Find model in bundled repo models/ directory or user ~/.pixelmemory/models directory."""
+    bundled = BUNDLED_MODELS_DIR / filename
+    if bundled.exists() and bundled.stat().st_size >= min_size:
+        return bundled
+    user_p = USER_MODELS_DIR / filename
+    if user_p.exists() and user_p.stat().st_size >= min_size:
+        return user_p
+    return user_p
+
+
+YUNET_PATH = _resolve_model_path("face_detection_yunet_2023mar.onnx", 100000)
+SFACE_PATH = _resolve_model_path("face_recognition_sface_2021dec.onnx", 10000000)
+NANODET_PATH = _resolve_model_path("object_detection_nanodet_2022nov.onnx", 1000000)
 
 # SFace cosine similarity threshold (0.363 is official threshold for high confidence match)
 SIMILARITY_THRESHOLD = 0.363
@@ -56,27 +69,44 @@ for _stride in _NANODET_STRIDES:
 
 
 def ensure_models() -> bool:
-    """Download YuNet, SFace, and NanoDet models if not already present."""
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    """Ensure YuNet, SFace, and NanoDet models are available from local bundle or download fallback."""
+    global YUNET_PATH, SFACE_PATH, NANODET_PATH
+    USER_MODELS_DIR.mkdir(parents=True, exist_ok=True)
     FACES_THUMB_DIR.mkdir(parents=True, exist_ok=True)
+
+    YUNET_PATH = _resolve_model_path("face_detection_yunet_2023mar.onnx", 100000)
+    SFACE_PATH = _resolve_model_path("face_recognition_sface_2021dec.onnx", 10000000)
+    NANODET_PATH = _resolve_model_path("object_detection_nanodet_2022nov.onnx", 1000000)
 
     # Check and download YuNet if needed
     if not YUNET_PATH.exists() or YUNET_PATH.stat().st_size < 100000:
-        YUNET_PATH.unlink(missing_ok=True)
+        target = USER_MODELS_DIR / "face_detection_yunet_2023mar.onnx"
         print("[Faces] Downloading YuNet face detection model...")
-        urllib.request.urlretrieve(YUNET_URL, YUNET_PATH)
+        try:
+            urllib.request.urlretrieve(YUNET_URL, target)
+            YUNET_PATH = target
+        except Exception as e:
+            print(f"[Faces] Error downloading YuNet: {e}")
 
     # Check and download SFace if needed
     if not SFACE_PATH.exists() or SFACE_PATH.stat().st_size < 10000000:
-        SFACE_PATH.unlink(missing_ok=True)
+        target = USER_MODELS_DIR / "face_recognition_sface_2021dec.onnx"
         print("[Faces] Downloading SFace face recognition model...")
-        urllib.request.urlretrieve(SFACE_URL, SFACE_PATH)
+        try:
+            urllib.request.urlretrieve(SFACE_URL, target)
+            SFACE_PATH = target
+        except Exception as e:
+            print(f"[Faces] Error downloading SFace: {e}")
 
     # Check and download NanoDet if needed
     if not NANODET_PATH.exists() or NANODET_PATH.stat().st_size < 1000000:
-        NANODET_PATH.unlink(missing_ok=True)
+        target = USER_MODELS_DIR / "object_detection_nanodet_2022nov.onnx"
         print("[Faces] Downloading NanoDet pet detection model...")
-        urllib.request.urlretrieve(NANODET_URL, NANODET_PATH)
+        try:
+            urllib.request.urlretrieve(NANODET_URL, target)
+            NANODET_PATH = target
+        except Exception as e:
+            print(f"[Faces] Error downloading NanoDet: {e}")
 
     return YUNET_PATH.exists() and SFACE_PATH.exists() and NANODET_PATH.exists()
 
