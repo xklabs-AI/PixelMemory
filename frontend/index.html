@@ -229,9 +229,8 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s var(--ease-spring);
+      transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease;
       font-size: 0.9rem;
-      backdrop-filter: blur(8px);
       box-shadow: var(--glass-inner-bevel);
     }
 
@@ -342,8 +341,7 @@
       gap: 1.75rem;
       user-select: none;
       z-index: 15;
-      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-      will-change: width;
+      transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease;
       position: relative;
     }
 
@@ -481,7 +479,7 @@
       color: var(--text-muted);
       cursor: pointer;
       border: 1px solid transparent;
-      transition: all 0.18s var(--ease-spring);
+      transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
     }
 
     .nav-item:hover {
@@ -1027,16 +1025,14 @@
     }
 
 
-    /* ── Photo Card (Frosted Glass & Ambient Glow) ─────── */
+    /* ── Photo Card (Ambient Glow & Smooth GPU Composited) ─────── */
     .photo-card {
       background: var(--bg-card);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
       overflow: hidden;
       cursor: pointer;
-      transition: transform 0.22s var(--ease-spring), border-color 0.2s ease, box-shadow 0.22s var(--ease-spring);
+      transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -1045,12 +1041,12 @@
 
     .photo-card:hover {
       border-color: var(--border-highlight);
-      transform: translateY(-4px) scale(1.01);
-      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.15), var(--glass-inner-bevel);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(59, 130, 246, 0.15);
     }
 
     .photo-card:active {
-      transform: translateY(-2px) scale(0.99);
+      transform: translateY(-1px);
     }
 
     .photo-card.selected {
@@ -1071,16 +1067,14 @@
       width: 26px;
       height: 26px;
       border-radius: 50%;
-      background: rgba(10, 15, 26, 0.75);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(10, 15, 26, 0.88);
       border: 2px solid rgba(255, 255, 255, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       opacity: 0;
-      transition: all 0.18s var(--ease-spring);
+      transition: opacity 0.14s ease, transform 0.14s ease, background-color 0.14s ease, border-color 0.14s ease;
       z-index: 10;
       color: #fff;
       font-size: 0.75rem;
@@ -1305,11 +1299,12 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.35s ease;
+      transition: transform 0.2s ease;
+      will-change: transform;
     }
 
     .photo-card:hover .card-thumb {
-      transform: scale(1.05);
+      transform: scale(1.03);
     }
 
     .card-details {
@@ -1862,8 +1857,7 @@
       position: absolute;
       top: 8px;
       right: 8px;
-      background: rgba(15, 20, 32, 0.85);
-      backdrop-filter: blur(8px);
+      background: rgba(15, 20, 32, 0.92);
       border: 1px solid var(--border-highlight);
       color: #fff;
       border-radius: var(--radius-sm);
@@ -1875,7 +1869,7 @@
       gap: 0.3rem;
       cursor: pointer;
       opacity: 0;
-      transition: all 0.15s ease;
+      transition: opacity 0.14s ease, transform 0.14s ease, background-color 0.14s ease;
       z-index: 5;
     }
 
@@ -13075,39 +13069,40 @@
         resizer.classList.add('is-dragging');
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
-      });
 
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        let newWidth = startWidth + dx;
-        const minW = 180;
-        const maxW = Math.min(650, window.innerWidth * 0.6);
+        const onMouseMove = (ev) => {
+          if (!isDragging) return;
+          const dx = ev.clientX - startX;
+          let newWidth = startWidth + dx;
+          const minW = 180;
+          const maxW = Math.min(650, window.innerWidth * 0.6);
 
-        if (newWidth < 110) {
-          toggleSidebar(true);
+          if (newWidth < 110) {
+            toggleSidebar(true);
+            onMouseUp();
+            return;
+          }
+
+          newWidth = Math.max(minW, Math.min(maxW, newWidth));
+          savedWidth = Math.round(newWidth);
+          sidebar.style.width = `${savedWidth}px`;
+          sidebar.style.setProperty('--sidebar-width', `${savedWidth}px`);
+        };
+
+        const onMouseUp = () => {
+          if (!isDragging) return;
           isDragging = false;
           sidebar.classList.remove('is-resizing');
           resizer.classList.remove('is-dragging');
           document.body.style.cursor = '';
           document.body.style.userSelect = '';
-          return;
-        }
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+          localStorage.setItem('pixelmemory_sidebar_width', savedWidth.toString());
+        };
 
-        newWidth = Math.max(minW, Math.min(maxW, newWidth));
-        savedWidth = Math.round(newWidth);
-        sidebar.style.width = `${savedWidth}px`;
-        sidebar.style.setProperty('--sidebar-width', `${savedWidth}px`);
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        isDragging = false;
-        sidebar.classList.remove('is-resizing');
-        resizer.classList.remove('is-dragging');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        localStorage.setItem('pixelmemory_sidebar_width', savedWidth.toString());
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+        window.addEventListener('mouseup', onMouseUp);
       });
 
       // Double click to reset

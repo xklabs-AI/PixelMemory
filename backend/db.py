@@ -761,7 +761,16 @@ def insert_face(
 
 
 def update_face_person(conn: sqlite3.Connection, face_id: int, person_id: int | None) -> bool:
-    """Assign or unassign a person to a face."""
+    """Assign or unassign a person to a face, ensuring unique tags per image."""
+    if person_id is not None:
+        row = conn.execute("SELECT image_id FROM faces WHERE id = ?", (face_id,)).fetchone()
+        if row:
+            img_id = row["image_id"]
+            # Enforce unique tags per picture: clear duplicate tags of the same person on this image
+            conn.execute(
+                "UPDATE faces SET person_id = NULL WHERE image_id = ? AND person_id = ? AND id != ?",
+                (img_id, person_id, face_id),
+            )
     cur = conn.execute(
         "UPDATE faces SET person_id = ? WHERE id = ?",
         (person_id, face_id),
@@ -1095,7 +1104,40 @@ def deduplicate_faces(conn: sqlite3.Connection) -> int:
 
     if deleted_count > 0:
         conn.commit()
-    return deleted_count
+
+    # Phase 2: Enforce unique tags per picture (a single photo cannot have duplicate tags for the same person/pet)
+    tagged_rows = conn.execute(
+        """SELECT id, image_id, person_id, box_x, box_y, box_w, box_h, confidence,
+                  (embedding IS NOT NULL) AS has_emb, is_pet
+           FROM faces
+           WHERE person_id IS NOT NULL
+           ORDER BY image_id, person_id, has_emb DESC, confidence DESC, id ASC"""
+    ).fetchall()
+
+    by_tag: dict[tuple[int, int], list[sqlite3.Row]] = {}
+    for r in tagged_rows:
+        by_tag.setdefault((r["image_id"], r["person_id"]), []).append(r)
+
+    tag_dups_deleted = 0
+    for (img_id, pid), flist in by_tag.items():
+        if len(flist) > 1:
+            # Keep the primary face box (highest confidence/embedding)
+            primary_face_id = flist[0]["id"]
+            # Ensure person's avatar points to a valid face
+            conn.execute(
+                "UPDATE people SET avatar_face_id = ? WHERE id = ? AND (avatar_face_id IS NULL OR avatar_face_id NOT IN (SELECT id FROM faces))",
+                (primary_face_id, pid),
+            )
+            # Remove the duplicate tagged detection boxes
+            for dup in flist[1:]:
+                conn.execute("DELETE FROM face_rejections WHERE face_id = ?", (dup["id"],))
+                conn.execute("DELETE FROM faces WHERE id = ?", (dup["id"],))
+                tag_dups_deleted += 1
+
+    if tag_dups_deleted > 0:
+        conn.commit()
+
+    return deleted_count + tag_dups_deleted
 
 
 

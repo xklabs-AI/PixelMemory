@@ -2246,6 +2246,7 @@ def detect_image_faces(image_id: int, auto_tag: bool = True):
     with get_conn() as conn:
         conn.execute("UPDATE images SET faces_scanned = 1 WHERE id = ?", (image_id,))
         existing_faces = get_faces_for_image(conn, image_id)
+        assigned_person_ids = {ef["person_id"] for ef in existing_faces if ef.get("person_id")}
         known_embeddings = get_known_face_embeddings(conn)
 
         for d in detected:
@@ -2260,8 +2261,9 @@ def detect_image_faces(image_id: int, auto_tag: bool = True):
             person_id = None
             if auto_tag and d.get("embedding"):
                 best_pid, score = match_face_embedding(d["embedding"], known_embeddings)
-                if best_pid:
+                if best_pid and best_pid not in assigned_person_ids:
                     person_id = best_pid
+                    assigned_person_ids.add(best_pid)
 
             insert_face(
                 conn,
@@ -2627,6 +2629,7 @@ def _run_library_face_scan():
                         conn.execute("UPDATE images SET faces_scanned = 1 WHERE id = ?", (img_id,))
                         if detected:
                             existing_faces = get_faces_for_image(conn, img_id)
+                            assigned_person_ids = {ef["person_id"] for ef in existing_faces if ef.get("person_id")}
                             known_embeddings = get_known_face_embeddings(conn)
                             for d in detected:
                                 is_dup = False
@@ -2640,8 +2643,9 @@ def _run_library_face_scan():
                                 person_id = None
                                 if d.get("embedding"):
                                     best_pid, score = match_face_embedding(d["embedding"], known_embeddings)
-                                    if best_pid:
+                                    if best_pid and best_pid not in assigned_person_ids:
                                         person_id = best_pid
+                                        assigned_person_ids.add(best_pid)
                                 insert_face(
                                     conn,
                                     image_id=img_id,
