@@ -3033,10 +3033,11 @@
       border-radius: 6px;
       pointer-events: auto;
       cursor: pointer;
-      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+      transition: opacity 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
       background: rgba(59, 130, 246, 0.08);
       z-index: 11;
-      animation: faceBoxFadeIn 0.18s ease-out;
+      animation: faceBoxFadeIn 0.15s ease-out;
+      will-change: opacity, border-color;
     }
 
     @keyframes faceBoxFadeIn {
@@ -3044,69 +3045,116 @@
       to { opacity: 1; }
     }
 
+    /* When any face box or detail tag is hovered, subtly dim other face boxes so the target pops */
+    .face-overlay.has-hover .face-box:not(.is-hover-highlight) {
+      opacity: 0.35;
+    }
+
+    .face-box.is-hover-highlight,
+    .face-box:hover {
+      z-index: 30 !important;
+      opacity: 1 !important;
+      border-width: 3px !important;
+    }
+
+    .face-box.is-hover-highlight,
     .face-box:hover {
       border-color: #60a5fa;
-      box-shadow: 0 0 14px rgba(96, 165, 250, 0.7);
-      background: rgba(59, 130, 246, 0.18);
+      box-shadow: 0 0 20px rgba(96, 165, 250, 0.85), inset 0 0 14px rgba(59, 130, 246, 0.3);
+      background: rgba(59, 130, 246, 0.22);
     }
 
     .face-box.tagged {
       border-color: #10b981;
       background: rgba(16, 185, 129, 0.08);
     }
+    .face-box.tagged.is-hover-highlight,
     .face-box.tagged:hover {
-      border-color: #34d399;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.7);
-      background: rgba(16, 185, 129, 0.18);
+      border-color: #34d399 !important;
+      box-shadow: 0 0 22px rgba(16, 185, 129, 0.9), inset 0 0 14px rgba(16, 185, 129, 0.35) !important;
+      background: rgba(16, 185, 129, 0.22) !important;
     }
 
     .face-box.pet {
       border-color: #a855f7;
       background: rgba(168, 85, 247, 0.08);
     }
+    .face-box.pet.is-hover-highlight,
     .face-box.pet:hover {
-      border-color: #c084fc;
-      box-shadow: 0 0 14px rgba(168, 85, 247, 0.7);
-      background: rgba(168, 85, 247, 0.18);
+      border-color: #c084fc !important;
+      box-shadow: 0 0 22px rgba(168, 85, 247, 0.9), inset 0 0 14px rgba(168, 85, 247, 0.35) !important;
+      background: rgba(168, 85, 247, 0.22) !important;
     }
+
     .face-box.pet-untagged {
       border: 2px dashed #c084fc;
       background: rgba(168, 85, 247, 0.1);
     }
+    .face-box.pet-untagged.is-hover-highlight,
     .face-box.pet-untagged:hover {
-      border-color: #e9d5ff;
-      box-shadow: 0 0 14px rgba(192, 132, 252, 0.7);
-      background: rgba(168, 85, 247, 0.22);
+      border-color: #f0abfc !important;
+      box-shadow: 0 0 22px rgba(216, 70, 239, 0.9), inset 0 0 14px rgba(216, 70, 239, 0.35) !important;
+      background: rgba(168, 85, 247, 0.25) !important;
     }
 
     .face-box.untagged {
       border: 2px dashed #f59e0b;
       background: rgba(245, 158, 11, 0.08);
     }
+    .face-box.untagged.is-hover-highlight,
     .face-box.untagged:hover {
-      border-color: #fbbf24;
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
-      background: rgba(245, 158, 11, 0.18);
+      border-color: #fbbf24 !important;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.9), inset 0 0 14px rgba(245, 158, 11, 0.35) !important;
+      background: rgba(245, 158, 11, 0.22) !important;
     }
 
     .face-box-tag {
       position: absolute;
-      top: -26px;
+      top: -28px;
       left: 0;
       white-space: nowrap;
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 5px;
-      padding: 2px 7px;
-      font-size: 0.68rem;
+      padding: 3px 8px;
+      font-size: 0.7rem;
       font-weight: 600;
       color: #fff;
       display: flex;
       align-items: center;
       gap: 4px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
       pointer-events: auto;
+      transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.12s ease, box-shadow 0.12s ease;
+      will-change: transform;
+    }
+
+    .face-box.is-hover-highlight .face-box-tag,
+    .face-box:hover .face-box-tag {
+      transform: translateY(-2px);
+      background: rgba(15, 23, 42, 1);
+      border-color: #60a5fa;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(59, 130, 246, 0.7);
+      color: #fff;
+    }
+
+    .face-box.tagged.is-hover-highlight .face-box-tag,
+    .face-box.tagged:hover .face-box-tag {
+      border-color: #34d399;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(16, 185, 129, 0.7);
+    }
+
+    .face-box.pet.is-hover-highlight .face-box-tag,
+    .face-box.pet:hover .face-box-tag {
+      border-color: #c084fc;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(168, 85, 247, 0.7);
+    }
+
+    .face-box.untagged.is-hover-highlight .face-box-tag,
+    .face-box.untagged:hover .face-box-tag {
+      border-color: #fbbf24;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(245, 158, 11, 0.7);
     }
 
     .face-overlay-toolbar {
@@ -3383,23 +3431,64 @@
       cursor: pointer;
       transition: border-color 0.15s, transform 0.1s;
     }
-    .modal-person-chip:hover {
-      border-color: var(--accent);
-      transform: translateY(-1px);
+    .modal-person-chip:hover,
+    .modal-person-chip.is-hover-highlight {
+      border-color: var(--accent, #3b82f6) !important;
+      background: rgba(59, 130, 246, 0.22) !important;
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      transform: translateY(-2px) scale(1.05);
     }
     .modal-person-chip.untagged-chip {
       border: 1px dashed #f59e0b;
       color: #fbbf24;
       background: rgba(245, 158, 11, 0.1);
     }
-    .modal-person-chip .remove-face-tag {
+    .modal-person-chip.untagged-chip.is-hover-highlight,
+    .modal-person-chip.untagged-chip:hover {
+      border-color: #fbbf24 !important;
+      background: rgba(245, 158, 11, 0.25) !important;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.6) !important;
+    }
+    .modal-person-chip .remove-face-tag,
+    .modal-person-chip .discard-suggestion-btn {
       color: var(--text-muted);
       cursor: pointer;
       font-size: 0.85rem;
       margin-left: 2px;
+      padding: 0 3px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .modal-person-chip .remove-face-tag:hover {
       color: #ef4444;
+      background: rgba(239, 68, 68, 0.2);
+    }
+    .modal-person-chip .discard-suggestion-btn {
+      color: #f87171;
+    }
+    .modal-person-chip .discard-suggestion-btn:hover {
+      color: #fff;
+      background: rgba(239, 68, 68, 0.45);
+      transform: scale(1.15);
+    }
+
+    .btn-reject-suggestion {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-reject-suggestion:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fff;
+      border-color: rgba(239, 68, 68, 0.6);
     }
 
     /* ── People & Pets Explorer View ───────────────────── */
@@ -6056,6 +6145,7 @@
           <span id="popoverSuggestionName">Sarah</span>
           <span id="popoverSuggestionScore" class="vlm-badge">92%</span>
           <button type="button" class="btn-accept-suggestion" id="btnAcceptSuggestion">✔ Confirm</button>
+          <button type="button" class="btn-reject-suggestion" id="btnRejectSuggestion" title="Not this person (discard suggestion)">✕ Discard</button>
         </div>
       </div>
 
@@ -12449,6 +12539,7 @@
       currentImageFaces.forEach((f, idx) => {
         const box = document.createElement('div');
         box.className = 'face-box';
+        box.setAttribute('data-face-id', f.id);
         if (f.person_id) {
           box.classList.add(f.is_pet ? 'pet' : 'tagged');
         } else {
@@ -12475,6 +12566,21 @@
         }
 
         box.appendChild(tag);
+
+        // Synchronized highlight on box hover
+        box.addEventListener('mouseenter', () => {
+          overlay.classList.add('has-hover');
+          box.classList.add('is-hover-highlight');
+          const chip = $(`#modalPeopleChipsList .modal-person-chip[data-face-id="${f.id}"]`);
+          if (chip) chip.classList.add('is-hover-highlight');
+        });
+
+        box.addEventListener('mouseleave', () => {
+          overlay.classList.remove('has-hover');
+          box.classList.remove('is-hover-highlight');
+          const chip = $(`#modalPeopleChipsList .modal-person-chip[data-face-id="${f.id}"]`);
+          if (chip) chip.classList.remove('is-hover-highlight');
+        });
 
         box.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -12513,10 +12619,11 @@
           `;
         } else if (f.suggestion) {
           return `
-            <div class="modal-person-chip untagged-chip" data-face-id="${f.id}" title="Suggested match">
+            <div class="modal-person-chip untagged-chip" data-face-id="${f.id}" title="Suggested match: Click to review or ✕ to discard">
               <span>✨</span>
-              <span>${escapeHtml(f.suggestion.name)}?</span>
+              <span><strong>${escapeHtml(f.suggestion.name)}?</strong></span>
               <span style="font-size:0.65rem; color:#93c5fd;">(${Math.round(f.suggestion.similarity * 100)}%)</span>
+              <span class="discard-suggestion-btn" data-face-id="${f.id}" data-person-id="${f.suggestion.person_id}" data-name="${escapeHtml(f.suggestion.name)}" title="Discard suggestion (not ${escapeHtml(f.suggestion.name)})">&times;</span>
             </div>
           `;
         } else {
@@ -12530,13 +12637,47 @@
       }).join('');
 
       list.querySelectorAll('.modal-person-chip').forEach(chip => {
+        const fid = Number(chip.dataset.faceId);
+
+        // Synchronized highlight on chip hover
+        chip.addEventListener('mouseenter', () => {
+          const overlay = $('#faceOverlay');
+          if (overlay) overlay.classList.add('has-hover');
+          chip.classList.add('is-hover-highlight');
+          const box = $(`#faceOverlay .face-box[data-face-id="${fid}"]`);
+          if (box) box.classList.add('is-hover-highlight');
+        });
+
+        chip.addEventListener('mouseleave', () => {
+          const overlay = $('#faceOverlay');
+          if (overlay) overlay.classList.remove('has-hover');
+          chip.classList.remove('is-hover-highlight');
+          const box = $(`#faceOverlay .face-box[data-face-id="${fid}"]`);
+          if (box) box.classList.remove('is-hover-highlight');
+        });
+
         chip.addEventListener('click', (e) => {
-          if (e.target.classList.contains('remove-face-tag')) return;
-          const fid = Number(chip.dataset.faceId);
+          if (e.target.classList.contains('remove-face-tag') || e.target.classList.contains('discard-suggestion-btn')) return;
           const face = currentImageFaces.find(f => f.id === fid);
           if (face) {
-            const boxEl = $(`#faceOverlay .face-box:nth-child(${currentImageFaces.indexOf(face) + 1})`);
+            const boxEl = $(`#faceOverlay .face-box[data-face-id="${fid}"]`);
             if (boxEl) openFaceTagPopover(face, boxEl);
+          }
+        });
+      });
+
+      list.querySelectorAll('.discard-suggestion-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const fid = Number(btn.dataset.faceId);
+          const pid = Number(btn.dataset.personId);
+          const name = btn.dataset.name || 'person';
+          try {
+            await fetch(`${API}/api/people/${pid}/reject-match/${fid}`, { method: 'POST' });
+            showToast(`Discarded suggestion for ${name}`);
+            if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+          } catch (err) {
+            showToast('Failed to discard suggestion');
           }
         });
       });
@@ -12571,6 +12712,7 @@
       $('#popoverRelSelect').value = face.person_relationship || (face.is_pet ? 'Pet (Cat)' : 'Friend');
 
       const suggWrap = $('#popoverSuggestionWrap');
+      const rejectSuggBtn = $('#btnRejectSuggestion');
       if (face.suggestion && !face.person_name) {
         suggWrap.style.display = 'flex';
         $('#popoverSuggestionName').textContent = `${face.suggestion.name} (${face.suggestion.relationship || 'Friend'})`;
@@ -12594,6 +12736,19 @@
             showToast('Failed to accept suggestion');
           }
         };
+
+        if (rejectSuggBtn) {
+          rejectSuggBtn.onclick = async () => {
+            try {
+              await fetch(`${API}/api/people/${face.suggestion.person_id}/reject-match/${face.id}`, { method: 'POST' });
+              showToast(`Discarded suggestion for ${face.suggestion.name}`);
+              suggWrap.style.display = 'none';
+              if (currentDetailPhoto) loadImageFaces(currentDetailPhoto.id, false);
+            } catch (err) {
+              showToast('Failed to discard suggestion');
+            }
+          };
+        }
       } else {
         suggWrap.style.display = 'none';
       }

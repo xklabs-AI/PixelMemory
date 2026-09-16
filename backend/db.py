@@ -143,6 +143,7 @@ def init_db() -> None:
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(images)").fetchall()]
         if "faces_scanned" not in cols:
             conn.execute("ALTER TABLE images ADD COLUMN faces_scanned INTEGER DEFAULT 0")
+        deduplicate_faces(conn)
 
 
 @contextmanager
@@ -1038,6 +1039,64 @@ def batch_delete_faces(conn: sqlite3.Connection, face_ids: list[int]) -> int:
         if delete_face(conn, fid):
             count += 1
     return count
+
+
+def calculate_box_iou(box1: tuple, box2: tuple) -> float:
+    """Compute Intersection over Union between two (x, y, w, h) boxes."""
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[0] + box1[2], box2[0] + box2[2])
+    y2 = min(box1[1] + box1[3], box2[1] + box2[3])
+    intersection = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    area1 = max(0.0, box1[2]) * max(0.0, box1[3])
+    area2 = max(0.0, box2[2]) * max(0.0, box2[3])
+    union = area1 + area2 - intersection
+    return intersection / union if union > 0 else 0.0
+
+
+def deduplicate_faces(conn: sqlite3.Connection) -> int:
+    """Find and merge/remove duplicate face bounding boxes on the same image."""
+    rows = conn.execute(
+        """SELECT id, image_id, person_id, box_x, box_y, box_w, box_h, confidence,
+                  (embedding IS NOT NULL) AS has_emb, is_pet, created_at
+           FROM faces
+           ORDER BY image_id, (person_id IS NOT NULL) DESC, (embedding IS NOT NULL) DESC, id ASC"""
+    ).fetchall()
+
+    by_image: dict[int, list[sqlite3.Row]] = {}
+    for r in rows:
+        by_image.setdefault(r["image_id"], []).append(r)
+
+    deleted_count = 0
+    for image_id, face_list in by_image.items():
+        kept: list[dict] = []
+        for row in face_list:
+            f = dict(row)
+            box_f = (f["box_x"], f["box_y"], f["box_w"], f["box_h"])
+            duplicate_of = None
+            for k in kept:
+                box_k = (k["box_x"], k["box_y"], k["box_w"], k["box_h"])
+                iou = calculate_box_iou(box_f, box_k)
+                center_dist = abs(f["box_x"] - k["box_x"]) + abs(f["box_y"] - k["box_y"])
+                size_diff = abs(f["box_w"] - k["box_w"]) + abs(f["box_h"] - k["box_h"])
+                if iou > 0.55 or (center_dist < 0.08 and size_diff < 0.12):
+                    duplicate_of = k
+                    break
+
+            if duplicate_of is not None:
+                if not duplicate_of.get("person_id") and f.get("person_id"):
+                    conn.execute("UPDATE faces SET person_id = ? WHERE id = ?", (f["person_id"], duplicate_of["id"]))
+                    duplicate_of["person_id"] = f["person_id"]
+                conn.execute("DELETE FROM face_rejections WHERE face_id = ?", (f["id"],))
+                conn.execute("DELETE FROM faces WHERE id = ?", (f["id"],))
+                deleted_count += 1
+            else:
+                kept.append(f)
+
+    if deleted_count > 0:
+        conn.commit()
+    return deleted_count
+
 
 
 

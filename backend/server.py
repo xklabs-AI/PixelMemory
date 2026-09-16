@@ -43,6 +43,7 @@ from backend.db import (
     upsert_person, update_person, delete_person, get_photos_for_person,
     get_faces_for_person, unlink_face_from_person,
     get_known_face_embeddings, get_untagged_faces_with_embeddings,
+    calculate_box_iou,
 )
 from backend.faces import (
     detect_and_embed_faces, match_face_embedding, crop_face_thumbnail,
@@ -2184,6 +2185,14 @@ def get_image_faces(image_id: int):
         faces = get_faces_for_image(conn, image_id)
         known_embeddings = get_known_face_embeddings(conn)
         all_people = {p["id"]: p for p in get_all_people(conn)}
+        rejections = conn.execute(
+            "SELECT face_id, person_id FROM face_rejections WHERE face_id IN (SELECT id FROM faces WHERE image_id = ?)",
+            (image_id,),
+        ).fetchall()
+        rejected_set = {(r["face_id"], r["person_id"]) for r in rejections}
+
+    # Track people already tagged on this image to avoid redundant suggestions of the same person
+    already_tagged_people = {f["person_id"] for f in faces if f.get("person_id")}
 
     results = []
     for f in faces:
@@ -2194,15 +2203,22 @@ def get_image_faces(image_id: int):
                 rec = conn.execute("SELECT embedding FROM faces WHERE id = ?", (face_id,)).fetchone()
                 emb = rec["embedding"] if rec else None
             if emb:
-                best_pid, score = match_face_embedding(emb, known_embeddings)
-                if best_pid and best_pid in all_people:
-                    matched_person = all_people[best_pid]
-                    face_dict["suggestion"] = {
-                        "person_id": best_pid,
-                        "name": matched_person["name"],
-                        "relationship": matched_person["relationship"],
-                        "similarity": score,
-                    }
+                # Exclude candidates that were rejected for this specific face or already tagged on this photo
+                valid_known = [
+                    (fid, pid, e)
+                    for (fid, pid, e) in known_embeddings
+                    if (face_id, pid) not in rejected_set and pid not in already_tagged_people
+                ]
+                if valid_known:
+                    best_pid, score = match_face_embedding(emb, valid_known)
+                    if best_pid and best_pid in all_people:
+                        matched_person = all_people[best_pid]
+                        face_dict["suggestion"] = {
+                            "person_id": best_pid,
+                            "name": matched_person["name"],
+                            "relationship": matched_person["relationship"],
+                            "similarity": score,
+                        }
         results.append(face_dict)
 
     faces_scanned = bool(img_row["faces_scanned"]) if (img_row and "faces_scanned" in img_row.keys()) else False
@@ -2235,9 +2251,7 @@ def detect_image_faces(image_id: int, auto_tag: bool = True):
         for d in detected:
             is_dup = False
             for ef in existing_faces:
-                if (abs(ef["box_x"] - d["box_x"]) < 0.05 and
-                    abs(ef["box_y"] - d["box_y"]) < 0.05 and
-                    abs(ef["box_w"] - d["box_w"]) < 0.08):
+                if calculate_box_iou(ef, d) >= 0.45:
                     is_dup = True
                     break
             if is_dup:
@@ -2612,8 +2626,17 @@ def _run_library_face_scan():
                     with get_conn() as conn:
                         conn.execute("UPDATE images SET faces_scanned = 1 WHERE id = ?", (img_id,))
                         if detected:
+                            existing_faces = get_faces_for_image(conn, img_id)
                             known_embeddings = get_known_face_embeddings(conn)
                             for d in detected:
+                                is_dup = False
+                                for ef in existing_faces:
+                                    if calculate_box_iou(ef, d) >= 0.45:
+                                        is_dup = True
+                                        break
+                                if is_dup:
+                                    continue
+
                                 person_id = None
                                 if d.get("embedding"):
                                     best_pid, score = match_face_embedding(d["embedding"], known_embeddings)
