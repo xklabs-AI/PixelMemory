@@ -47,8 +47,8 @@
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-full: 9999px;
-      --glass-blur: blur(16px) saturate(180%);
-      --glass-blur-lg: blur(24px) saturate(200%);
+      --glass-blur: blur(12px);
+      --glass-blur-lg: blur(16px);
       --glass-inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.09);
       --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -96,8 +96,6 @@
     .top-header {
       height: 54px;
       background: var(--bg-sidebar);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
       border-bottom: 1px solid var(--border);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), var(--glass-inner-bevel);
       display: flex;
@@ -258,8 +256,6 @@
     .rail {
       width: 68px;
       background: var(--bg-rail);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -330,8 +326,6 @@
       max-width: 650px;
       flex-shrink: 0;
       background: var(--bg-sidebar);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -480,13 +474,15 @@
       cursor: pointer;
       border: 1px solid transparent;
       transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .nav-item:hover {
       background: var(--bg-surface);
       color: var(--text);
       border-color: rgba(255, 255, 255, 0.06);
-      transform: translateX(2px);
+      transform: translateX(2px) translateZ(0);
     }
 
     .nav-item:active {
@@ -580,8 +576,6 @@
       flex-direction: column;
       gap: 0.85rem;
       background: var(--bg-sidebar);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
       border-bottom: 1px solid var(--border);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), var(--glass-inner-bevel);
       z-index: 10;
@@ -1037,6 +1031,9 @@
       flex-direction: column;
       position: relative;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), var(--glass-inner-bevel);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform;
     }
 
     .photo-card:hover {
@@ -1301,10 +1298,12 @@
       display: block;
       transition: transform 0.2s ease;
       will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .photo-card:hover .card-thumb {
-      transform: scale(1.03);
+      transform: scale(1.03) translateZ(0);
     }
 
     .card-details {
