@@ -3106,7 +3106,7 @@
       top: -28px;
       left: 0;
       white-space: nowrap;
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(15, 23, 42, 0.96);
       border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 5px;
       padding: 3px 8px;
@@ -3116,16 +3116,17 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      backdrop-filter: blur(10px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
       pointer-events: auto;
       transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.12s ease, box-shadow 0.12s ease;
       will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .face-box.is-hover-highlight .face-box-tag,
     .face-box:hover .face-box-tag {
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
       background: rgba(15, 23, 42, 1);
       border-color: #60a5fa;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(59, 130, 246, 0.7);
@@ -3160,7 +3161,7 @@
     }
 
     .face-tool-toggle {
-      background: rgba(15, 23, 42, 0.82);
+      background: rgba(15, 23, 42, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 6px;
       color: var(--text-main);
@@ -3171,8 +3172,7 @@
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      backdrop-filter: blur(8px);
-      transition: all 0.18s ease;
+      transition: all 0.14s ease;
     }
     .face-tool-toggle:hover {
       background: rgba(30, 41, 59, 0.95);
@@ -3203,10 +3203,8 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(15, 23, 42, 0.82);
+      background: rgba(15, 23, 42, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
       color: #e2e8f0;
       cursor: pointer;
