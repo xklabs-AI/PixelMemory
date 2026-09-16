@@ -2080,7 +2080,7 @@ def save_story_as_note_endpoint(album_id: int, req: SaveStoryNoteRequest):
 
 
 @app.get("/api/notes/search")
-def search_notes_endpoint(q: str = Query("", min_length=0), limit: int = Query(50, ge=1, le=100)):
+def search_notes_endpoint(q: str = Query("", min_length=0), limit: int = Query(50, ge=1, le=5000)):
     """Search notes across all albums by title, content, date, or album name."""
     from backend.db import search_all_notes
     with get_conn() as conn:
